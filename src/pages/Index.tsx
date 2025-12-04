@@ -37,6 +37,7 @@ export default function Index() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<QuestionAnalysis | null>(null);
+  const [level, setLevel] = useState<'gcse' | 'a-level'>('gcse');
   
   // Chat state
   const [messages, setMessages] = useState<Message[]>([]);
@@ -258,7 +259,7 @@ export default function Index() {
           role: m.sender,
           content: m.content,
         })),
-        questionContext: questionText || 'See attached image',
+        questionContext: `Student level: ${level.toUpperCase()}. ${questionText || 'See attached image'}`,
       }),
     });
 
@@ -390,6 +391,29 @@ export default function Index() {
     setStep('upload');
   };
 
+  const loadExampleConversation = () => {
+    const exampleMessages: Message[] = [
+      {
+        id: 'example-1',
+        sender: 'tutor',
+        content: "I can see you've got a quadratic equation to solve: x² + 5x + 6 = 0. Before we dive in, have you worked with factorising before?",
+      },
+      {
+        id: 'example-2',
+        sender: 'student',
+        content: "Yeah I think so, you find two numbers that multiply together?",
+      },
+      {
+        id: 'example-3',
+        sender: 'tutor',
+        content: "Exactly right. So for this equation, we need two numbers that multiply to give 6, and add to give 5. What pair comes to mind?",
+      },
+    ];
+    setMessages(exampleMessages);
+    setAnalysis({ questionSummary: 'Solve x² + 5x + 6 = 0', topic: 'Quadratics', difficulty: 'GCSE', socraticOpening: '' });
+    setStep('chat');
+  };
+
   // Intro screen
   if (step === 'intro') {
     return (
@@ -424,20 +448,23 @@ export default function Index() {
                 onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
               >
                 <Camera className="h-5 w-5 mr-2" />
-                Try It Free
+                Snap a Question
               </Button>
-              <p className="text-sm text-muted-foreground">Built for AQA, Edexcel and OCR students</p>
+              <button 
+                onClick={loadExampleConversation}
+                className="text-sm text-primary hover:text-primary/80 transition-colors underline underline-offset-2"
+              >
+                See an example question
+              </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-8 pt-8 border-t border-border">
-              <div className="text-center space-y-2">
-                <div className="text-3xl font-semibold text-foreground">24/7</div>
-                <p className="text-xs text-muted-foreground">Always-on tutoring</p>
-              </div>
-              <div className="text-center space-y-2">
-                <div className="text-3xl font-semibold text-foreground">Free</div>
-                <p className="text-xs text-muted-foreground">No sign-up to try</p>
-              </div>
+            <div className="pt-8 border-t border-border">
+              <p className="text-sm text-muted-foreground">
+                24/7 • Step-by-step GCSE & A-Level help • No sign-up to try
+              </p>
+              <p className="text-xs text-muted-foreground/70 mt-2">
+                Built with Zero Gravity mentors
+              </p>
             </div>
           </div>
         </main>
@@ -464,6 +491,30 @@ export default function Index() {
           <div className="w-12" />
         </div>
 
+        {/* Level selector */}
+        <div className="flex justify-center gap-2 px-4 pb-4">
+          <button
+            onClick={() => setLevel('gcse')}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              level === 'gcse' 
+                ? 'bg-primary text-background' 
+                : 'bg-white/10 text-white/70 hover:bg-white/20'
+            }`}
+          >
+            GCSE
+          </button>
+          <button
+            onClick={() => setLevel('a-level')}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              level === 'a-level' 
+                ? 'bg-primary text-background' 
+                : 'bg-white/10 text-white/70 hover:bg-white/20'
+            }`}
+          >
+            A-Level
+          </button>
+        </div>
+
         <div className="flex-1 flex flex-col items-center justify-center p-4">
           <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageChange} />
           <button
@@ -475,9 +526,12 @@ export default function Index() {
             </div>
             <div className="text-center space-y-2">
               <p className="text-white font-medium">Tap to open camera</p>
-              <p className="text-white/50 text-sm">Point at your maths question</p>
+              <p className="text-white/50 text-sm">Make sure the whole question is in frame and in focus</p>
             </div>
           </button>
+          <p className="text-white/40 text-xs mt-4 text-center max-w-xs">
+            Works best on printed or clearly written questions
+          </p>
         </div>
 
         <div className="p-6">
