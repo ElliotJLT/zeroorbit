@@ -424,11 +424,9 @@ export default function Chat() {
               }`}
             >
               {message.sender === 'tutor' && (
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
-                    <span className="text-[10px] text-primary font-bold">O</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">Orbit</span>
+                <div className="flex items-center gap-3 mb-3">
+                  <img src={orbitIcon} alt="Orbit" className="w-10 h-10 object-contain" />
+                  <span className="text-sm font-medium text-foreground">Orbit</span>
                 </div>
               )}
               <p className={`text-sm leading-relaxed ${message.sender === 'student' ? 'text-right' : ''}`}>
