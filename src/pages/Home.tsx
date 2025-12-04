@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Plus, TrendingUp, LogOut, Shield, ChevronRight, Flame } from 'lucide-react';
+import { Plus, TrendingUp, LogOut, Shield, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { TopicChip } from '@/components/TopicChip';
-import { cn } from '@/lib/utils';
 
 interface Topic {
   id: string;
@@ -80,20 +79,20 @@ export default function Home() {
   };
 
   const firstName = profile?.full_name?.split(' ')[0] || 'there';
-  const totalAttempts = stats.reduce((sum, s) => sum + s.attempts, 0);
+  const totalAttempts = stats.reduce((sum, s) => sum + (s.attempts || 0), 0);
 
   if (loading || !profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-24 bg-background">
       {/* Header */}
-      <div className="p-4 flex items-center justify-between">
+      <header className="p-4 flex items-center justify-between border-b border-border">
         <div className="flex items-center gap-3">
           {isAdmin && (
             <Button variant="ghost" size="icon" asChild className="rounded-full">
@@ -103,75 +102,67 @@ export default function Home() {
             </Button>
           )}
         </div>
-        <Button variant="ghost" size="icon" onClick={handleSignOut} className="rounded-full">
+        <Button variant="ghost" size="icon" onClick={handleSignOut} className="rounded-full text-muted-foreground">
           <LogOut className="h-5 w-5" />
         </Button>
-      </div>
+      </header>
 
-      <div className="px-4 max-w-lg mx-auto space-y-6">
+      <div className="px-4 py-6 max-w-lg mx-auto space-y-8">
         {/* Greeting */}
         <div className="space-y-1 animate-fade-in">
-          <h1 className="text-3xl font-bold font-display">
-            Hey {firstName}! 👋
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Hi, {firstName}
           </h1>
           <p className="text-muted-foreground">
-            Ready to tackle some maths?
+            What would you like to work on?
           </p>
         </div>
 
         {/* Primary CTA */}
         <Button
           onClick={() => navigate('/ask')}
-          className="w-full h-16 text-lg rounded-2xl btn-primary animate-fade-in"
+          className="w-full h-14 text-base rounded-full bg-primary hover:bg-primary/90 animate-fade-in"
           style={{ animationDelay: '100ms' }}
         >
-          <Plus className="h-6 w-6 mr-2" />
-          Ask a question
+          <Plus className="h-5 w-5 mr-2" />
+          New Question
         </Button>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-3 animate-fade-in" style={{ animationDelay: '200ms' }}>
-          <div className="glass-card rounded-2xl p-4 space-y-1">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Flame className="h-4 w-4 text-warning" />
-              <span className="text-xs">This week</span>
-            </div>
-            <p className="text-2xl font-bold">{weeklyCount}</p>
-            <p className="text-xs text-muted-foreground">questions</p>
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-4 animate-fade-in" style={{ animationDelay: '200ms' }}>
+          <div className="bg-muted rounded-2xl p-5 space-y-1">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">This week</p>
+            <p className="text-3xl font-semibold">{weeklyCount}</p>
+            <p className="text-sm text-muted-foreground">questions</p>
           </div>
           
-          <div className="glass-card rounded-2xl p-4 space-y-1">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <TrendingUp className="h-4 w-4 text-secondary" />
-              <span className="text-xs">Total</span>
-            </div>
-            <p className="text-2xl font-bold">{totalAttempts}</p>
-            <p className="text-xs text-muted-foreground">topics practiced</p>
+          <div className="bg-muted rounded-2xl p-5 space-y-1">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Total</p>
+            <p className="text-3xl font-semibold">{totalAttempts}</p>
+            <p className="text-sm text-muted-foreground">practiced</p>
           </div>
         </div>
 
-        {/* Profile info */}
-        <div className="glass-card rounded-2xl p-4 flex items-center justify-between animate-fade-in" style={{ animationDelay: '300ms' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-white font-bold">
-              {firstName[0]?.toUpperCase()}
-            </div>
-            <div>
-              <p className="font-medium">{profile.full_name}</p>
-              <p className="text-xs text-muted-foreground">
-                {profile.year_group} • {profile.exam_board} • Target: {profile.target_grade}
-              </p>
-            </div>
+        {/* Profile card */}
+        <div className="bg-muted rounded-2xl p-4 flex items-center gap-4 animate-fade-in" style={{ animationDelay: '300ms' }}>
+          <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-lg">
+            {firstName[0]?.toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium truncate">{profile.full_name}</p>
+            <p className="text-sm text-muted-foreground">
+              {profile.year_group} · {profile.exam_board} · Target {profile.target_grade}
+            </p>
           </div>
         </div>
 
         {/* Topics */}
-        <div className="space-y-3 animate-fade-in" style={{ animationDelay: '400ms' }}>
+        <div className="space-y-4 animate-fade-in" style={{ animationDelay: '400ms' }}>
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold font-display">Your Topics</h2>
-            <Button variant="ghost" size="sm" asChild className="text-primary">
+            <h2 className="text-lg font-semibold">Topics</h2>
+            <Button variant="ghost" size="sm" asChild className="text-primary -mr-2">
               <Link to="/progress">
-                View all
+                See all
                 <ChevronRight className="h-4 w-4 ml-1" />
               </Link>
             </Button>
@@ -183,8 +174,8 @@ export default function Home() {
                 <TopicChip
                   key={topic.id}
                   name={topic.name}
-                  attempts={stat.attempts}
-                  correctAttempts={stat.correct_attempts}
+                  attempts={stat.attempts || 0}
+                  correctAttempts={stat.correct_attempts || 0}
                 />
               );
             })}
