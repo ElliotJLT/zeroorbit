@@ -75,7 +75,7 @@ export default function Index() {
               >
                 <span className="font-semibold">Stuck on a maths question?</span>
                 <br />
-                <span className="font-semibold" style={{ color: '#00FAD7' }}>Show Orbit.</span>
+                <span className="font-semibold" style={{ color: 'rgba(255,255,255,0.8)' }}>Show Orbit.</span>
               </h1>
               
               <p className="text-lg text-muted-foreground max-w-sm mx-auto leading-relaxed">
