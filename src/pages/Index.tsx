@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import orbitLogo from '@/assets/orbit-logo.png';
+import orbitIcon from '@/assets/orbit-icon.png';
 
 export default function Index() {
   const { user, loading } = useAuth();
@@ -55,15 +56,20 @@ export default function Index() {
         <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <div className="max-w-lg w-full space-y-12 animate-fade-in">
             {/* Logo with glow */}
-            <div className="relative flex justify-center items-center mb-8">
+            <div className="relative flex flex-col items-center mb-8">
               <div 
-                className="absolute w-48 h-48 blur-2xl"
+                className="absolute w-48 h-48 blur-2xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
                 style={{ background: 'radial-gradient(circle, rgba(0,250,215,0.35) 0%, transparent 70%)' }}
               />
               <img 
                 src={orbitLogo} 
                 alt="Orbit" 
-                className="relative h-36 w-auto"
+                className="relative h-44 w-auto"
+              />
+              <img 
+                src={orbitIcon} 
+                alt="" 
+                className="relative h-10 w-auto opacity-60 -mt-2"
               />
             </div>
 
