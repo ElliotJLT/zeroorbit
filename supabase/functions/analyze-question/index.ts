@@ -11,13 +11,73 @@ serve(async (req) => {
   }
 
   try {
-    const { imageBase64, questionText } = await req.json();
+    const { imageBase64, questionText, ocrOnly } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    // OCR-only mode - just extract text from the image
+    if (ocrOnly && imageBase64) {
+      console.log("Running OCR on question image...");
+      
+      const ocrMessages = [
+        {
+          role: "system",
+          content: `You are an OCR specialist. Extract all visible text from the maths question image. 
+Include mathematical expressions, numbers, and any written text. 
+Format mathematical expressions clearly (e.g., x² instead of x2, fractions as a/b).
+Return ONLY the extracted text, nothing else. If there's LaTeX or mathematical notation, render it in plain readable form.`
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Extract all text and mathematical expressions from this image:"
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: imageBase64.startsWith("data:") ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`
+              }
+            }
+          ]
+        }
+      ];
+
+      const ocrResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: ocrMessages,
+        }),
+      });
+
+      if (!ocrResponse.ok) {
+        const errorText = await ocrResponse.text();
+        console.error("OCR error:", ocrResponse.status, errorText);
+        return new Response(JSON.stringify({ detectedText: null }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const ocrData = await ocrResponse.json();
+      const detectedText = ocrData.choices?.[0]?.message?.content?.trim() || null;
+      
+      console.log("OCR result:", detectedText);
+
+      return new Response(JSON.stringify({ detectedText }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Full analysis mode
     console.log("Analyzing question image...");
 
     const messages = [

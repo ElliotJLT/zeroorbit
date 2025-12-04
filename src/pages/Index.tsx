@@ -391,29 +391,6 @@ export default function Index() {
     setStep('upload');
   };
 
-  const loadExampleConversation = () => {
-    const exampleMessages: Message[] = [
-      {
-        id: 'example-1',
-        sender: 'tutor',
-        content: "I can see you've got a quadratic equation to solve: x² + 5x + 6 = 0. Before we dive in, have you worked with factorising before?",
-      },
-      {
-        id: 'example-2',
-        sender: 'student',
-        content: "Yeah I think so, you find two numbers that multiply together?",
-      },
-      {
-        id: 'example-3',
-        sender: 'tutor',
-        content: "Exactly right. So for this equation, we need two numbers that multiply to give 6, and add to give 5. What pair comes to mind?",
-      },
-    ];
-    setMessages(exampleMessages);
-    setAnalysis({ questionSummary: 'Solve x² + 5x + 6 = 0', topic: 'Quadratics', difficulty: 'GCSE', socraticOpening: '' });
-    setStep('chat');
-  };
-
   // Intro screen
   if (step === 'intro') {
     return (
@@ -439,24 +416,16 @@ export default function Index() {
               </p>
             </div>
 
-            <div className="space-y-4">
-              <Button
-                onClick={() => setStep('upload')}
-                className="w-full max-w-xs mx-auto h-14 text-base rounded-full font-medium transition-all text-white"
-                style={{ background: '#111416', border: '1px solid #00FAD7' }}
-                onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 16px rgba(0,250,215,0.25)'}
-                onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
-              >
-                <Camera className="h-5 w-5 mr-2" />
-                Snap a Question
-              </Button>
-              <button 
-                onClick={loadExampleConversation}
-                className="text-sm text-primary hover:text-primary/80 transition-colors underline underline-offset-2"
-              >
-                See an example question
-              </button>
-            </div>
+            <Button
+              onClick={() => setStep('upload')}
+              className="w-full max-w-xs mx-auto h-14 text-base rounded-full font-medium transition-all text-white"
+              style={{ background: '#111416', border: '1px solid #00FAD7' }}
+              onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 16px rgba(0,250,215,0.25)'}
+              onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
+            >
+              <Camera className="h-5 w-5 mr-2" />
+              Snap a Question
+            </Button>
 
             <div className="pt-8 border-t border-border">
               <p className="text-sm text-muted-foreground">
