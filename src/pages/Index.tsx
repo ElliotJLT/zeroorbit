@@ -139,80 +139,76 @@ export default function Index() {
     );
   }
 
-  // Upload screen
+  // Camera screen - opens immediately
   if (step === 'upload') {
     return (
-      <div className="min-h-screen flex flex-col p-6 bg-background">
-        <div className="max-w-lg mx-auto w-full flex-1 flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <button
-              onClick={() => setStep('intro')}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+      <div className="min-h-screen flex flex-col bg-black">
+        {/* Header */}
+        <div className="p-4 flex items-center justify-between">
+          <button
+            onClick={() => setStep('intro')}
+            className="text-sm text-white/70 hover:text-white transition-colors"
+          >
+            ← Back
+          </button>
+          <h2 className="text-lg font-medium text-white">Snap your question</h2>
+          <div className="w-12" />
+        </div>
+
+        {/* Camera area */}
+        <div className="flex-1 flex flex-col items-center justify-center p-4">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handleImageChange}
+          />
+
+          {/* Camera preview placeholder - tapping opens camera */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full max-w-sm aspect-[3/4] rounded-3xl border-2 border-white/20 bg-white/5 flex flex-col items-center justify-center gap-6 transition-all hover:border-primary/50 hover:bg-white/10"
+          >
+            <div 
+              className="w-20 h-20 rounded-full flex items-center justify-center"
+              style={{ background: 'rgba(0,250,215,0.2)' }}
             >
-              ← Back
-            </button>
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 flex flex-col justify-center space-y-8 animate-fade-in">
-            <div className="text-center space-y-3">
-              <h2 className="text-3xl font-semibold tracking-tight">What do you need help with?</h2>
-              <p className="text-muted-foreground">
-                Upload a photo or describe your question
-              </p>
+              <Camera className="h-10 w-10 text-primary" />
             </div>
-
-            {/* Photo upload */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={handleImageChange}
-            />
-
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="upload-zone rounded-2xl p-10 flex flex-col items-center gap-4"
-            >
-              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-                <Camera className="h-6 w-6 text-primary" />
-              </div>
-              <div className="space-y-1 text-center">
-                <p className="font-medium text-foreground">Upload photo</p>
-                <p className="text-sm text-muted-foreground">
-                  Take a photo or choose from library
-                </p>
-              </div>
-            </button>
-
-            {/* Divider */}
-            <div className="flex items-center gap-4">
-              <div className="flex-1 h-px bg-border" />
-              <span className="text-sm text-muted-foreground">or</span>
-              <div className="flex-1 h-px bg-border" />
+            <div className="text-center space-y-2">
+              <p className="text-white font-medium">Tap to open camera</p>
+              <p className="text-white/50 text-sm">Point at your maths question</p>
             </div>
+          </button>
+        </div>
 
-            {/* Text input */}
-            <Textarea
-              placeholder="Type your question here..."
-              value={questionText}
-              onChange={(e) => setQuestionText(e.target.value)}
-              className="min-h-[120px] rounded-xl bg-muted border-0 resize-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-
-            {questionText.trim() && (
-              <Button
-                onClick={handleGetHelp}
-                className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 animate-fade-in"
-              >
-                Continue
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            )}
-          </div>
+        {/* Bottom actions */}
+        <div className="p-6 space-y-4">
+          <button
+            onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = 'image/*';
+              input.onchange = (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    setImagePreview(reader.result as string);
+                    setImageFile(file);
+                    setStep('preview');
+                  };
+                  reader.readAsDataURL(file);
+                }
+              };
+              input.click();
+            }}
+            className="w-full text-center text-sm text-white/60 hover:text-white transition-colors py-2"
+          >
+            Upload from library instead
+          </button>
         </div>
       </div>
     );
