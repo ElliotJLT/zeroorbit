@@ -55,17 +55,17 @@ export default function Index() {
           <div className="max-w-lg w-full space-y-12 animate-fade-in">
             {/* Hero */}
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted text-muted-foreground text-sm font-medium">
-                A-Level Maths Tutor
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                AI tutor for A-level Maths
               </div>
               
               <h1 className="text-5xl font-semibold tracking-tight leading-tight">
-                Get unstuck.<br />
-                <span className="text-muted-foreground">Instantly.</span>
+                Turn stuck questions<br />
+                <span className="text-muted-foreground">into marks.</span>
               </h1>
               
-              <p className="text-lg text-muted-foreground max-w-sm mx-auto">
-                Snap a photo of any maths question and get step-by-step guidance from AI.
+              <p className="text-lg text-muted-foreground max-w-md mx-auto">
+                Snap a photo of any A-level maths question and Orbit walks you through it step-by-step — no copy-paste answers.
               </p>
             </div>
 
@@ -76,27 +76,23 @@ export default function Index() {
                 className="w-full max-w-xs mx-auto h-14 text-base rounded-full bg-primary hover:bg-primary/90"
               >
                 <Camera className="h-5 w-5 mr-2" />
-                Get Started
+                Try It Free
               </Button>
               
               <p className="text-sm text-muted-foreground">
-                No account required to try
+                Built for AQA, Edexcel and OCR students
               </p>
             </div>
 
             {/* Features */}
-            <div className="grid grid-cols-3 gap-6 pt-8 border-t border-border">
-              <div className="text-center space-y-2">
-                <div className="text-3xl font-semibold text-foreground">1M+</div>
-                <p className="text-xs text-muted-foreground">Questions solved</p>
-              </div>
-              <div className="text-center space-y-2">
-                <div className="text-3xl font-semibold text-foreground">4.9</div>
-                <p className="text-xs text-muted-foreground">Student rating</p>
-              </div>
+            <div className="grid grid-cols-2 gap-8 pt-8 border-t border-border">
               <div className="text-center space-y-2">
                 <div className="text-3xl font-semibold text-foreground">24/7</div>
-                <p className="text-xs text-muted-foreground">Available</p>
+                <p className="text-xs text-muted-foreground">Always-on tutoring</p>
+              </div>
+              <div className="text-center space-y-2">
+                <div className="text-3xl font-semibold text-foreground">Free</div>
+                <p className="text-xs text-muted-foreground">No sign-up to try</p>
               </div>
             </div>
           </div>
