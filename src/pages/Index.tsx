@@ -44,6 +44,7 @@ export default function Index() {
   const [sending, setSending] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const [showInput, setShowInput] = useState(false);
   const [exchangeCount, setExchangeCount] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
@@ -114,11 +115,16 @@ export default function Index() {
     }
   };
 
-  const speakText = useCallback(async (text: string) => {
-    if (!voiceEnabled) return;
+  const speakText = useCallback(async (text: string, messageId?: string) => {
+    if (!voiceEnabled) {
+      setSpeakingMessageId(null);
+      return;
+    }
     
     try {
       setIsSpeaking(true);
+      if (messageId) setSpeakingMessageId(messageId);
+      
       const response = await fetch(TTS_URL, {
         method: 'POST',
         headers: {
@@ -130,6 +136,7 @@ export default function Index() {
 
       if (!response.ok) {
         setIsSpeaking(false);
+        setSpeakingMessageId(null);
         return;
       }
 
@@ -139,11 +146,18 @@ export default function Index() {
       
       const audio = new Audio(`data:audio/mpeg;base64,${audioContent}`);
       audioRef.current = audio;
-      audio.onended = () => setIsSpeaking(false);
-      audio.onerror = () => setIsSpeaking(false);
+      audio.onended = () => {
+        setIsSpeaking(false);
+        setSpeakingMessageId(null);
+      };
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        setSpeakingMessageId(null);
+      };
       await audio.play();
     } catch (error) {
       setIsSpeaking(false);
+      setSpeakingMessageId(null);
     }
   }, [voiceEnabled]);
 
@@ -153,6 +167,7 @@ export default function Index() {
       audioRef.current = null;
     }
     setIsSpeaking(false);
+    setSpeakingMessageId(null);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -214,7 +229,7 @@ export default function Index() {
       
       setMessages([initialMessage]);
       setStep('chat');
-      speakText(analysisData.socraticOpening);
+      speakText(analysisData.socraticOpening, initialMessage.id);
       
     } catch (error) {
       console.error('Analysis error:', error);
@@ -225,7 +240,7 @@ export default function Index() {
       };
       setMessages([fallbackMessage]);
       setStep('chat');
-      speakText(fallbackMessage.content);
+      speakText(fallbackMessage.content, fallbackMessage.id);
     } finally {
       setIsAnalyzing(false);
     }
@@ -337,7 +352,15 @@ export default function Index() {
       const allMessages = [...messages, studentMessage];
       const response = await streamChat(allMessages);
       setExchangeCount(prev => prev + 1);
-      speakText(response);
+      
+      // Get the last tutor message ID for voice-first mode
+      setMessages(prev => {
+        const lastTutorMsg = [...prev].reverse().find(m => m.sender === 'tutor');
+        if (lastTutorMsg) {
+          speakText(response, lastTutorMsg.id);
+        }
+        return prev;
+      });
       
       if (exchangeCount + 1 >= MAX_FREE_EXCHANGES) {
         setTimeout(() => {
@@ -608,17 +631,25 @@ export default function Index() {
             >
               {message.sender === 'tutor' && (
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                  <div className={`w-6 h-6 rounded-full bg-primary flex items-center justify-center ${speakingMessageId === message.id ? 'animate-pulse' : ''}`}>
                     <span className="text-background font-bold text-xs">O</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">Orbit</span>
+                  <span className="text-xs text-muted-foreground">
+                    {speakingMessageId === message.id ? 'Orbit is speaking...' : 'Orbit'}
+                  </span>
                 </div>
               )}
               {message.imageUrl && (
                 <img src={message.imageUrl} alt="Uploaded" className="w-full max-h-32 object-contain rounded-lg mb-2" />
               )}
               <p className={`text-sm leading-relaxed ${message.sender === 'student' ? 'text-right' : ''}`}>
-                {message.content || (
+                {speakingMessageId === message.id && message.sender === 'tutor' ? (
+                  <span className="inline-flex items-center gap-1 text-muted-foreground">
+                    <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </span>
+                ) : message.content || (
                   <span className="inline-flex items-center gap-1">
                     <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
