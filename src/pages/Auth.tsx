@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
-import { ArrowRight, Sparkles, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,12 +24,10 @@ export default function Auth() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Check if there's a pending question from the landing page
   const hasPendingQuestion = !!sessionStorage.getItem('pendingQuestion');
 
   useEffect(() => {
     if (user) {
-      // If there's a pending question, go to ask page
       if (hasPendingQuestion) {
         navigate('/ask');
       } else {
@@ -73,40 +71,37 @@ export default function Auth() {
       });
     } else if (!isLogin) {
       toast({
-        title: 'Welcome to Vector Tutor! 🎉',
+        title: 'Welcome!',
         description: 'Your account is ready.',
       });
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col p-6">
-      <div className="max-w-md mx-auto w-full flex-1 flex flex-col justify-center">
+    <div className="min-h-screen flex flex-col p-6 bg-background">
+      <div className="max-w-sm mx-auto w-full flex-1 flex flex-col justify-center">
         <div className="space-y-8 animate-fade-in">
           {/* Header */}
-          <div className="text-center space-y-4">
+          <div className="text-center space-y-3">
             {hasPendingQuestion ? (
               <>
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 text-secondary text-sm font-medium">
-                  <Sparkles className="h-4 w-4" />
-                  Almost there!
-                </div>
-                <h1 className="text-3xl font-bold">
-                  Create your free account
+                <p className="text-sm text-primary font-medium">Almost there</p>
+                <h1 className="text-2xl font-semibold tracking-tight">
+                  Create your account
                 </h1>
-                <p className="text-muted-foreground">
-                  To get help with your question and track your progress
+                <p className="text-muted-foreground text-sm">
+                  Get help with your question and track progress
                 </p>
               </>
             ) : (
               <>
-                <h1 className="text-3xl font-bold">
-                  {isLogin ? 'Welcome back!' : 'Join Vector Tutor'}
+                <h1 className="text-2xl font-semibold tracking-tight">
+                  {isLogin ? 'Welcome back' : 'Get started'}
                 </h1>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {isLogin 
-                    ? 'Sign in to continue learning'
-                    : 'Get unstuck on A-level Maths in minutes'}
+                    ? 'Sign in to continue'
+                    : 'Create an account to get started'}
                 </p>
               </>
             )}
@@ -116,30 +111,30 @@ export default function Auth() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="email"
-                  placeholder="Email address"
+                  placeholder="Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-12 h-14 rounded-2xl"
+                  className="pl-11 h-12 rounded-xl bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary"
                   aria-invalid={!!errors.email}
                 />
               </div>
               {errors.email && (
-                <p className="text-sm text-destructive pl-4">{errors.email}</p>
+                <p className="text-sm text-destructive px-1">{errors.email}</p>
               )}
             </div>
 
             <div className="space-y-2">
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-12 pr-12 h-14 rounded-2xl"
+                  className="pl-11 pr-11 h-12 rounded-xl bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary"
                   aria-invalid={!!errors.password}
                 />
                 <button
@@ -147,25 +142,25 @@ export default function Auth() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               {errors.password && (
-                <p className="text-sm text-destructive pl-4">{errors.password}</p>
+                <p className="text-sm text-destructive px-1">{errors.password}</p>
               )}
             </div>
 
             <Button
               type="submit"
-              className="w-full h-14 text-lg rounded-2xl btn-primary"
+              className="w-full h-12 rounded-full bg-primary hover:bg-primary/90"
               disabled={loading}
             >
               {loading ? (
                 'Loading...'
               ) : (
                 <>
-                  {isLogin ? 'Sign in' : 'Create account'}
-                  <ArrowRight className="h-5 w-5 ml-2" />
+                  {isLogin ? 'Sign in' : 'Continue'}
+                  <ArrowRight className="h-4 w-4 ml-2" />
                 </>
               )}
             </Button>
@@ -176,26 +171,30 @@ export default function Auth() {
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-muted-foreground hover:text-primary transition-colors"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               {isLogin 
-                ? "Don't have an account? Sign up"
-                : 'Already have an account? Sign in'}
+                ? "Don't have an account? "
+                : 'Already have an account? '}
+              <span className="text-primary">{isLogin ? 'Sign up' : 'Sign in'}</span>
             </button>
           </div>
 
           {/* Benefits */}
           {!isLogin && (
-            <div className="space-y-3 pt-4">
-              <p className="text-sm text-center text-muted-foreground">What you get:</p>
-              <div className="grid gap-2">
+            <div className="space-y-3 pt-4 border-t border-border">
+              <div className="grid gap-3">
                 {[
-                  '🎯 Instant help on any maths question',
-                  '📊 Track your progress by topic',
-                  '💾 Save your sessions for revision',
+                  { title: 'Instant help', desc: 'Get step-by-step guidance' },
+                  { title: 'Track progress', desc: 'See your improvement over time' },
+                  { title: 'Save sessions', desc: 'Review past questions anytime' },
                 ].map((benefit, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl glass-card">
-                    <span className="text-sm">{benefit}</span>
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2" />
+                    <div>
+                      <p className="text-sm font-medium">{benefit.title}</p>
+                      <p className="text-xs text-muted-foreground">{benefit.desc}</p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -206,9 +205,12 @@ export default function Auth() {
 
       {/* Footer */}
       <footer className="text-center py-4">
-        <p className="text-sm text-muted-foreground">
-          Free for A-level students 🎓
-        </p>
+        <button
+          onClick={() => navigate('/')}
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          ← Back to home
+        </button>
       </footer>
     </div>
   );

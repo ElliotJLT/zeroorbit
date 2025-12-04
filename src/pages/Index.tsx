@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Upload, ArrowRight, Sparkles, Zap, Send, X } from 'lucide-react';
+import { Camera, Upload, ArrowRight, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -34,7 +34,6 @@ export default function Index() {
   };
 
   const handleGetHelp = () => {
-    // Store the question in sessionStorage for after auth
     sessionStorage.setItem('pendingQuestion', JSON.stringify({
       text: questionText,
       image: imagePreview
@@ -48,81 +47,68 @@ export default function Index() {
     setStep('upload');
   };
 
-  // Intro screen - value prop
+  // Intro screen
   if (step === 'intro') {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-background">
         <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <div className="max-w-md w-full space-y-8 animate-fade-in">
+          <div className="max-w-lg w-full space-y-12 animate-fade-in">
             {/* Hero */}
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                <Sparkles className="h-4 w-4" />
-                AI-powered maths help
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted text-muted-foreground text-sm font-medium">
+                A-Level Maths Tutor
               </div>
               
-              <h1 className="text-4xl font-bold tracking-tight">
-                Stuck on{' '}
-                <span className="text-gradient">A-level Maths</span>?
+              <h1 className="text-5xl font-semibold tracking-tight leading-tight">
+                Get unstuck.<br />
+                <span className="text-muted-foreground">Instantly.</span>
               </h1>
               
-              <p className="text-xl text-muted-foreground">
-                Snap a photo. Get instant help. It's that simple.
+              <p className="text-lg text-muted-foreground max-w-sm mx-auto">
+                Snap a photo of any maths question and get step-by-step guidance from AI.
               </p>
             </div>
 
             {/* Main CTA */}
-            <div className="space-y-4 pt-4">
+            <div className="space-y-4">
               <Button
                 onClick={() => setStep('upload')}
-                className="w-full h-16 text-lg rounded-2xl btn-primary"
+                className="w-full max-w-xs mx-auto h-14 text-base rounded-full bg-primary hover:bg-primary/90"
               >
-                <Camera className="h-6 w-6 mr-2" />
-                Take a photo of your question
+                <Camera className="h-5 w-5 mr-2" />
+                Get Started
               </Button>
               
               <p className="text-sm text-muted-foreground">
-                No signup required to try it out ✨
+                No account required to try
               </p>
             </div>
 
-            {/* Social proof */}
-            <div className="pt-8 space-y-4">
-              <div className="flex items-center justify-center gap-1">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <span key={i} className="text-2xl">⭐</span>
-                ))}
+            {/* Features */}
+            <div className="grid grid-cols-3 gap-6 pt-8 border-t border-border">
+              <div className="text-center space-y-2">
+                <div className="text-3xl font-semibold text-foreground">1M+</div>
+                <p className="text-xs text-muted-foreground">Questions solved</p>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Loved by 1000+ A-level students
-              </p>
-            </div>
-
-            {/* Quick features */}
-            <div className="grid grid-cols-3 gap-4 pt-6">
-              <div className="text-center p-4 rounded-xl glass-card">
-                <div className="text-2xl mb-2">📸</div>
-                <p className="text-xs text-muted-foreground">Photo to solution</p>
+              <div className="text-center space-y-2">
+                <div className="text-3xl font-semibold text-foreground">4.9</div>
+                <p className="text-xs text-muted-foreground">Student rating</p>
               </div>
-              <div className="text-center p-4 rounded-xl glass-card">
-                <div className="text-2xl mb-2">🎯</div>
-                <p className="text-xs text-muted-foreground">Step-by-step help</p>
-              </div>
-              <div className="text-center p-4 rounded-xl glass-card">
-                <div className="text-2xl mb-2">📈</div>
-                <p className="text-xs text-muted-foreground">Track progress</p>
+              <div className="text-center space-y-2">
+                <div className="text-3xl font-semibold text-foreground">24/7</div>
+                <p className="text-xs text-muted-foreground">Available</p>
               </div>
             </div>
           </div>
         </main>
 
         {/* Footer */}
-        <footer className="p-4 text-center">
+        <footer className="p-6 text-center">
           <button
             onClick={() => navigate('/auth')}
-            className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            Already have an account? Sign in
+            Already have an account? <span className="text-primary">Sign in</span>
           </button>
         </footer>
       </div>
@@ -132,28 +118,24 @@ export default function Index() {
   // Upload screen
   if (step === 'upload') {
     return (
-      <div className="min-h-screen flex flex-col p-6">
-        <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
+      <div className="min-h-screen flex flex-col p-6 bg-background">
+        <div className="max-w-lg mx-auto w-full flex-1 flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <button
               onClick={() => setStep('intro')}
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               ← Back
             </button>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Zap className="h-4 w-4 text-primary" />
-              Instant help
-            </div>
           </div>
 
           {/* Content */}
-          <div className="flex-1 flex flex-col justify-center space-y-6 animate-fade-in">
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold">What's your question?</h2>
+          <div className="flex-1 flex flex-col justify-center space-y-8 animate-fade-in">
+            <div className="text-center space-y-3">
+              <h2 className="text-3xl font-semibold tracking-tight">What do you need help with?</h2>
               <p className="text-muted-foreground">
-                Take a photo or type it out
+                Upload a photo or describe your question
               </p>
             </div>
 
@@ -169,41 +151,41 @@ export default function Index() {
 
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="upload-zone rounded-2xl p-8 flex flex-col items-center gap-4 transition-all"
+              className="upload-zone rounded-2xl p-10 flex flex-col items-center gap-4"
             >
-              <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
-                <Camera className="h-8 w-8 text-primary" />
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                <Camera className="h-6 w-6 text-primary" />
               </div>
               <div className="space-y-1 text-center">
-                <p className="font-medium">Tap to take or upload a photo</p>
+                <p className="font-medium text-foreground">Upload photo</p>
                 <p className="text-sm text-muted-foreground">
-                  Works best with clear, well-lit images
+                  Take a photo or choose from library
                 </p>
               </div>
             </button>
 
-            {/* Or divider */}
+            {/* Divider */}
             <div className="flex items-center gap-4">
               <div className="flex-1 h-px bg-border" />
-              <span className="text-sm text-muted-foreground">or type it</span>
+              <span className="text-sm text-muted-foreground">or</span>
               <div className="flex-1 h-px bg-border" />
             </div>
 
             {/* Text input */}
             <Textarea
-              placeholder="Type or paste your maths question here..."
+              placeholder="Type your question here..."
               value={questionText}
               onChange={(e) => setQuestionText(e.target.value)}
-              className="min-h-[100px] rounded-2xl"
+              className="min-h-[120px] rounded-xl bg-muted border-0 resize-none focus-visible:ring-1 focus-visible:ring-primary"
             />
 
             {questionText.trim() && (
               <Button
                 onClick={handleGetHelp}
-                className="w-full h-14 text-lg rounded-2xl btn-primary animate-fade-in"
+                className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 animate-fade-in"
               >
-                Get help
-                <ArrowRight className="h-5 w-5 ml-2" />
+                Continue
+                <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             )}
           </div>
@@ -214,13 +196,13 @@ export default function Index() {
 
   // Preview screen
   return (
-    <div className="min-h-screen flex flex-col p-6">
-      <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
+    <div className="min-h-screen flex flex-col p-6 bg-background">
+      <div className="max-w-lg mx-auto w-full flex-1 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={() => setStep('upload')}
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             ← Back
           </button>
@@ -229,9 +211,9 @@ export default function Index() {
         {/* Content */}
         <div className="flex-1 flex flex-col space-y-6 animate-fade-in">
           <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold">Looking good! 📸</h2>
+            <h2 className="text-2xl font-semibold tracking-tight">Review your question</h2>
             <p className="text-muted-foreground">
-              Add any extra details if needed
+              Add details to get better help
             </p>
           </div>
 
@@ -240,35 +222,35 @@ export default function Index() {
             <img
               src={imagePreview!}
               alt="Question"
-              className="w-full rounded-2xl border border-border"
+              className="w-full rounded-xl border border-border"
             />
             <button
               onClick={clearImage}
-              className="absolute top-3 right-3 p-2 rounded-full bg-background/80 backdrop-blur hover:bg-background transition-colors"
+              className="absolute top-3 right-3 p-2 rounded-full bg-background/90 backdrop-blur-sm hover:bg-muted transition-colors"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
 
           {/* Optional text */}
           <Textarea
-            placeholder="Add any extra details about your question (optional)..."
+            placeholder="Add context or specify what you need help with (optional)"
             value={questionText}
             onChange={(e) => setQuestionText(e.target.value)}
-            className="min-h-[80px] rounded-2xl"
+            className="min-h-[100px] rounded-xl bg-muted border-0 resize-none focus-visible:ring-1 focus-visible:ring-primary"
           />
 
           {/* CTA */}
-          <div className="space-y-3">
+          <div className="space-y-3 pt-2">
             <Button
               onClick={handleGetHelp}
-              className="w-full h-14 text-lg rounded-2xl btn-primary"
+              className="w-full h-12 rounded-full bg-primary hover:bg-primary/90"
             >
-              <Sparkles className="h-5 w-5 mr-2" />
-              Get instant help
+              Get Help
+              <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              Create a free account to save your progress
+            <p className="text-center text-xs text-muted-foreground">
+              Free account required to continue
             </p>
           </div>
         </div>
