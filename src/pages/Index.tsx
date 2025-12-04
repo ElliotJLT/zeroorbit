@@ -70,17 +70,16 @@ export default function Index() {
             {/* Hero */}
             <div className="space-y-4">
               <h1 
-                className="text-5xl tracking-tight leading-[1.05]"
+                className="text-4xl tracking-tight leading-[1.15]"
                 style={{ textShadow: '0 0 40px rgba(0,250,215,0.08)' }}
               >
-                <span className="font-semibold">Turn stuck questions</span>
+                <span className="font-semibold">Stuck on a maths question?</span>
                 <br />
-                <span className="font-normal" style={{ color: 'rgba(255,255,255,0.8)' }}>into marks.</span>
+                <span className="font-semibold" style={{ color: '#00FAD7' }}>Show Orbit.</span>
               </h1>
               
               <p className="text-lg text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                Snap your question.<br />
-                Orbit walks you through the method — clearly and calmly.
+                Get a step-by-step walkthrough made for AQA, Edexcel and OCR students.
               </p>
             </div>
 
