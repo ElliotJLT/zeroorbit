@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Plus, TrendingUp, LogOut, Shield } from 'lucide-react';
+import { Plus, TrendingUp, LogOut, Shield, ChevronRight, Flame } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { TopicChip } from '@/components/TopicChip';
+import { cn } from '@/lib/utils';
 
 interface Topic {
   id: string;
@@ -41,7 +41,6 @@ export default function Home() {
   }, [user]);
 
   const fetchData = async () => {
-    // Fetch topics
     const { data: topicsData } = await supabase
       .from('topics')
       .select('*')
@@ -49,7 +48,6 @@ export default function Home() {
     
     if (topicsData) setTopics(topicsData);
 
-    // Fetch practice stats
     const { data: statsData } = await supabase
       .from('practice_stats')
       .select('*')
@@ -57,7 +55,6 @@ export default function Home() {
     
     if (statsData) setStats(statsData);
 
-    // Fetch weekly session count
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
     
@@ -82,6 +79,9 @@ export default function Home() {
     navigate('/');
   };
 
+  const firstName = profile?.full_name?.split(' ')[0] || 'there';
+  const totalAttempts = stats.reduce((sum, s) => sum + s.attempts, 0);
+
   if (loading || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -91,70 +91,93 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen p-4 pb-24">
-      <div className="max-w-lg mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-h2">
-              Hi{profile.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              {profile.year_group} • {profile.exam_board} • Target: {profile.target_grade}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            {isAdmin && (
-              <Button variant="ghost" size="icon" asChild>
-                <Link to="/admin">
-                  <Shield className="h-5 w-5" />
-                </Link>
-              </Button>
-            )}
-            <Button variant="ghost" size="icon" onClick={handleSignOut}>
-              <LogOut className="h-5 w-5" />
+    <div className="min-h-screen pb-24">
+      {/* Header */}
+      <div className="p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {isAdmin && (
+            <Button variant="ghost" size="icon" asChild className="rounded-full">
+              <Link to="/admin">
+                <Shield className="h-5 w-5" />
+              </Link>
             </Button>
-          </div>
+          )}
+        </div>
+        <Button variant="ghost" size="icon" onClick={handleSignOut} className="rounded-full">
+          <LogOut className="h-5 w-5" />
+        </Button>
+      </div>
+
+      <div className="px-4 max-w-lg mx-auto space-y-6">
+        {/* Greeting */}
+        <div className="space-y-1 animate-fade-in">
+          <h1 className="text-3xl font-bold font-display">
+            Hey {firstName}! 👋
+          </h1>
+          <p className="text-muted-foreground">
+            Ready to tackle some maths?
+          </p>
         </div>
 
         {/* Primary CTA */}
         <Button
-          variant="hero"
-          size="pill-xl"
-          className="w-full"
           onClick={() => navigate('/ask')}
+          className="w-full h-16 text-lg rounded-2xl btn-primary animate-fade-in"
+          style={{ animationDelay: '100ms' }}
         >
-          <Plus className="h-5 w-5" />
-          Ask a maths question
+          <Plus className="h-6 w-6 mr-2" />
+          Ask a question
         </Button>
 
-        {/* This Week Stats */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-secondary/20">
-                <TrendingUp className="h-5 w-5 text-secondary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">This week</p>
-                <p className="text-xl font-semibold">
-                  {weeklyCount} question{weeklyCount !== 1 ? 's' : ''} solved
-                </p>
-              </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 gap-3 animate-fade-in" style={{ animationDelay: '200ms' }}>
+          <div className="glass-card rounded-2xl p-4 space-y-1">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Flame className="h-4 w-4 text-warning" />
+              <span className="text-xs">This week</span>
             </div>
-          </CardContent>
-        </Card>
+            <p className="text-2xl font-bold">{weeklyCount}</p>
+            <p className="text-xs text-muted-foreground">questions</p>
+          </div>
+          
+          <div className="glass-card rounded-2xl p-4 space-y-1">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <TrendingUp className="h-4 w-4 text-secondary" />
+              <span className="text-xs">Total</span>
+            </div>
+            <p className="text-2xl font-bold">{totalAttempts}</p>
+            <p className="text-xs text-muted-foreground">topics practiced</p>
+          </div>
+        </div>
+
+        {/* Profile info */}
+        <div className="glass-card rounded-2xl p-4 flex items-center justify-between animate-fade-in" style={{ animationDelay: '300ms' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-white font-bold">
+              {firstName[0]?.toUpperCase()}
+            </div>
+            <div>
+              <p className="font-medium">{profile.full_name}</p>
+              <p className="text-xs text-muted-foreground">
+                {profile.year_group} • {profile.exam_board} • Target: {profile.target_grade}
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* Topics */}
-        <div className="space-y-3">
+        <div className="space-y-3 animate-fade-in" style={{ animationDelay: '400ms' }}>
           <div className="flex items-center justify-between">
-            <h2 className="text-h3">Topics</h2>
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/progress">View all</Link>
+            <h2 className="text-lg font-semibold font-display">Your Topics</h2>
+            <Button variant="ghost" size="sm" asChild className="text-primary">
+              <Link to="/progress">
+                View all
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Link>
             </Button>
           </div>
           <div className="space-y-2">
-            {topics.map((topic) => {
+            {topics.slice(0, 4).map((topic) => {
               const stat = getStatForTopic(topic.id);
               return (
                 <TopicChip

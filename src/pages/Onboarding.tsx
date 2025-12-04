@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -16,26 +16,37 @@ const onboardingSchema = z.object({
   targetGrade: z.string().min(1, 'Please select your target grade'),
 });
 
-const yearOptions = ['Y12', 'Y13'];
-const examBoardOptions = ['AQA', 'Edexcel', 'OCR', 'Not sure'];
-const gradeOptions = ['B', 'A', 'A*'];
+const yearOptions = [
+  { value: 'Y12', label: 'Year 12', emoji: '📚' },
+  { value: 'Y13', label: 'Year 13', emoji: '🎓' },
+];
+
+const examBoardOptions = [
+  { value: 'AQA', label: 'AQA' },
+  { value: 'Edexcel', label: 'Edexcel' },
+  { value: 'OCR', label: 'OCR' },
+  { value: 'Not sure', label: 'Not sure' },
+];
+
+const gradeOptions = [
+  { value: 'B', label: 'B', color: 'bg-warning/20 text-warning border-warning/30' },
+  { value: 'A', label: 'A', color: 'bg-primary/20 text-primary border-primary/30' },
+  { value: 'A*', label: 'A*', color: 'bg-secondary/20 text-secondary border-secondary/30' },
+];
 
 export default function Onboarding() {
+  const [step, setStep] = useState(1);
   const [fullName, setFullName] = useState('');
   const [yearGroup, setYearGroup] = useState('');
   const [examBoard, setExamBoard] = useState('');
   const [targetGrade, setTargetGrade] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
-
+  const handleSubmit = async () => {
     const validation = onboardingSchema.safeParse({
       fullName,
       yearGroup,
@@ -44,11 +55,10 @@ export default function Onboarding() {
     });
 
     if (!validation.success) {
-      const fieldErrors: Record<string, string> = {};
-      validation.error.errors.forEach((err) => {
-        fieldErrors[err.path[0] as string] = err.message;
+      toast({
+        variant: 'destructive',
+        title: 'Please fill in all fields',
       });
-      setErrors(fieldErrors);
       return;
     }
 
@@ -77,123 +87,169 @@ export default function Onboarding() {
       });
     } else {
       await refreshProfile();
-      toast({
-        title: 'Profile saved!',
-        description: "Let's start learning.",
-      });
-      navigate('/home');
+      
+      // Check if there's a pending question
+      if (sessionStorage.getItem('pendingQuestion')) {
+        navigate('/ask');
+      } else {
+        navigate('/home');
+      }
     }
   };
 
-  const SelectButton = ({
-    value,
-    selected,
-    onClick,
-  }: {
-    value: string;
-    selected: boolean;
-    onClick: () => void;
-  }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "px-4 py-3 rounded-xl font-medium transition-all duration-200 border",
-        selected
-          ? "bg-primary/20 border-primary text-primary"
-          : "bg-surface-2 border-border hover:border-primary/50"
-      )}
-    >
-      {value}
-    </button>
-  );
+  const canProceed = () => {
+    switch (step) {
+      case 1: return fullName.length >= 2;
+      case 2: return yearGroup !== '';
+      case 3: return examBoard !== '';
+      case 4: return targetGrade !== '';
+      default: return false;
+    }
+  };
+
+  const nextStep = () => {
+    if (step < 4) {
+      setStep(step + 1);
+    } else {
+      handleSubmit();
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Tell us about yourself</CardTitle>
-          <CardDescription>
-            We'll personalise your learning experience
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Full name</label>
+    <div className="min-h-screen flex flex-col p-6">
+      <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
+        {/* Progress */}
+        <div className="flex gap-2 mb-8">
+          {[1, 2, 3, 4].map((s) => (
+            <div
+              key={s}
+              className={cn(
+                "flex-1 h-1.5 rounded-full transition-all duration-300",
+                s <= step ? "bg-primary" : "bg-muted"
+              )}
+            />
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 flex flex-col justify-center">
+          {step === 1 && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="text-center space-y-2">
+                <span className="text-4xl">👋</span>
+                <h1 className="text-2xl font-bold font-display">What's your name?</h1>
+                <p className="text-muted-foreground">So we know what to call you</p>
+              </div>
               <Input
-                placeholder="Enter your name"
+                placeholder="Your first name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                className="h-14 text-lg rounded-2xl text-center"
+                autoFocus
               />
-              {errors.fullName && (
-                <p className="text-sm text-destructive">{errors.fullName}</p>
-              )}
             </div>
+          )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Year group</label>
-              <div className="flex gap-2">
-                {yearOptions.map((year) => (
-                  <SelectButton
-                    key={year}
-                    value={year}
-                    selected={yearGroup === year}
-                    onClick={() => setYearGroup(year)}
-                  />
+          {step === 2 && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="text-center space-y-2">
+                <span className="text-4xl">📚</span>
+                <h1 className="text-2xl font-bold font-display">Which year are you in?</h1>
+              </div>
+              <div className="grid gap-3">
+                {yearOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setYearGroup(option.value)}
+                    className={cn(
+                      "p-5 rounded-2xl text-left transition-all duration-200 glass-card border-2",
+                      yearGroup === option.value
+                        ? "border-primary bg-primary/10"
+                        : "border-transparent hover:border-border"
+                    )}
+                  >
+                    <span className="text-2xl mr-3">{option.emoji}</span>
+                    <span className="font-medium text-lg">{option.label}</span>
+                  </button>
                 ))}
               </div>
-              {errors.yearGroup && (
-                <p className="text-sm text-destructive">{errors.yearGroup}</p>
-              )}
             </div>
+          )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Exam board</label>
-              <div className="flex flex-wrap gap-2">
-                {examBoardOptions.map((board) => (
-                  <SelectButton
-                    key={board}
-                    value={board}
-                    selected={examBoard === board}
-                    onClick={() => setExamBoard(board)}
-                  />
+          {step === 3 && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="text-center space-y-2">
+                <span className="text-4xl">📋</span>
+                <h1 className="text-2xl font-bold font-display">What's your exam board?</h1>
+                <p className="text-muted-foreground">Don't worry if you're not sure</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {examBoardOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setExamBoard(option.value)}
+                    className={cn(
+                      "p-4 rounded-2xl font-medium transition-all duration-200 glass-card border-2",
+                      examBoard === option.value
+                        ? "border-primary bg-primary/10"
+                        : "border-transparent hover:border-border"
+                    )}
+                  >
+                    {option.label}
+                  </button>
                 ))}
               </div>
-              {errors.examBoard && (
-                <p className="text-sm text-destructive">{errors.examBoard}</p>
-              )}
             </div>
+          )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Target grade</label>
-              <div className="flex gap-2">
-                {gradeOptions.map((grade) => (
-                  <SelectButton
-                    key={grade}
-                    value={grade}
-                    selected={targetGrade === grade}
-                    onClick={() => setTargetGrade(grade)}
-                  />
+          {step === 4 && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="text-center space-y-2">
+                <span className="text-4xl">🎯</span>
+                <h1 className="text-2xl font-bold font-display">What's your target grade?</h1>
+                <p className="text-muted-foreground">We'll help you get there!</p>
+              </div>
+              <div className="flex gap-3 justify-center">
+                {gradeOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setTargetGrade(option.value)}
+                    className={cn(
+                      "w-20 h-20 rounded-2xl font-bold text-2xl transition-all duration-200 border-2",
+                      targetGrade === option.value
+                        ? option.color + " border-current scale-110"
+                        : "glass-card border-transparent hover:scale-105"
+                    )}
+                  >
+                    {option.label}
+                  </button>
                 ))}
               </div>
-              {errors.targetGrade && (
-                <p className="text-sm text-destructive">{errors.targetGrade}</p>
-              )}
             </div>
+          )}
+        </div>
 
-            <Button
-              type="submit"
-              variant="hero"
-              size="pill-lg"
-              className="w-full"
-              disabled={loading}
-            >
-              {loading ? 'Saving...' : 'Continue'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+        {/* CTA */}
+        <div className="pt-8">
+          <Button
+            onClick={nextStep}
+            disabled={!canProceed() || loading}
+            className="w-full h-14 text-lg rounded-2xl btn-primary"
+          >
+            {loading ? 'Saving...' : step === 4 ? (
+              <>
+                <Sparkles className="h-5 w-5 mr-2" />
+                Let's go!
+              </>
+            ) : (
+              <>
+                Continue
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

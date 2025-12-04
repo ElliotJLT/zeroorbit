@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Target } from 'lucide-react';
+import { ArrowLeft, Trophy, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 interface Topic {
@@ -76,40 +75,46 @@ export default function Progress() {
     ? Math.round((totalCorrect / totalAttempts) * 100) 
     : 0;
 
+  const strongCount = topics.filter(t => {
+    const stat = getStatForTopic(t.id);
+    return getStrengthLevel(stat.attempts, stat.correct_attempts) === 'strong';
+  }).length;
+
   return (
-    <div className="min-h-screen p-4">
-      <div className="max-w-lg mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/home')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-h2">Your Progress</h1>
+    <div className="min-h-screen pb-8">
+      {/* Header */}
+      <div className="p-4 flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/home')} className="rounded-full">
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-xl font-bold font-display">Your Progress</h1>
+      </div>
+
+      <div className="px-4 max-w-lg mx-auto space-y-6">
+        {/* Overall Stats */}
+        <div className="grid grid-cols-2 gap-3 animate-fade-in">
+          <div className="glass-card rounded-2xl p-5 text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-primary mb-3">
+              <TrendingUp className="h-6 w-6 text-white" />
+            </div>
+            <p className="text-3xl font-bold">{overallPercentage}%</p>
+            <p className="text-sm text-muted-foreground">accuracy</p>
+          </div>
+          
+          <div className="glass-card rounded-2xl p-5 text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-secondary mb-3">
+              <Trophy className="h-6 w-6 text-secondary-foreground" />
+            </div>
+            <p className="text-3xl font-bold">{strongCount}</p>
+            <p className="text-sm text-muted-foreground">topics mastered</p>
+          </div>
         </div>
 
-        {/* Overall Stats */}
-        <Card className="corner-glow">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-4 rounded-2xl bg-primary/20">
-                <Target className="h-8 w-8 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Overall accuracy</p>
-                <p className="text-3xl font-bold">{overallPercentage}%</p>
-                <p className="text-sm text-muted-foreground">
-                  {totalCorrect} / {totalAttempts} questions
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Topics Grid */}
-        <div className="space-y-3">
-          <h2 className="text-h3">By Topic</h2>
-          <div className="grid gap-3">
-            {topics.map((topic) => {
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold font-display">By Topic</h2>
+          <div className="space-y-3">
+            {topics.map((topic, index) => {
               const stat = getStatForTopic(topic.id);
               const level = getStrengthLevel(stat.attempts, stat.correct_attempts);
               const percentage = stat.attempts > 0
@@ -117,56 +122,83 @@ export default function Progress() {
                 : 0;
 
               return (
-                <Card
+                <div
                   key={topic.id}
-                  className={cn(
-                    "transition-all duration-200",
-                    level === 'strong' && "border-secondary/30",
-                    level === 'ok' && "border-warning/30",
-                    level === 'weak' && "border-destructive/30"
-                  )}
+                  className="glass-card rounded-2xl p-4 animate-fade-in"
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-medium">{topic.name}</h3>
-                      <span
-                        className={cn(
-                          "text-sm px-3 py-1 rounded-full font-medium",
-                          level === 'strong' && "bg-secondary/20 text-secondary",
-                          level === 'ok' && "bg-warning/20 text-warning",
-                          level === 'weak' && "bg-destructive/20 text-destructive",
-                          level === 'none' && "bg-muted text-muted-foreground"
-                        )}
-                      >
-                        {level === 'strong' && 'Strong'}
-                        {level === 'ok' && 'OK'}
-                        {level === 'weak' && 'Weak'}
-                        {level === 'none' && 'Not started'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span>{stat.attempts} attempts</span>
-                      {stat.attempts > 0 && <span>{percentage}% correct</span>}
-                    </div>
-                    {stat.attempts > 0 && (
-                      <div className="mt-2 h-2 rounded-full bg-surface-3 overflow-hidden">
-                        <div
-                          className={cn(
-                            "h-full transition-all duration-500",
-                            level === 'strong' && "bg-secondary",
-                            level === 'ok' && "bg-warning",
-                            level === 'weak' && "bg-destructive"
-                          )}
-                          style={{ width: `${percentage}%` }}
-                        />
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center text-lg",
+                        level === 'strong' && "bg-secondary/20",
+                        level === 'ok' && "bg-warning/20",
+                        level === 'weak' && "bg-destructive/20",
+                        level === 'none' && "bg-muted"
+                      )}>
+                        {level === 'strong' && '💪'}
+                        {level === 'ok' && '📈'}
+                        {level === 'weak' && '📚'}
+                        {level === 'none' && '🔒'}
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      <div>
+                        <h3 className="font-medium">{topic.name}</h3>
+                        <p className="text-xs text-muted-foreground">
+                          {stat.attempts} attempt{stat.attempts !== 1 ? 's' : ''}
+                          {stat.attempts > 0 && ` • ${percentage}% correct`}
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      className={cn(
+                        "text-xs px-3 py-1.5 rounded-full font-medium",
+                        level === 'strong' && "bg-secondary/15 text-secondary",
+                        level === 'ok' && "bg-warning/15 text-warning",
+                        level === 'weak' && "bg-destructive/15 text-destructive",
+                        level === 'none' && "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {level === 'strong' && 'Strong'}
+                      {level === 'ok' && 'Getting there'}
+                      {level === 'weak' && 'Needs work'}
+                      {level === 'none' && 'Not started'}
+                    </span>
+                  </div>
+                  
+                  {stat.attempts > 0 && (
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={cn(
+                          "h-full rounded-full transition-all duration-500",
+                          level === 'strong' && "bg-gradient-secondary",
+                          level === 'ok' && "bg-warning",
+                          level === 'weak' && "bg-destructive"
+                        )}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
         </div>
+
+        {/* Encouragement */}
+        {totalAttempts > 0 && (
+          <div className="text-center p-6 glass-card rounded-2xl animate-fade-in">
+            <p className="text-2xl mb-2">
+              {overallPercentage >= 70 ? '🌟' : overallPercentage >= 40 ? '💪' : '📚'}
+            </p>
+            <p className="text-muted-foreground">
+              {overallPercentage >= 70 
+                ? "Amazing progress! You're crushing it!"
+                : overallPercentage >= 40 
+                ? "Good work! Keep practicing to improve."
+                : "Every expert was once a beginner. Keep going!"}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
