@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, Sparkles } from 'lucide-react';
+import { ArrowLeft, Send } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { ChatBubble } from '@/components/ChatBubble';
 import { ImageViewer } from '@/components/ImageViewer';
 import { ConfidenceRating } from '@/components/ConfidenceRating';
 import { useToast } from '@/hooks/use-toast';
+import orbitLogo from '@/assets/orbit-logo.png';
 
 interface Session {
   id: string;
@@ -26,30 +27,29 @@ interface Message {
   created_at: string;
 }
 
-// Stubbed tutor response generator
 function generateTutorReply(messages: Message[], questionText: string): string {
   const responses = [
     "Great question! Let me help you work through this step by step.\n\n1. First, identify what the question is asking\n2. Look for key information and formulas\n3. Apply the appropriate method\n4. Check your answer makes sense\n\nWhat part would you like to start with?",
     "I can see you're making progress! Here's a hint: try breaking it down into smaller parts. What's the first thing you notice about the question?",
     "That's a good approach! Let me guide you through the next step. Consider what happens when you apply the technique we discussed.",
-    "You're on the right track 🎯 Remember the key formula here and think about how each term relates to what you're trying to find.",
-    "Excellent progress! 🌟 Now let's verify your answer by checking it makes sense in the context of the original question.",
+    "You're on the right track. Remember the key formula here and think about how each term relates to what you're trying to find.",
+    "Excellent progress! Now let's verify your answer by checking it makes sense in the context of the original question.",
   ];
   
   return responses[Math.min(messages.filter(m => m.sender === 'student').length, responses.length - 1)];
 }
 
 function generateInitialResponse(questionText: string, hasImage: boolean): string {
-  return `Hey! I can see your question${hasImage ? ' and the image you uploaded' : ''} 👀
+  return `Hey! I can see your question${hasImage ? ' and the image you uploaded' : ''}.
 
 **Let me break this down for you:**
 
 This looks like a great A-level question! Here's how we'll tackle it:
 
-1. 📝 **Understand** what the question is asking
-2. 🔍 **Identify** the key concepts and formulas
-3. ✏️ **Work through** the solution step-by-step
-4. ✅ **Check** our answer makes sense
+1. **Understand** what the question is asking
+2. **Identify** the key concepts and formulas
+3. **Work through** the solution step-by-step
+4. **Check** our answer makes sense
 
 What specific part would you like help with first? Or shall I start from the beginning?`;
 }
@@ -233,21 +233,21 @@ export default function Chat() {
 
     setConfidenceSubmitted(true);
     toast({
-      title: 'Progress saved! 🎉',
+      title: 'Progress saved!',
       description: 'Keep up the amazing work.',
     });
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse text-muted-foreground">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-4">
         <div className="max-w-2xl mx-auto flex items-center gap-4">
@@ -255,8 +255,8 @@ export default function Chat() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="font-medium">Chat with Vector Tutor</span>
+            <img src={orbitLogo} alt="Orbit" className="h-6 w-auto" />
+            <span className="font-medium text-muted-foreground">Chat</span>
           </div>
         </div>
       </div>
@@ -305,7 +305,7 @@ export default function Chat() {
 
           {/* Confidence Rating */}
           {messages.length > 2 && !confidenceSubmitted && (
-            <div className="glass-card rounded-2xl p-4 mt-6 animate-fade-in">
+            <div className="bg-muted rounded-2xl p-4 mt-6 animate-fade-in border border-border">
               <ConfidenceRating
                 value={null}
                 onChange={handleConfidenceChange}
@@ -314,7 +314,7 @@ export default function Chat() {
           )}
 
           {confidenceSubmitted && (
-            <div className="text-center text-sm text-secondary animate-fade-in">
+            <div className="text-center text-sm text-primary animate-fade-in">
               ✓ Progress saved
             </div>
           )}
@@ -330,12 +330,16 @@ export default function Chat() {
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
             disabled={sending}
-            className="rounded-2xl"
+            className="rounded-2xl bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary"
           />
           <Button
             onClick={sendMessage}
             disabled={sending || !newMessage.trim()}
-            className="rounded-2xl btn-primary px-6"
+            className="rounded-2xl px-6"
+            style={{ 
+              background: '#00FAD7',
+              color: '#0B0D0F',
+            }}
           >
             <Send className="h-5 w-5" />
           </Button>

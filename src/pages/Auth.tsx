@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import orbitLogo from '@/assets/orbit-logo.png';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -81,6 +82,11 @@ export default function Auth() {
     <div className="min-h-screen flex flex-col p-6 bg-background">
       <div className="max-w-sm mx-auto w-full flex-1 flex flex-col justify-center">
         <div className="space-y-8 animate-fade-in">
+          {/* Logo */}
+          <div className="flex justify-center">
+            <img src={orbitLogo} alt="Orbit" className="h-16 w-auto" />
+          </div>
+
           {/* Header */}
           <div className="text-center space-y-3">
             {hasPendingQuestion ? (
@@ -152,7 +158,13 @@ export default function Auth() {
 
             <Button
               type="submit"
-              className="w-full h-12 rounded-full bg-primary hover:bg-primary/90"
+              className="w-full h-12 rounded-full font-medium transition-all text-white"
+              style={{ 
+                background: '#111416',
+                border: '1px solid #00FAD7',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 16px rgba(0,250,215,0.25)'}
+              onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
               disabled={loading}
             >
               {loading ? (

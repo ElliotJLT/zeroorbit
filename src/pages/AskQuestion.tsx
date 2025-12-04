@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, Upload, X, Sparkles, Zap } from 'lucide-react';
+import { ArrowLeft, Camera, Upload, X, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import orbitLogo from '@/assets/orbit-logo.png';
 
 interface Topic {
   id: string;
@@ -97,7 +98,6 @@ export default function AskQuestion() {
     return data.publicUrl;
   };
 
-  // Convert base64 to file for images from pending question
   const base64ToFile = async (base64: string, filename: string): Promise<File | null> => {
     try {
       const res = await fetch(base64);
@@ -125,7 +125,6 @@ export default function AskQuestion() {
     let questionImageUrl: string | null = null;
     let workingImageUrl: string | null = null;
 
-    // Handle question image (could be from file or from pending base64)
     if (questionImage) {
       questionImageUrl = await uploadImage(questionImage, user.id);
     } else if (questionPreview && questionPreview.startsWith('data:')) {
@@ -165,27 +164,24 @@ export default function AskQuestion() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
-      <div className="p-4 flex items-center gap-4">
+      <div className="p-4 flex items-center gap-4 border-b border-border">
         <Button variant="ghost" size="icon" onClick={() => navigate('/home')} className="rounded-full">
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="flex items-center gap-2">
-          <Zap className="h-4 w-4 text-primary" />
-          <span className="text-sm text-muted-foreground">Ask a question</span>
-        </div>
+        <img src={orbitLogo} alt="Orbit" className="h-6 w-auto" />
       </div>
 
       <div className="flex-1 p-4 max-w-lg mx-auto w-full space-y-6">
         {/* Question Text */}
         <div className="space-y-3 animate-fade-in">
-          <h2 className="text-xl font-bold font-display">What's your question?</h2>
+          <h2 className="text-xl font-semibold">What's your question?</h2>
           <Textarea
             placeholder="Type or paste your maths question here..."
             value={questionText}
             onChange={(e) => setQuestionText(e.target.value)}
-            className="min-h-[100px] rounded-2xl"
+            className="min-h-[100px] rounded-2xl bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary"
           />
         </div>
 
@@ -227,7 +223,10 @@ export default function AskQuestion() {
               onClick={() => questionInputRef.current?.click()}
               className="upload-zone w-full rounded-2xl p-6 flex flex-col items-center gap-3"
             >
-              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+              <div 
+                className="w-12 h-12 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(0,250,215,0.15)' }}
+              >
                 <Camera className="h-6 w-6 text-primary" />
               </div>
               <span className="text-sm text-muted-foreground">Tap to take or upload a photo</span>
@@ -295,10 +294,10 @@ export default function AskQuestion() {
                   setSelectedTopic(selectedTopic === topic.id ? '' : topic.id)
                 }
                 className={cn(
-                  "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                  "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border",
                   selectedTopic === topic.id
-                    ? "bg-primary text-primary-foreground"
-                    : "glass-card hover:bg-accent"
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-muted border-transparent hover:border-border"
                 )}
               >
                 {topic.name}
@@ -309,12 +308,18 @@ export default function AskQuestion() {
       </div>
 
       {/* Submit */}
-      <div className="p-4 border-t border-border bg-background/80 backdrop-blur">
+      <div className="p-4 border-t border-border bg-background/95 backdrop-blur">
         <div className="max-w-lg mx-auto">
           <Button
             onClick={handleSubmit}
             disabled={loading || (!questionText.trim() && !questionPreview)}
-            className="w-full h-14 text-lg rounded-2xl btn-primary"
+            className="w-full h-14 text-lg rounded-2xl font-medium transition-all text-white"
+            style={{ 
+              background: '#111416',
+              border: '1px solid #00FAD7',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 16px rgba(0,250,215,0.25)'}
+            onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
           >
             {loading ? 'Creating session...' : (
               <>
