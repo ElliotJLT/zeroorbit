@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import orbitLogo from '@/assets/orbit-logo.png';
 
 interface Topic {
   id: string;
@@ -81,29 +82,36 @@ export default function Progress() {
   }).length;
 
   return (
-    <div className="min-h-screen pb-8">
+    <div className="min-h-screen pb-8 bg-background">
       {/* Header */}
-      <div className="p-4 flex items-center gap-4">
+      <div className="p-4 flex items-center gap-4 border-b border-border">
         <Button variant="ghost" size="icon" onClick={() => navigate('/home')} className="rounded-full">
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-bold font-display">Your Progress</h1>
+        <img src={orbitLogo} alt="Orbit" className="h-6 w-auto" />
+        <h1 className="text-lg font-semibold">Progress</h1>
       </div>
 
-      <div className="px-4 max-w-lg mx-auto space-y-6">
+      <div className="px-4 py-6 max-w-lg mx-auto space-y-6">
         {/* Overall Stats */}
         <div className="grid grid-cols-2 gap-3 animate-fade-in">
-          <div className="glass-card rounded-2xl p-5 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-primary mb-3">
-              <TrendingUp className="h-6 w-6 text-white" />
+          <div className="bg-muted rounded-2xl p-5 text-center border border-border">
+            <div 
+              className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-3"
+              style={{ background: 'rgba(0,250,215,0.15)' }}
+            >
+              <TrendingUp className="h-6 w-6 text-primary" />
             </div>
             <p className="text-3xl font-bold">{overallPercentage}%</p>
             <p className="text-sm text-muted-foreground">accuracy</p>
           </div>
           
-          <div className="glass-card rounded-2xl p-5 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-secondary mb-3">
-              <Trophy className="h-6 w-6 text-secondary-foreground" />
+          <div className="bg-muted rounded-2xl p-5 text-center border border-border">
+            <div 
+              className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-3"
+              style={{ background: 'rgba(0,250,215,0.15)' }}
+            >
+              <Trophy className="h-6 w-6 text-primary" />
             </div>
             <p className="text-3xl font-bold">{strongCount}</p>
             <p className="text-sm text-muted-foreground">topics mastered</p>
@@ -112,7 +120,7 @@ export default function Progress() {
 
         {/* Topics Grid */}
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold font-display">By Topic</h2>
+          <h2 className="text-lg font-semibold">By Topic</h2>
           <div className="space-y-3">
             {topics.map((topic, index) => {
               const stat = getStatForTopic(topic.id);
@@ -124,7 +132,7 @@ export default function Progress() {
               return (
                 <div
                   key={topic.id}
-                  className="glass-card rounded-2xl p-4 animate-fade-in"
+                  className="bg-muted rounded-2xl p-4 animate-fade-in border border-border"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className="flex items-center justify-between mb-3">
@@ -134,7 +142,7 @@ export default function Progress() {
                         level === 'strong' && "bg-secondary/20",
                         level === 'ok' && "bg-warning/20",
                         level === 'weak' && "bg-destructive/20",
-                        level === 'none' && "bg-muted"
+                        level === 'none' && "bg-accent"
                       )}>
                         {level === 'strong' && '💪'}
                         {level === 'ok' && '📈'}
@@ -145,7 +153,7 @@ export default function Progress() {
                         <h3 className="font-medium">{topic.name}</h3>
                         <p className="text-xs text-muted-foreground">
                           {stat.attempts} attempt{stat.attempts !== 1 ? 's' : ''}
-                          {stat.attempts > 0 && ` • ${percentage}% correct`}
+                          {stat.attempts > 0 && ` · ${percentage}% correct`}
                         </p>
                       </div>
                     </div>
@@ -155,7 +163,7 @@ export default function Progress() {
                         level === 'strong' && "bg-secondary/15 text-secondary",
                         level === 'ok' && "bg-warning/15 text-warning",
                         level === 'weak' && "bg-destructive/15 text-destructive",
-                        level === 'none' && "bg-muted text-muted-foreground"
+                        level === 'none' && "bg-accent text-muted-foreground"
                       )}
                     >
                       {level === 'strong' && 'Strong'}
@@ -166,11 +174,11 @@ export default function Progress() {
                   </div>
                   
                   {stat.attempts > 0 && (
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div className="h-2 rounded-full bg-accent overflow-hidden">
                       <div
                         className={cn(
                           "h-full rounded-full transition-all duration-500",
-                          level === 'strong' && "bg-gradient-secondary",
+                          level === 'strong' && "bg-secondary",
                           level === 'ok' && "bg-warning",
                           level === 'weak' && "bg-destructive"
                         )}
@@ -186,7 +194,7 @@ export default function Progress() {
 
         {/* Encouragement */}
         {totalAttempts > 0 && (
-          <div className="text-center p-6 glass-card rounded-2xl animate-fade-in">
+          <div className="text-center p-6 bg-muted rounded-2xl animate-fade-in border border-border">
             <p className="text-2xl mb-2">
               {overallPercentage >= 70 ? '🌟' : overallPercentage >= 40 ? '💪' : '📚'}
             </p>

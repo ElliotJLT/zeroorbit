@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Plus, TrendingUp, LogOut, Shield, ChevronRight } from 'lucide-react';
+import { Plus, LogOut, Shield, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { TopicChip } from '@/components/TopicChip';
+import orbitLogo from '@/assets/orbit-logo.png';
 
 interface Topic {
   id: string;
@@ -94,6 +95,7 @@ export default function Home() {
       {/* Header */}
       <header className="p-4 flex items-center justify-between border-b border-border">
         <div className="flex items-center gap-3">
+          <img src={orbitLogo} alt="Orbit" className="h-8 w-auto" />
           {isAdmin && (
             <Button variant="ghost" size="icon" asChild className="rounded-full">
               <Link to="/admin">
@@ -121,8 +123,14 @@ export default function Home() {
         {/* Primary CTA */}
         <Button
           onClick={() => navigate('/ask')}
-          className="w-full h-14 text-base rounded-full bg-primary hover:bg-primary/90 animate-fade-in"
-          style={{ animationDelay: '100ms' }}
+          className="w-full h-14 text-base rounded-full font-medium transition-all text-white animate-fade-in"
+          style={{ 
+            background: '#111416',
+            border: '1px solid #00FAD7',
+            animationDelay: '100ms'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 16px rgba(0,250,215,0.25)'}
+          onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
         >
           <Plus className="h-5 w-5 mr-2" />
           New Question
@@ -145,7 +153,10 @@ export default function Home() {
 
         {/* Profile card */}
         <div className="bg-muted rounded-2xl p-4 flex items-center gap-4 animate-fade-in" style={{ animationDelay: '300ms' }}>
-          <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-lg">
+          <div 
+            className="w-12 h-12 rounded-full flex items-center justify-center font-semibold text-lg"
+            style={{ background: '#00FAD7', color: '#0B0D0F' }}
+          >
             {firstName[0]?.toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">

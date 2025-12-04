@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import orbitLogo from '@/assets/orbit-logo.png';
 
 const onboardingSchema = z.object({
   fullName: z.string().min(2, 'Please enter your name'),
@@ -17,8 +18,8 @@ const onboardingSchema = z.object({
 });
 
 const yearOptions = [
-  { value: 'Y12', label: 'Year 12', emoji: '📚' },
-  { value: 'Y13', label: 'Year 13', emoji: '🎓' },
+  { value: 'Y12', label: 'Year 12' },
+  { value: 'Y13', label: 'Year 13' },
 ];
 
 const examBoardOptions = [
@@ -29,9 +30,9 @@ const examBoardOptions = [
 ];
 
 const gradeOptions = [
-  { value: 'B', label: 'B', color: 'bg-warning/20 text-warning border-warning/30' },
-  { value: 'A', label: 'A', color: 'bg-primary/20 text-primary border-primary/30' },
-  { value: 'A*', label: 'A*', color: 'bg-secondary/20 text-secondary border-secondary/30' },
+  { value: 'B', label: 'B' },
+  { value: 'A', label: 'A' },
+  { value: 'A*', label: 'A*' },
 ];
 
 export default function Onboarding() {
@@ -88,7 +89,6 @@ export default function Onboarding() {
     } else {
       await refreshProfile();
       
-      // Check if there's a pending question
       if (sessionStorage.getItem('pendingQuestion')) {
         navigate('/ask');
       } else {
@@ -116,8 +116,13 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col p-6">
+    <div className="min-h-screen flex flex-col p-6 bg-background">
       <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <img src={orbitLogo} alt="Orbit" className="h-12 w-auto" />
+        </div>
+
         {/* Progress */}
         <div className="flex gap-2 mb-8">
           {[1, 2, 3, 4].map((s) => (
@@ -136,15 +141,14 @@ export default function Onboarding() {
           {step === 1 && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center space-y-2">
-                <span className="text-4xl">👋</span>
-                <h1 className="text-2xl font-bold font-display">What's your name?</h1>
+                <h1 className="text-2xl font-semibold">What's your name?</h1>
                 <p className="text-muted-foreground">So we know what to call you</p>
               </div>
               <Input
                 placeholder="Your first name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="h-14 text-lg rounded-2xl text-center"
+                className="h-14 text-lg rounded-2xl text-center bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary"
                 autoFocus
               />
             </div>
@@ -153,8 +157,7 @@ export default function Onboarding() {
           {step === 2 && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center space-y-2">
-                <span className="text-4xl">📚</span>
-                <h1 className="text-2xl font-bold font-display">Which year are you in?</h1>
+                <h1 className="text-2xl font-semibold">Which year are you in?</h1>
               </div>
               <div className="grid gap-3">
                 {yearOptions.map((option) => (
@@ -162,13 +165,12 @@ export default function Onboarding() {
                     key={option.value}
                     onClick={() => setYearGroup(option.value)}
                     className={cn(
-                      "p-5 rounded-2xl text-left transition-all duration-200 glass-card border-2",
+                      "p-5 rounded-2xl text-left transition-all duration-200 bg-muted border-2",
                       yearGroup === option.value
-                        ? "border-primary bg-primary/10"
+                        ? "border-primary"
                         : "border-transparent hover:border-border"
                     )}
                   >
-                    <span className="text-2xl mr-3">{option.emoji}</span>
                     <span className="font-medium text-lg">{option.label}</span>
                   </button>
                 ))}
@@ -179,8 +181,7 @@ export default function Onboarding() {
           {step === 3 && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center space-y-2">
-                <span className="text-4xl">📋</span>
-                <h1 className="text-2xl font-bold font-display">What's your exam board?</h1>
+                <h1 className="text-2xl font-semibold">What's your exam board?</h1>
                 <p className="text-muted-foreground">Don't worry if you're not sure</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -189,9 +190,9 @@ export default function Onboarding() {
                     key={option.value}
                     onClick={() => setExamBoard(option.value)}
                     className={cn(
-                      "p-4 rounded-2xl font-medium transition-all duration-200 glass-card border-2",
+                      "p-4 rounded-2xl font-medium transition-all duration-200 bg-muted border-2",
                       examBoard === option.value
-                        ? "border-primary bg-primary/10"
+                        ? "border-primary"
                         : "border-transparent hover:border-border"
                     )}
                   >
@@ -205,9 +206,8 @@ export default function Onboarding() {
           {step === 4 && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center space-y-2">
-                <span className="text-4xl">🎯</span>
-                <h1 className="text-2xl font-bold font-display">What's your target grade?</h1>
-                <p className="text-muted-foreground">We'll help you get there!</p>
+                <h1 className="text-2xl font-semibold">What's your target grade?</h1>
+                <p className="text-muted-foreground">We'll help you get there</p>
               </div>
               <div className="flex gap-3 justify-center">
                 {gradeOptions.map((option) => (
@@ -215,10 +215,10 @@ export default function Onboarding() {
                     key={option.value}
                     onClick={() => setTargetGrade(option.value)}
                     className={cn(
-                      "w-20 h-20 rounded-2xl font-bold text-2xl transition-all duration-200 border-2",
+                      "w-20 h-20 rounded-2xl font-bold text-2xl transition-all duration-200 bg-muted border-2",
                       targetGrade === option.value
-                        ? option.color + " border-current scale-110"
-                        : "glass-card border-transparent hover:scale-105"
+                        ? "border-primary scale-110"
+                        : "border-transparent hover:scale-105"
                     )}
                   >
                     {option.label}
@@ -234,12 +234,18 @@ export default function Onboarding() {
           <Button
             onClick={nextStep}
             disabled={!canProceed() || loading}
-            className="w-full h-14 text-lg rounded-2xl btn-primary"
+            className="w-full h-14 text-lg rounded-2xl font-medium transition-all text-white"
+            style={{ 
+              background: '#111416',
+              border: '1px solid #00FAD7',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 16px rgba(0,250,215,0.25)'}
+            onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
           >
             {loading ? 'Saving...' : step === 4 ? (
               <>
                 <Sparkles className="h-5 w-5 mr-2" />
-                Let's go!
+                Let's go
               </>
             ) : (
               <>

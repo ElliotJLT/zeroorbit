@@ -53,9 +53,9 @@ export default {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
         },
-        pink: {
-          DEFAULT: "hsl(var(--pink))",
-          foreground: "hsl(var(--pink-foreground))",
+        mint: {
+          DEFAULT: "hsl(172 100% 49%)",
+          foreground: "hsl(220 15% 6%)",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
