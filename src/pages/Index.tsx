@@ -66,11 +66,6 @@ export default function Index() {
                 alt="Orbit" 
                 className="relative h-44 w-auto"
               />
-              <img 
-                src={orbitIcon} 
-                alt="" 
-                className="relative h-10 w-auto opacity-60 -mt-2"
-              />
             </div>
 
             {/* Hero */}
@@ -125,13 +120,20 @@ export default function Index() {
         </main>
 
         {/* Footer */}
-        <footer className="p-6 text-center">
+        <footer className="p-6 text-center space-y-4">
           <button
             onClick={() => navigate('/auth')}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Already have an account? <span className="text-primary">Sign in</span>
           </button>
+          <div className="pt-4">
+            <img 
+              src={orbitIcon} 
+              alt="Zero Gravity" 
+              className="h-6 w-auto mx-auto opacity-40"
+            />
+          </div>
         </footer>
       </div>
     );
