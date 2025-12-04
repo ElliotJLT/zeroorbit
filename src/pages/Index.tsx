@@ -55,28 +55,32 @@ export default function Index() {
         <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <div className="max-w-lg w-full space-y-12 animate-fade-in">
             {/* Logo with glow */}
-            <div className="relative flex justify-center mb-6">
+            <div className="relative flex justify-center items-center mb-8">
               <div 
-                className="absolute inset-0 blur-3xl opacity-40"
-                style={{ background: 'radial-gradient(circle, #00FAD7 0%, transparent 70%)' }}
+                className="absolute w-32 h-32 blur-2xl"
+                style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%)' }}
               />
               <img 
                 src={orbitLogo} 
                 alt="Orbit" 
-                className="relative h-40 w-auto"
+                className="relative h-36 w-auto"
               />
             </div>
 
             {/* Hero */}
-            <div className="space-y-6">
-              
-              <h1 className="text-5xl font-semibold tracking-tight leading-tight">
-                Turn stuck questions<br />
-                <span className="text-muted-foreground">into marks.</span>
+            <div className="space-y-5">
+              <h1 
+                className="text-5xl tracking-tight leading-[1.1]"
+                style={{ textShadow: '0 0 40px rgba(0,250,215,0.08)' }}
+              >
+                <span className="font-semibold">Turn stuck questions</span>
+                <br />
+                <span className="font-light text-muted-foreground">into marks.</span>
               </h1>
               
-              <p className="text-lg text-muted-foreground max-w-md mx-auto">
-                Snap a photo of any A-level maths question and Orbit walks you through it step-by-step — no copy-paste answers.
+              <p className="text-lg text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                Show Orbit your question.<br />
+                Get the method explained clearly — no shortcuts, no stress.
               </p>
             </div>
 
@@ -84,7 +88,12 @@ export default function Index() {
             <div className="space-y-4">
               <Button
                 onClick={() => setStep('upload')}
-                className="w-full max-w-xs mx-auto h-14 text-base rounded-full bg-primary hover:bg-primary/90"
+                className="w-full max-w-xs mx-auto h-14 text-base rounded-full border-0 text-[#0B0D0F] font-medium transition-all"
+                style={{ 
+                  background: '#00FAD7',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 24px rgba(0,250,215,0.4)'}
+                onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
               >
                 <Camera className="h-5 w-5 mr-2" />
                 Try It Free
