@@ -1,15 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, Volume2, VolumeX, Loader2 } from 'lucide-react';
+import { ArrowLeft, Camera, Mic, MicOff, X, Volume2, VolumeX, Send } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChatBubble } from '@/components/ChatBubble';
-import { ImageViewer } from '@/components/ImageViewer';
-import { ConfidenceRating } from '@/components/ConfidenceRating';
 import { useToast } from '@/hooks/use-toast';
-import orbitLogo from '@/assets/orbit-logo.png';
+import orbitIcon from '@/assets/orbit-icon.png';
 
 interface Session {
   id: string;
@@ -27,6 +24,13 @@ interface Message {
   created_at: string;
 }
 
+interface QuestionAnalysis {
+  questionSummary: string;
+  topic: string;
+  difficulty: string;
+  socraticOpening: string;
+}
+
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const TTS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/text-to-speech`;
 
@@ -37,12 +41,15 @@ export default function Chat() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [confidenceSubmitted, setConfidenceSubmitted] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [analysis, setAnalysis] = useState<QuestionAnalysis | null>(null);
+  const [showInput, setShowInput] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -78,7 +85,7 @@ export default function Chat() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ text, voice: 'Sarah' }),
+        body: JSON.stringify({ text }),
       });
 
       if (!response.ok) {
@@ -132,7 +139,23 @@ export default function Chat() {
     }
 
     setSession(sessionData);
-    setConfidenceSubmitted(sessionData.confidence_after !== null);
+
+    // Check for pre-analyzed data from session storage
+    const pendingData = sessionStorage.getItem('pendingQuestion');
+    let initialMessage = "Hey! I can see your question. Let me take a look and help you work through it step by step. What have you tried so far?";
+    
+    if (pendingData) {
+      try {
+        const parsed = JSON.parse(pendingData);
+        if (parsed.analysis) {
+          setAnalysis(parsed.analysis);
+          initialMessage = parsed.analysis.socraticOpening;
+        }
+        sessionStorage.removeItem('pendingQuestion');
+      } catch (e) {
+        console.error('Failed to parse pending question:', e);
+      }
+    }
 
     const { data: messagesData } = await supabase
       .from('messages')
@@ -143,22 +166,6 @@ export default function Chat() {
     if (messagesData && messagesData.length > 0) {
       setMessages(messagesData);
     } else {
-      // Check for pre-analyzed opening from session storage
-      const pendingData = sessionStorage.getItem('pendingQuestion');
-      let initialMessage = "Hey! I can see your question. Let's work through this together! What part would you like to start with?";
-      
-      if (pendingData) {
-        try {
-          const parsed = JSON.parse(pendingData);
-          if (parsed.analysis?.socraticOpening) {
-            initialMessage = parsed.analysis.socraticOpening;
-          }
-          sessionStorage.removeItem('pendingQuestion');
-        } catch (e) {
-          console.error('Failed to parse pending question:', e);
-        }
-      }
-
       const { data: newMsg } = await supabase
         .from('messages')
         .insert({
@@ -171,7 +178,6 @@ export default function Chat() {
 
       if (newMsg) {
         setMessages([newMsg]);
-        // Speak the initial message
         speakText(initialMessage);
       }
     }
@@ -205,7 +211,6 @@ export default function Chat() {
     let fullResponse = '';
     let streamDone = false;
 
-    // Create placeholder message
     const placeholderId = `temp-${Date.now()}`;
     setMessages(prev => [...prev, {
       id: placeholderId,
@@ -255,15 +260,15 @@ export default function Chat() {
     return { fullResponse, placeholderId };
   };
 
-  const sendMessage = async () => {
-    if (!newMessage.trim() || !sessionId || sending) return;
+  const sendMessage = async (content?: string) => {
+    const messageContent = content || newMessage.trim();
+    if (!messageContent || !sessionId || sending) return;
 
     setSending(true);
     stopSpeaking();
-    const messageContent = newMessage;
     setNewMessage('');
+    setShowInput(false);
 
-    // Add student message
     const { data: studentMessage, error: studentError } = await supabase
       .from('messages')
       .insert({
@@ -290,7 +295,6 @@ export default function Chat() {
       const allMessages = [...messages, studentMessage];
       const { fullResponse, placeholderId } = await streamChat(allMessages);
 
-      // Save the tutor response to DB
       const { data: tutorMessage } = await supabase
         .from('messages')
         .insert({
@@ -302,12 +306,9 @@ export default function Chat() {
         .single();
 
       if (tutorMessage) {
-        // Replace placeholder with real message
         setMessages(prev => prev.map(m => 
           m.id === placeholderId ? tutorMessage : m
         ));
-        
-        // Speak the response
         speakText(fullResponse);
       }
     } catch (error) {
@@ -317,82 +318,55 @@ export default function Chat() {
         title: 'Error getting response',
         description: 'Please try again.',
       });
-      // Remove placeholder on error
       setMessages(prev => prev.filter(m => !m.id.startsWith('temp-')));
     }
 
     setSending(false);
   };
 
-  const handleConfidenceChange = async (value: number) => {
-    if (!session || !user) return;
+  const handleNewImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !sessionId) return;
 
-    await supabase
-      .from('sessions')
-      .update({ confidence_after: value })
-      .eq('id', session.id);
-
-    if (session.topic_id) {
-      const { data: existingStat } = await supabase
-        .from('practice_stats')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('topic_id', session.topic_id)
-        .maybeSingle();
-
-      if (existingStat) {
-        await supabase
-          .from('practice_stats')
-          .update({
-            attempts: existingStat.attempts + 1,
-            correct_attempts: value >= 4 
-              ? existingStat.correct_attempts + 1 
-              : existingStat.correct_attempts,
-          })
-          .eq('id', existingStat.id);
-      } else {
-        await supabase
-          .from('practice_stats')
-          .insert({
-            user_id: user.id,
-            topic_id: session.topic_id,
-            attempts: 1,
-            correct_attempts: value >= 4 ? 1 : 0,
-          });
-      }
-    }
-
-    setConfidenceSubmitted(true);
-    toast({
-      title: 'Progress saved!',
-      description: 'Keep up the amazing work.',
-    });
+    // Upload new image and add as message
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const imageData = reader.result as string;
+      // For now, just send a text message that a new image was added
+      // In future, we could store and display this
+      await sendMessage("I have another question to show you (new image uploaded)");
+    };
+    reader.readAsDataURL(file);
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="relative">
+          <div 
+            className="absolute w-16 h-16 blur-xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={{ background: 'radial-gradient(circle, rgba(0,250,215,0.4) 0%, transparent 70%)' }}
+          />
+          <div className="h-8 w-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        </div>
       </div>
     );
   }
+
+  const latestTutorMessage = [...messages].reverse().find(m => m.sender === 'tutor');
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/home')} className="rounded-full">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex items-center gap-2">
-              <img src={orbitLogo} alt="Orbit" className="h-6 w-auto" />
-              <span className="font-medium text-muted-foreground">Chat</span>
-            </div>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/home')} className="rounded-full">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex items-center gap-2">
+            <img src={orbitIcon} alt="Orbit" className="h-6 w-auto" />
+            <span className="font-medium">Orbit</span>
           </div>
-          
-          {/* Voice toggle */}
           <Button
             variant="ghost"
             size="icon"
@@ -411,97 +385,162 @@ export default function Chat() {
         </div>
       </div>
 
-      {/* Question Preview */}
-      {(session?.question_image_url || session?.working_image_url) && (
-        <div className="p-4 border-b border-border bg-muted/30">
-          <div className="max-w-2xl mx-auto">
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {session?.question_image_url && (
-                <ImageViewer
-                  src={session.question_image_url}
-                  alt="Question"
-                  className="w-20 h-20 flex-shrink-0"
-                />
-              )}
-              {session?.working_image_url && (
-                <ImageViewer
-                  src={session.working_image_url}
-                  alt="Working"
-                  className="w-20 h-20 flex-shrink-0"
-                />
-              )}
-            </div>
-            {session?.question_text && session.question_text !== 'See attached image' && (
-              <p className="text-sm text-muted-foreground mt-2">
-                {session.question_text}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Messages */}
+      {/* Main content */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="max-w-2xl mx-auto space-y-4">
-          {messages.map((message) => (
-            <ChatBubble
-              key={message.id}
-              sender={message.sender}
-              content={message.content}
-              timestamp={new Date(message.created_at)}
-            />
-          ))}
           
-          {sending && messages[messages.length - 1]?.sender === 'student' && (
-            <div className="flex justify-start">
-              <div className="bubble-tutor p-4">
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          {/* Question Card */}
+          {session?.question_image_url && (
+            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+                <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
+                  <span className="text-xs text-primary font-medium">?</span>
+                </div>
+                <span className="font-medium text-sm">
+                  {analysis?.topic || 'Maths Question'}
+                </span>
+                {analysis?.difficulty && (
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    {analysis.difficulty}
+                  </span>
+                )}
               </div>
-            </div>
-          )}
-          
-          <div ref={messagesEndRef} />
-
-          {/* Confidence Rating */}
-          {messages.length > 2 && !confidenceSubmitted && (
-            <div className="bg-muted rounded-2xl p-4 mt-6 animate-fade-in border border-border">
-              <ConfidenceRating
-                value={null}
-                onChange={handleConfidenceChange}
+              <img
+                src={session.question_image_url}
+                alt="Question"
+                className="w-full max-h-64 object-contain bg-muted/30"
               />
             </div>
           )}
 
-          {confidenceSubmitted && (
-            <div className="text-center text-sm text-primary animate-fade-in">
-              ✓ Progress saved
+          {/* Messages as thinking blocks */}
+          {messages.map((message) => (
+            <div 
+              key={message.id}
+              className={`rounded-2xl p-4 ${
+                message.sender === 'tutor' 
+                  ? 'bg-card border border-border' 
+                  : 'bg-primary/10 ml-8'
+              }`}
+            >
+              {message.sender === 'tutor' && (
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
+                    <span className="text-[10px] text-primary font-bold">O</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">Orbit</span>
+                </div>
+              )}
+              <p className={`text-sm leading-relaxed ${message.sender === 'student' ? 'text-right' : ''}`}>
+                {message.content || (
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </span>
+                )}
+              </p>
             </div>
-          )}
+          ))}
+          
+          <div ref={messagesEndRef} />
         </div>
       </div>
 
-      {/* Input */}
+      {/* Text input overlay */}
+      {showInput && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-20 flex items-end">
+          <div className="w-full p-4 bg-background border-t border-border">
+            <div className="max-w-2xl mx-auto">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm text-muted-foreground">Type your response</span>
+                <button 
+                  onClick={() => setShowInput(false)}
+                  className="ml-auto p-1 hover:bg-muted rounded"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Ask a question or explain your thinking..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                  disabled={sending}
+                  autoFocus
+                  className="rounded-2xl bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary"
+                />
+                <Button
+                  onClick={() => sendMessage()}
+                  disabled={sending || !newMessage.trim()}
+                  className="rounded-2xl px-6"
+                  style={{ background: '#00FAD7', color: '#0B0D0F' }}
+                >
+                  <Send className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom action bar */}
       <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border p-4">
-        <div className="max-w-2xl mx-auto flex gap-2">
-          <Input
-            placeholder="Type your message..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-            disabled={sending}
-            className="rounded-2xl bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary"
-          />
-          <Button
-            onClick={sendMessage}
-            disabled={sending || !newMessage.trim()}
-            className="rounded-2xl px-6"
-            style={{ 
-              background: '#00FAD7',
-              color: '#0B0D0F',
-            }}
-          >
-            <Send className="h-5 w-5" />
-          </Button>
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center justify-center gap-4">
+            {/* Camera button */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleNewImage}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={sending}
+              className="w-12 h-12 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors disabled:opacity-50"
+            >
+              <Camera className="h-5 w-5 text-muted-foreground" />
+            </button>
+
+            {/* Main mic/record button */}
+            <button
+              onClick={() => setShowInput(true)}
+              disabled={sending}
+              className="w-16 h-16 rounded-full flex items-center justify-center transition-all disabled:opacity-50"
+              style={{ 
+                background: 'linear-gradient(135deg, #00FAD7 0%, #00C4AA 100%)',
+                boxShadow: isSpeaking ? '0 0 30px rgba(0,250,215,0.5)' : '0 4px 20px rgba(0,250,215,0.3)'
+              }}
+            >
+              {sending ? (
+                <div className="h-5 w-5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+              ) : (
+                <Mic className="h-6 w-6 text-background" />
+              )}
+            </button>
+
+            {/* Close/stop button */}
+            <button
+              onClick={() => {
+                if (isSpeaking) {
+                  stopSpeaking();
+                } else {
+                  navigate('/home');
+                }
+              }}
+              className="w-12 h-12 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+            >
+              <X className="h-5 w-5 text-muted-foreground" />
+            </button>
+          </div>
+          
+          <p className="text-center text-xs text-muted-foreground mt-3">
+            Tap mic to type • Camera for new question
+          </p>
         </div>
       </div>
     </div>

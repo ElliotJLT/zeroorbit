@@ -24,16 +24,8 @@ serve(async (req) => {
 
     console.log("Generating speech for text:", text.substring(0, 100) + "...");
 
-    // Voice ID mapping for common voices
-    const voiceIds: Record<string, string> = {
-      "Sarah": "EXAVITQu4vr4xnSDxMaL",
-      "Aria": "9BWtsMINqrJLrRacOk9x",
-      "Roger": "CwhRBWXzGAHq8TQ4Fs17",
-      "Laura": "FGY2WhTYpPnrIDTdsKH5",
-      "Charlie": "IKne3meq5aSn9XLyUdCD",
-    };
-
-    const voiceId = voiceIds[voice] || voiceIds["Sarah"];
+    // Default voice ID - custom Orbit tutor voice
+    const voiceId = voice || "AXdMgz6evoL7OPd7eU12";
 
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: "POST",

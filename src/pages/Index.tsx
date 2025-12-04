@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Upload, ArrowRight, X, Loader2 } from 'lucide-react';
+import { Camera, ArrowRight, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,10 +20,11 @@ export default function Index() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [step, setStep] = useState<'intro' | 'upload' | 'preview' | 'analyzing'>('intro');
+  const [step, setStep] = useState<'intro' | 'upload' | 'preview'>('intro');
   const [questionText, setQuestionText] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<QuestionAnalysis | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -46,10 +47,10 @@ export default function Index() {
     }
   };
 
-  const analyzeQuestion = async () => {
+  const analyzeAndSubmit = async () => {
     if (!imagePreview) return;
     
-    setStep('analyzing');
+    setIsAnalyzing(true);
     
     try {
       const response = await supabase.functions.invoke('analyze-question', {
@@ -79,7 +80,7 @@ export default function Index() {
       toast({
         variant: 'destructive',
         title: 'Analysis failed',
-        description: 'Please try again or continue without analysis.'
+        description: 'Please try again.'
       });
       // Fallback - continue without analysis
       sessionStorage.setItem('pendingQuestion', JSON.stringify({
@@ -87,6 +88,8 @@ export default function Index() {
         image: imagePreview
       }));
       navigate('/auth');
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -94,6 +97,7 @@ export default function Index() {
     setImagePreview(null);
     setImageFile(null);
     setAnalysis(null);
+    setIsAnalyzing(false);
     setStep('upload');
   };
 
@@ -258,37 +262,14 @@ export default function Index() {
     );
   }
 
-  // Analyzing screen
-  if (step === 'analyzing') {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
-        <div className="max-w-sm w-full text-center space-y-8 animate-fade-in">
-          <div className="relative">
-            <div 
-              className="absolute w-32 h-32 blur-2xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-              style={{ background: 'radial-gradient(circle, rgba(0,250,215,0.4) 0%, transparent 70%)' }}
-            />
-            <Loader2 className="h-16 w-16 mx-auto text-primary animate-spin relative" />
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-semibold">Analyzing your question...</h2>
-            <p className="text-muted-foreground">
-              Orbit is figuring out the best way to help you
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Preview screen
+  // Preview screen with shimmer
   return (
     <div className="min-h-screen flex flex-col p-6 bg-background">
       <div className="max-w-lg mx-auto w-full flex-1 flex flex-col">
         <div className="flex items-center justify-between mb-6">
           <button
-            onClick={() => setStep('upload')}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => !isAnalyzing && setStep('upload')}
+            className={`text-sm transition-colors ${isAnalyzing ? 'text-muted-foreground/50 cursor-not-allowed' : 'text-muted-foreground hover:text-foreground'}`}
           >
             ← Back
           </button>
@@ -296,40 +277,70 @@ export default function Index() {
 
         <div className="flex-1 flex flex-col space-y-6 animate-fade-in">
           <div className="text-center space-y-2">
-            <h2 className="text-2xl font-semibold tracking-tight">Review your question</h2>
+            <h2 className="text-2xl font-semibold tracking-tight">
+              {isAnalyzing ? 'Analysing...' : 'Review your question'}
+            </h2>
             <p className="text-muted-foreground">
-              Add details to get better help
+              {isAnalyzing ? 'Orbit is figuring out how to help' : 'Add details to get better help'}
             </p>
           </div>
 
-          <div className="relative">
+          {/* Image with shimmer effect when analyzing */}
+          <div className="relative overflow-hidden rounded-xl">
             <img
               src={imagePreview!}
               alt="Question"
-              className="w-full rounded-xl border border-border"
+              className={`w-full border border-border rounded-xl transition-all duration-300 ${isAnalyzing ? 'opacity-70' : ''}`}
             />
-            <button
-              onClick={clearImage}
-              className="absolute top-3 right-3 p-2 rounded-full bg-background/90 backdrop-blur-sm hover:bg-muted transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            {isAnalyzing && (
+              <div className="absolute inset-0 overflow-hidden rounded-xl">
+                <div 
+                  className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite]"
+                  style={{
+                    background: 'linear-gradient(90deg, transparent 0%, rgba(0,250,215,0.15) 50%, transparent 100%)',
+                  }}
+                />
+              </div>
+            )}
+            {!isAnalyzing && (
+              <button
+                onClick={clearImage}
+                className="absolute top-3 right-3 p-2 rounded-full bg-background/90 backdrop-blur-sm hover:bg-muted transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
-          <Textarea
-            placeholder="Add context or specify what you need help with (optional)"
-            value={questionText}
-            onChange={(e) => setQuestionText(e.target.value)}
-            className="min-h-[100px] rounded-xl bg-muted border-0 resize-none focus-visible:ring-1 focus-visible:ring-primary"
-          />
+          {/* Text input - fades when analyzing */}
+          <div className={`transition-opacity duration-300 ${isAnalyzing ? 'opacity-30 pointer-events-none' : ''}`}>
+            <Textarea
+              placeholder="Add context or specify what you need help with (optional)"
+              value={questionText}
+              onChange={(e) => setQuestionText(e.target.value)}
+              className="min-h-[100px] rounded-xl bg-muted border-0 resize-none focus-visible:ring-1 focus-visible:ring-primary"
+              disabled={isAnalyzing}
+            />
+          </div>
 
+          {/* CTA */}
           <div className="space-y-3 pt-2">
             <Button
-              onClick={analyzeQuestion}
-              className="w-full h-12 rounded-full bg-primary hover:bg-primary/90"
+              onClick={analyzeAndSubmit}
+              disabled={isAnalyzing}
+              className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-70"
             >
-              Get Help
-              <ArrowRight className="h-4 w-4 ml-2" />
+              {isAnalyzing ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+                  Thinking...
+                </span>
+              ) : (
+                <>
+                  Get Help
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </>
+              )}
             </Button>
             <p className="text-center text-xs text-muted-foreground">
               Free account required to continue
