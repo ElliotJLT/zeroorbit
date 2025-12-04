@@ -120,19 +120,25 @@ export default function Index() {
         </main>
 
         {/* Footer */}
-        <footer className="p-6 text-center space-y-4">
+        <footer className="p-6 text-center space-y-6">
           <button
             onClick={() => navigate('/auth')}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Already have an account? <span className="text-primary">Sign in</span>
           </button>
-          <div className="pt-4">
+          <div className="flex items-center justify-center gap-2 pt-2">
             <img 
               src={orbitIcon} 
               alt="Zero Gravity" 
-              className="h-6 w-auto mx-auto opacity-40"
+              className="h-8 w-auto opacity-50"
             />
+            <div className="flex items-start gap-0.5">
+              <span className="text-xs font-medium tracking-wider text-muted-foreground/60 leading-tight">
+                ZERO<br />GRAVITY
+              </span>
+              <span className="text-[8px] text-muted-foreground/40">™</span>
+            </div>
           </div>
         </footer>
       </div>
