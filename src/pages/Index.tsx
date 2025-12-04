@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, ArrowRight, X, Volume2, VolumeX, Mic, MicOff, Send } from 'lucide-react';
+import { Camera, ArrowRight, X, Volume2, VolumeX, Mic, MicOff, Send, Upload } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -553,9 +553,10 @@ export default function Index() {
               };
               input.click();
             }}
-            className="w-full text-center text-sm text-white/60 hover:text-white transition-colors py-2"
+            className="flex items-center justify-center gap-2 text-sm text-white/60 hover:text-white transition-colors py-2"
           >
-            Upload from library instead
+            <Upload className="h-4 w-4" />
+            Upload
           </button>
         </div>
       </div>
