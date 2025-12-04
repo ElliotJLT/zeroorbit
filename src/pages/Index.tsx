@@ -127,18 +127,12 @@ export default function Index() {
           >
             Already have an account? <span className="text-primary">Sign in</span>
           </button>
-          <div className="flex items-center justify-center gap-2 pt-2">
+          <div className="pt-2">
             <img 
               src={orbitIcon} 
               alt="Zero Gravity" 
-              className="h-8 w-auto opacity-50"
+              className="h-10 w-auto mx-auto opacity-50"
             />
-            <div className="flex items-start gap-0.5">
-              <span className="text-xs font-medium tracking-wider text-muted-foreground/60 leading-tight">
-                ZERO<br />GRAVITY
-              </span>
-              <span className="text-[8px] text-muted-foreground/40">™</span>
-            </div>
           </div>
         </footer>
       </div>
