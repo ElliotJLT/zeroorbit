@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, Volume2, VolumeX, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -27,32 +27,8 @@ interface Message {
   created_at: string;
 }
 
-function generateTutorReply(messages: Message[], questionText: string): string {
-  const responses = [
-    "Great question! Let me help you work through this step by step.\n\n1. First, identify what the question is asking\n2. Look for key information and formulas\n3. Apply the appropriate method\n4. Check your answer makes sense\n\nWhat part would you like to start with?",
-    "I can see you're making progress! Here's a hint: try breaking it down into smaller parts. What's the first thing you notice about the question?",
-    "That's a good approach! Let me guide you through the next step. Consider what happens when you apply the technique we discussed.",
-    "You're on the right track. Remember the key formula here and think about how each term relates to what you're trying to find.",
-    "Excellent progress! Now let's verify your answer by checking it makes sense in the context of the original question.",
-  ];
-  
-  return responses[Math.min(messages.filter(m => m.sender === 'student').length, responses.length - 1)];
-}
-
-function generateInitialResponse(questionText: string, hasImage: boolean): string {
-  return `Hey! I can see your question${hasImage ? ' and the image you uploaded' : ''}.
-
-**Let me break this down for you:**
-
-This looks like a great A-level question! Here's how we'll tackle it:
-
-1. **Understand** what the question is asking
-2. **Identify** the key concepts and formulas
-3. **Work through** the solution step-by-step
-4. **Check** our answer makes sense
-
-What specific part would you like help with first? Or shall I start from the beginning?`;
-}
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
+const TTS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/text-to-speech`;
 
 export default function Chat() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -62,8 +38,11 @@ export default function Chat() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [confidenceSubmitted, setConfidenceSubmitted] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -86,6 +65,51 @@ export default function Chat() {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const speakText = useCallback(async (text: string) => {
+    if (!voiceEnabled) return;
+    
+    try {
+      setIsSpeaking(true);
+      const response = await fetch(TTS_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ text, voice: 'Sarah' }),
+      });
+
+      if (!response.ok) {
+        console.error('TTS error:', response.status);
+        setIsSpeaking(false);
+        return;
+      }
+
+      const { audioContent } = await response.json();
+      
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      
+      const audio = new Audio(`data:audio/mpeg;base64,${audioContent}`);
+      audioRef.current = audio;
+      audio.onended = () => setIsSpeaking(false);
+      audio.onerror = () => setIsSpeaking(false);
+      await audio.play();
+    } catch (error) {
+      console.error('Speech error:', error);
+      setIsSpeaking(false);
+    }
+  }, [voiceEnabled]);
+
+  const stopSpeaking = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setIsSpeaking(false);
   };
 
   const fetchSession = async () => {
@@ -119,36 +143,127 @@ export default function Chat() {
     if (messagesData && messagesData.length > 0) {
       setMessages(messagesData);
     } else {
-      const initialResponse = generateInitialResponse(
-        sessionData.question_text,
-        !!sessionData.question_image_url
-      );
+      // Check for pre-analyzed opening from session storage
+      const pendingData = sessionStorage.getItem('pendingQuestion');
+      let initialMessage = "Hey! I can see your question. Let's work through this together! What part would you like to start with?";
+      
+      if (pendingData) {
+        try {
+          const parsed = JSON.parse(pendingData);
+          if (parsed.analysis?.socraticOpening) {
+            initialMessage = parsed.analysis.socraticOpening;
+          }
+          sessionStorage.removeItem('pendingQuestion');
+        } catch (e) {
+          console.error('Failed to parse pending question:', e);
+        }
+      }
 
-      const { data: newMessage } = await supabase
+      const { data: newMsg } = await supabase
         .from('messages')
         .insert({
           session_id: sessionId,
           sender: 'tutor',
-          content: initialResponse,
+          content: initialMessage,
         })
         .select()
         .single();
 
-      if (newMessage) {
-        setMessages([newMessage]);
+      if (newMsg) {
+        setMessages([newMsg]);
+        // Speak the initial message
+        speakText(initialMessage);
       }
     }
 
     setLoading(false);
   };
 
+  const streamChat = async (allMessages: Message[]) => {
+    const response = await fetch(CHAT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({
+        messages: allMessages.map(m => ({
+          role: m.sender,
+          content: m.content,
+        })),
+        questionContext: session?.question_text,
+      }),
+    });
+
+    if (!response.ok || !response.body) {
+      throw new Error('Failed to start stream');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let textBuffer = '';
+    let fullResponse = '';
+    let streamDone = false;
+
+    // Create placeholder message
+    const placeholderId = `temp-${Date.now()}`;
+    setMessages(prev => [...prev, {
+      id: placeholderId,
+      sender: 'tutor',
+      content: '',
+      created_at: new Date().toISOString(),
+    }]);
+
+    while (!streamDone) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      textBuffer += decoder.decode(value, { stream: true });
+
+      let newlineIndex: number;
+      while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+        let line = textBuffer.slice(0, newlineIndex);
+        textBuffer = textBuffer.slice(newlineIndex + 1);
+
+        if (line.endsWith('\r')) line = line.slice(0, -1);
+        if (line.startsWith(':') || line.trim() === '') continue;
+        if (!line.startsWith('data: ')) continue;
+
+        const jsonStr = line.slice(6).trim();
+        if (jsonStr === '[DONE]') {
+          streamDone = true;
+          break;
+        }
+
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const content = parsed.choices?.[0]?.delta?.content;
+          if (content) {
+            fullResponse += content;
+            setMessages(prev => prev.map(m => 
+              m.id === placeholderId 
+                ? { ...m, content: fullResponse }
+                : m
+            ));
+          }
+        } catch {
+          textBuffer = line + '\n' + textBuffer;
+          break;
+        }
+      }
+    }
+
+    return { fullResponse, placeholderId };
+  };
+
   const sendMessage = async () => {
-    if (!newMessage.trim() || !sessionId) return;
+    if (!newMessage.trim() || !sessionId || sending) return;
 
     setSending(true);
+    stopSpeaking();
     const messageContent = newMessage;
     setNewMessage('');
 
+    // Add student message
     const { data: studentMessage, error: studentError } = await supabase
       .from('messages')
       .insert({
@@ -169,25 +284,41 @@ export default function Chat() {
       return;
     }
 
-    setMessages((prev) => [...prev, studentMessage]);
+    setMessages(prev => [...prev, studentMessage]);
 
-    const tutorResponse = generateTutorReply(
-      [...messages, studentMessage],
-      session?.question_text || ''
-    );
+    try {
+      const allMessages = [...messages, studentMessage];
+      const { fullResponse, placeholderId } = await streamChat(allMessages);
 
-    const { data: tutorMessage, error: tutorError } = await supabase
-      .from('messages')
-      .insert({
-        session_id: sessionId,
-        sender: 'tutor',
-        content: tutorResponse,
-      })
-      .select()
-      .single();
+      // Save the tutor response to DB
+      const { data: tutorMessage } = await supabase
+        .from('messages')
+        .insert({
+          session_id: sessionId,
+          sender: 'tutor',
+          content: fullResponse,
+        })
+        .select()
+        .single();
 
-    if (!tutorError && tutorMessage) {
-      setMessages((prev) => [...prev, tutorMessage]);
+      if (tutorMessage) {
+        // Replace placeholder with real message
+        setMessages(prev => prev.map(m => 
+          m.id === placeholderId ? tutorMessage : m
+        ));
+        
+        // Speak the response
+        speakText(fullResponse);
+      }
+    } catch (error) {
+      console.error('Stream error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error getting response',
+        description: 'Please try again.',
+      });
+      // Remove placeholder on error
+      setMessages(prev => prev.filter(m => !m.id.startsWith('temp-')));
     }
 
     setSending(false);
@@ -241,7 +372,7 @@ export default function Chat() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -250,14 +381,33 @@ export default function Chat() {
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-4">
-        <div className="max-w-2xl mx-auto flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/home')} className="rounded-full">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <img src={orbitLogo} alt="Orbit" className="h-6 w-auto" />
-            <span className="font-medium text-muted-foreground">Chat</span>
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/home')} className="rounded-full">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex items-center gap-2">
+              <img src={orbitLogo} alt="Orbit" className="h-6 w-auto" />
+              <span className="font-medium text-muted-foreground">Chat</span>
+            </div>
           </div>
+          
+          {/* Voice toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              if (isSpeaking) stopSpeaking();
+              setVoiceEnabled(!voiceEnabled);
+            }}
+            className={`rounded-full ${isSpeaking ? 'text-primary' : ''}`}
+          >
+            {voiceEnabled ? (
+              <Volume2 className={`h-5 w-5 ${isSpeaking ? 'animate-pulse' : ''}`} />
+            ) : (
+              <VolumeX className="h-5 w-5" />
+            )}
+          </Button>
         </div>
       </div>
 
@@ -301,6 +451,15 @@ export default function Chat() {
               timestamp={new Date(message.created_at)}
             />
           ))}
+          
+          {sending && messages[messages.length - 1]?.sender === 'student' && (
+            <div className="flex justify-start">
+              <div className="bubble-tutor p-4">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            </div>
+          )}
+          
           <div ref={messagesEndRef} />
 
           {/* Confidence Rating */}

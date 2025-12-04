@@ -1,19 +1,30 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Upload, ArrowRight, X } from 'lucide-react';
+import { Camera, Upload, ArrowRight, X, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import orbitLogo from '@/assets/orbit-logo.png';
 import orbitIcon from '@/assets/orbit-icon.png';
+
+interface QuestionAnalysis {
+  questionSummary: string;
+  topic: string;
+  difficulty: string;
+  socraticOpening: string;
+}
 
 export default function Index() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [step, setStep] = useState<'intro' | 'upload' | 'preview'>('intro');
+  const { toast } = useToast();
+  const [step, setStep] = useState<'intro' | 'upload' | 'preview' | 'analyzing'>('intro');
   const [questionText, setQuestionText] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [analysis, setAnalysis] = useState<QuestionAnalysis | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -35,17 +46,54 @@ export default function Index() {
     }
   };
 
-  const handleGetHelp = () => {
-    sessionStorage.setItem('pendingQuestion', JSON.stringify({
-      text: questionText,
-      image: imagePreview
-    }));
-    navigate('/auth');
+  const analyzeQuestion = async () => {
+    if (!imagePreview) return;
+    
+    setStep('analyzing');
+    
+    try {
+      const response = await supabase.functions.invoke('analyze-question', {
+        body: { 
+          imageBase64: imagePreview,
+          questionText: questionText 
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to analyze question');
+      }
+
+      const analysisData = response.data as QuestionAnalysis;
+      setAnalysis(analysisData);
+      
+      // Store everything for after auth
+      sessionStorage.setItem('pendingQuestion', JSON.stringify({
+        text: questionText || 'See attached image',
+        image: imagePreview,
+        analysis: analysisData
+      }));
+      
+      navigate('/auth');
+    } catch (error) {
+      console.error('Analysis error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Analysis failed',
+        description: 'Please try again or continue without analysis.'
+      });
+      // Fallback - continue without analysis
+      sessionStorage.setItem('pendingQuestion', JSON.stringify({
+        text: questionText || 'See attached image',
+        image: imagePreview
+      }));
+      navigate('/auth');
+    }
   };
 
   const clearImage = () => {
     setImagePreview(null);
     setImageFile(null);
+    setAnalysis(null);
     setStep('upload');
   };
 
@@ -139,11 +187,10 @@ export default function Index() {
     );
   }
 
-  // Camera screen - opens immediately
+  // Camera screen
   if (step === 'upload') {
     return (
       <div className="min-h-screen flex flex-col bg-black">
-        {/* Header */}
         <div className="p-4 flex items-center justify-between">
           <button
             onClick={() => setStep('intro')}
@@ -155,7 +202,6 @@ export default function Index() {
           <div className="w-12" />
         </div>
 
-        {/* Camera area */}
         <div className="flex-1 flex flex-col items-center justify-center p-4">
           <input
             ref={fileInputRef}
@@ -166,7 +212,6 @@ export default function Index() {
             onChange={handleImageChange}
           />
 
-          {/* Camera preview placeholder - tapping opens camera */}
           <button
             onClick={() => fileInputRef.current?.click()}
             className="w-full max-w-sm aspect-[3/4] rounded-3xl border-2 border-white/20 bg-white/5 flex flex-col items-center justify-center gap-6 transition-all hover:border-primary/50 hover:bg-white/10"
@@ -184,7 +229,6 @@ export default function Index() {
           </button>
         </div>
 
-        {/* Bottom actions */}
         <div className="p-6 space-y-4">
           <button
             onClick={() => {
@@ -214,11 +258,33 @@ export default function Index() {
     );
   }
 
+  // Analyzing screen
+  if (step === 'analyzing') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
+        <div className="max-w-sm w-full text-center space-y-8 animate-fade-in">
+          <div className="relative">
+            <div 
+              className="absolute w-32 h-32 blur-2xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+              style={{ background: 'radial-gradient(circle, rgba(0,250,215,0.4) 0%, transparent 70%)' }}
+            />
+            <Loader2 className="h-16 w-16 mx-auto text-primary animate-spin relative" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-semibold">Analyzing your question...</h2>
+            <p className="text-muted-foreground">
+              Orbit is figuring out the best way to help you
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Preview screen
   return (
     <div className="min-h-screen flex flex-col p-6 bg-background">
       <div className="max-w-lg mx-auto w-full flex-1 flex flex-col">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={() => setStep('upload')}
@@ -228,7 +294,6 @@ export default function Index() {
           </button>
         </div>
 
-        {/* Content */}
         <div className="flex-1 flex flex-col space-y-6 animate-fade-in">
           <div className="text-center space-y-2">
             <h2 className="text-2xl font-semibold tracking-tight">Review your question</h2>
@@ -237,7 +302,6 @@ export default function Index() {
             </p>
           </div>
 
-          {/* Image preview */}
           <div className="relative">
             <img
               src={imagePreview!}
@@ -252,7 +316,6 @@ export default function Index() {
             </button>
           </div>
 
-          {/* Optional text */}
           <Textarea
             placeholder="Add context or specify what you need help with (optional)"
             value={questionText}
@@ -260,10 +323,9 @@ export default function Index() {
             className="min-h-[100px] rounded-xl bg-muted border-0 resize-none focus-visible:ring-1 focus-visible:ring-primary"
           />
 
-          {/* CTA */}
           <div className="space-y-3 pt-2">
             <Button
-              onClick={handleGetHelp}
+              onClick={analyzeQuestion}
               className="w-full h-12 rounded-full bg-primary hover:bg-primary/90"
             >
               Get Help
