@@ -57,8 +57,8 @@ export default function Index() {
             {/* Logo with glow */}
             <div className="relative flex justify-center items-center mb-8">
               <div 
-                className="absolute w-36 h-36 blur-2xl"
-                style={{ background: 'radial-gradient(circle, rgba(0,250,215,0.11) 0%, transparent 70%)' }}
+                className="absolute w-48 h-48 blur-2xl"
+                style={{ background: 'radial-gradient(circle, rgba(0,250,215,0.35) 0%, transparent 70%)' }}
               />
               <img 
                 src={orbitLogo} 
