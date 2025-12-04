@@ -55,7 +55,7 @@ export default function Index() {
         <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <div className="max-w-lg w-full space-y-12 animate-fade-in">
             {/* Logo with glow */}
-            <div className="relative flex justify-center mb-4">
+            <div className="relative flex justify-center mb-6">
               <div 
                 className="absolute inset-0 blur-3xl opacity-40"
                 style={{ background: 'radial-gradient(circle, #00FAD7 0%, transparent 70%)' }}
@@ -63,15 +63,12 @@ export default function Index() {
               <img 
                 src={orbitLogo} 
                 alt="Orbit" 
-                className="relative h-24 w-auto"
+                className="relative h-40 w-auto"
               />
             </div>
 
             {/* Hero */}
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                AI tutor for A-level Maths
-              </div>
               
               <h1 className="text-5xl font-semibold tracking-tight leading-tight">
                 Turn stuck questions<br />
