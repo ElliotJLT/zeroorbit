@@ -641,7 +641,7 @@ export default function Index() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-4">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-4 pt-[max(1rem,env(safe-area-inset-top))]">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <button onClick={() => setStep('preview')} className="text-sm text-muted-foreground hover:text-foreground">← Back</button>
           <img src={orbitLogo} alt="Orbit" className="h-12 w-auto" />
@@ -752,7 +752,7 @@ export default function Index() {
 
       {/* Bottom action bar */}
       {exchangeCount < MAX_FREE_EXCHANGES && (
-        <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border p-4 z-20">
+        <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))] z-20">
           <div className="max-w-2xl mx-auto">
             {/* Hidden file input for chat image upload */}
             <input 
