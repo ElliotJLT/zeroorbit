@@ -57,8 +57,8 @@ export default function Index() {
             {/* Logo with glow */}
             <div className="relative flex justify-center items-center mb-8">
               <div 
-                className="absolute w-32 h-32 blur-2xl"
-                style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%)' }}
+                className="absolute w-36 h-36 blur-2xl"
+                style={{ background: 'radial-gradient(circle, rgba(0,250,215,0.11) 0%, transparent 70%)' }}
               />
               <img 
                 src={orbitLogo} 
@@ -68,19 +68,19 @@ export default function Index() {
             </div>
 
             {/* Hero */}
-            <div className="space-y-5">
+            <div className="space-y-4">
               <h1 
-                className="text-5xl tracking-tight leading-[1.1]"
+                className="text-5xl tracking-tight leading-[1.05]"
                 style={{ textShadow: '0 0 40px rgba(0,250,215,0.08)' }}
               >
                 <span className="font-semibold">Turn stuck questions</span>
                 <br />
-                <span className="font-light text-muted-foreground">into marks.</span>
+                <span className="font-normal" style={{ color: 'rgba(255,255,255,0.8)' }}>into marks.</span>
               </h1>
               
               <p className="text-lg text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                Show Orbit your question.<br />
-                Get the method explained clearly — no shortcuts, no stress.
+                Snap your question.<br />
+                Orbit walks you through the method — clearly and calmly.
               </p>
             </div>
 
@@ -88,11 +88,12 @@ export default function Index() {
             <div className="space-y-4">
               <Button
                 onClick={() => setStep('upload')}
-                className="w-full max-w-xs mx-auto h-14 text-base rounded-full border-0 text-[#0B0D0F] font-medium transition-all"
+                className="w-full max-w-xs mx-auto h-14 text-base rounded-full font-medium transition-all text-white"
                 style={{ 
-                  background: '#00FAD7',
+                  background: '#111416',
+                  border: '1px solid #00FAD7',
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 24px rgba(0,250,215,0.4)'}
+                onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 16px rgba(0,250,215,0.25)'}
                 onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
               >
                 <Camera className="h-5 w-5 mr-2" />
