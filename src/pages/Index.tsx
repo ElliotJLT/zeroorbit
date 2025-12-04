@@ -742,65 +742,47 @@ export default function Index() {
         )}
       </div>
 
-      {/* Text input overlay */}
-      {showInput && exchangeCount < MAX_FREE_EXCHANGES && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-20 flex items-end">
-          <div className="w-full p-4 bg-background border-t border-border">
-            <div className="max-w-2xl mx-auto">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm text-muted-foreground">Type your response</span>
-                <button onClick={() => setShowInput(false)} className="ml-auto p-1 hover:bg-muted rounded">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Ask a question or explain your thinking..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                  disabled={sending}
-                  autoFocus
-                  className="rounded-2xl bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary"
-                />
-                <Button onClick={() => sendMessage()} disabled={sending || !newMessage.trim()} className="rounded-2xl px-6" style={{ background: '#00FAD7', color: '#0B0D0F' }}>
-                  <Send className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Click outside to close input */}
+      {showInput && (
+        <div 
+          className="fixed inset-0 z-10" 
+          onClick={() => setShowInput(false)} 
+        />
       )}
 
       {/* Bottom action bar */}
       {exchangeCount < MAX_FREE_EXCHANGES && (
-        <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border p-4">
+        <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border p-4 z-20">
           <div className="max-w-2xl mx-auto">
-            <div className="flex items-center justify-center gap-4">
-              {/* Hidden file input for chat image upload */}
-              <input 
-                ref={chatFileInputRef} 
-                type="file" 
-                accept="image/*" 
-                capture="environment" 
-                className="hidden" 
-                onChange={handleChatImageUpload} 
-              />
-              
-              {/* Camera button - adds to current chat */}
+            {/* Hidden file input for chat image upload */}
+            <input 
+              ref={chatFileInputRef} 
+              type="file" 
+              accept="image/*" 
+              capture="environment" 
+              className="hidden" 
+              onChange={handleChatImageUpload} 
+            />
+            
+            <div className="flex items-center justify-center gap-3">
+              {/* Camera button - fades when input shown */}
               <button 
                 onClick={() => chatFileInputRef.current?.click()} 
-                disabled={sending} 
-                className="w-12 h-12 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors disabled:opacity-50"
+                disabled={sending || showInput} 
+                className={`w-12 h-12 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-all duration-300 disabled:opacity-50 ${
+                  showInput ? 'opacity-0 scale-75 pointer-events-none w-0 -ml-3' : ''
+                }`}
               >
                 <Camera className="h-5 w-5 text-muted-foreground" />
               </button>
 
-              {/* Mic button - records voice */}
+              {/* Mic button - fades when input shown */}
               <button
                 onClick={isRecording ? stopRecording : startRecording}
-                disabled={sending}
-                className={`w-16 h-16 rounded-full flex items-center justify-center transition-all disabled:opacity-50 ${isRecording ? 'animate-pulse' : ''}`}
+                disabled={sending || showInput}
+                className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 disabled:opacity-50 ${
+                  isRecording ? 'animate-pulse' : ''
+                } ${showInput ? 'opacity-0 scale-75 pointer-events-none w-0' : ''}`}
                 style={{ 
                   background: isRecording 
                     ? 'linear-gradient(135deg, #FF6B6B 0%, #EE5A5A 100%)' 
@@ -821,16 +803,42 @@ export default function Index() {
                 )}
               </button>
 
-              {/* Type button - opens text input */}
+              {/* Text input - appears when showInput is true */}
+              <div className={`flex-1 transition-all duration-300 overflow-hidden ${
+                showInput ? 'max-w-md opacity-100' : 'max-w-0 opacity-0'
+              }`}>
+                <Input
+                  placeholder="Type your message..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                  disabled={sending}
+                  autoFocus={showInput}
+                  className="rounded-2xl bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary h-12"
+                />
+              </div>
+
+              {/* Send button - transforms position */}
               <button 
-                onClick={() => setShowInput(true)} 
-                disabled={sending}
-                className="w-12 h-12 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors disabled:opacity-50"
+                onClick={() => {
+                  if (showInput && newMessage.trim()) {
+                    sendMessage();
+                  } else {
+                    setShowInput(true);
+                  }
+                }}
+                disabled={sending || (showInput && !newMessage.trim())}
+                className={`rounded-full flex items-center justify-center transition-all duration-300 disabled:opacity-50 ${
+                  showInput 
+                    ? 'w-12 h-12 bg-primary' 
+                    : 'w-12 h-12 bg-muted hover:bg-muted/80'
+                }`}
               >
-                <Send className="h-5 w-5 text-muted-foreground" />
+                <Send className={`h-5 w-5 transition-colors ${showInput ? 'text-background' : 'text-muted-foreground'}`} />
               </button>
             </div>
-            <p className="text-center text-xs text-muted-foreground mt-3">
+            
+            <p className={`text-center text-xs text-muted-foreground mt-3 transition-opacity duration-300 ${showInput ? 'opacity-0' : ''}`}>
               {isRecording ? 'Listening... tap to stop' : 'Tap mic to speak • Camera for more images'}
             </p>
           </div>
