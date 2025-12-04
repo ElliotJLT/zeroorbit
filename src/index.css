@@ -221,6 +221,12 @@
   .animate-mint-glow {
     animation: mint-glow 3s ease-in-out infinite;
   }
+
+  /* Shimmer effect */
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
 }
 
 @layer utilities {
