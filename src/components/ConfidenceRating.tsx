@@ -6,33 +6,36 @@ interface ConfidenceRatingProps {
   disabled?: boolean;
 }
 
+const emojis = ['😰', '😕', '🤔', '😊', '🎯'];
+
 export function ConfidenceRating({ value, onChange, disabled }: ConfidenceRatingProps) {
   return (
-    <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">
-        How confident do you feel on this type of question now?
+    <div className="space-y-4">
+      <p className="font-medium text-center">
+        How confident do you feel now? 
       </p>
-      <div className="flex gap-2">
+      <div className="flex justify-center gap-2">
         {[1, 2, 3, 4, 5].map((rating) => (
           <button
             key={rating}
             onClick={() => onChange(rating)}
             disabled={disabled}
             className={cn(
-              "w-12 h-12 rounded-xl font-semibold transition-all duration-200",
+              "w-14 h-14 rounded-2xl font-semibold transition-all duration-200 flex flex-col items-center justify-center gap-0.5",
               value === rating
-                ? "bg-primary text-primary-foreground btn-glow"
-                : "bg-surface-2 border border-border hover:border-primary hover:bg-surface-3",
+                ? "bg-primary text-primary-foreground scale-110"
+                : "glass-card hover:scale-105",
               disabled && "opacity-50 cursor-not-allowed"
             )}
           >
-            {rating}
+            <span className="text-lg">{emojis[rating - 1]}</span>
+            <span className="text-xs">{rating}</span>
           </button>
         ))}
       </div>
-      <div className="flex justify-between text-xs text-muted-foreground">
-        <span>Not confident</span>
-        <span>Very confident</span>
+      <div className="flex justify-between text-xs text-muted-foreground px-2">
+        <span>Still confused</span>
+        <span>Got it!</span>
       </div>
     </div>
   );

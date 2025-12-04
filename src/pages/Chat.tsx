@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
 import { ChatBubble } from '@/components/ChatBubble';
 import { ImageViewer } from '@/components/ImageViewer';
 import { ConfidenceRating } from '@/components/ConfidenceRating';
@@ -29,31 +28,30 @@ interface Message {
 
 // Stubbed tutor response generator
 function generateTutorReply(messages: Message[], questionText: string): string {
-  // This is a stub that will be replaced with real AI later
   const responses = [
     "Great question! Let me help you work through this step by step.\n\n1. First, identify what the question is asking\n2. Look for key information and formulas\n3. Apply the appropriate method\n4. Check your answer makes sense\n\nWhat part would you like to start with?",
-    "I can see you're working on this problem. Here's a hint: try breaking it down into smaller parts. What's the first thing you notice about the question?",
+    "I can see you're making progress! Here's a hint: try breaking it down into smaller parts. What's the first thing you notice about the question?",
     "That's a good approach! Let me guide you through the next step. Consider what happens when you apply the technique we discussed.",
-    "You're on the right track. Remember the key formula here and think about how each term relates to what you're trying to find.",
-    "Excellent progress! Now let's verify your answer by checking it makes sense in the context of the original question.",
+    "You're on the right track 🎯 Remember the key formula here and think about how each term relates to what you're trying to find.",
+    "Excellent progress! 🌟 Now let's verify your answer by checking it makes sense in the context of the original question.",
   ];
   
   return responses[Math.min(messages.filter(m => m.sender === 'student').length, responses.length - 1)];
 }
 
 function generateInitialResponse(questionText: string, hasImage: boolean): string {
-  return `I can see your question${hasImage ? ' and the image you uploaded' : ''}. Let me break this down for you.
+  return `Hey! I can see your question${hasImage ? ' and the image you uploaded' : ''} 👀
 
-**Here's what this question is about:**
-This appears to be related to A-level maths concepts. Let me analyse the key components.
+**Let me break this down for you:**
 
-**Here are the steps we'll go through:**
-1. Understand what the question is asking
-2. Identify the relevant concepts and formulas
-3. Work through the solution methodically
-4. Verify our answer
+This looks like a great A-level question! Here's how we'll tackle it:
 
-What specific part would you like help with first?`;
+1. 📝 **Understand** what the question is asking
+2. 🔍 **Identify** the key concepts and formulas
+3. ✏️ **Work through** the solution step-by-step
+4. ✅ **Check** our answer makes sense
+
+What specific part would you like help with first? Or shall I start from the beginning?`;
 }
 
 export default function Chat() {
@@ -121,7 +119,6 @@ export default function Chat() {
     if (messagesData && messagesData.length > 0) {
       setMessages(messagesData);
     } else {
-      // Generate initial tutor response
       const initialResponse = generateInitialResponse(
         sessionData.question_text,
         !!sessionData.question_image_url
@@ -152,7 +149,6 @@ export default function Chat() {
     const messageContent = newMessage;
     setNewMessage('');
 
-    // Add student message
     const { data: studentMessage, error: studentError } = await supabase
       .from('messages')
       .insert({
@@ -175,7 +171,6 @@ export default function Chat() {
 
     setMessages((prev) => [...prev, studentMessage]);
 
-    // Generate tutor response (stubbed)
     const tutorResponse = generateTutorReply(
       [...messages, studentMessage],
       session?.question_text || ''
@@ -201,13 +196,11 @@ export default function Chat() {
   const handleConfidenceChange = async (value: number) => {
     if (!session || !user) return;
 
-    // Update session confidence
     await supabase
       .from('sessions')
       .update({ confidence_after: value })
       .eq('id', session.id);
 
-    // Update or create practice_stats
     if (session.topic_id) {
       const { data: existingStat } = await supabase
         .from('practice_stats')
@@ -240,8 +233,8 @@ export default function Chat() {
 
     setConfidenceSubmitted(true);
     toast({
-      title: 'Progress saved!',
-      description: 'Keep up the great work.',
+      title: 'Progress saved! 🎉',
+      description: 'Keep up the amazing work.',
     });
   };
 
@@ -258,19 +251,19 @@ export default function Chat() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-4">
         <div className="max-w-2xl mx-auto flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/home')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/home')} className="rounded-full">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-semibold truncate flex-1">
-            {session?.question_text.slice(0, 50)}
-            {(session?.question_text.length || 0) > 50 ? '...' : ''}
-          </h1>
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="font-medium">Chat with Vector Tutor</span>
+          </div>
         </div>
       </div>
 
       {/* Question Preview */}
       {(session?.question_image_url || session?.working_image_url) && (
-        <div className="p-4 border-b border-border bg-surface-1">
+        <div className="p-4 border-b border-border bg-muted/30">
           <div className="max-w-2xl mx-auto">
             <div className="flex gap-2 overflow-x-auto pb-2">
               {session?.question_image_url && (
@@ -312,14 +305,12 @@ export default function Chat() {
 
           {/* Confidence Rating */}
           {messages.length > 2 && !confidenceSubmitted && (
-            <Card className="mt-6">
-              <CardContent className="p-4">
-                <ConfidenceRating
-                  value={null}
-                  onChange={handleConfidenceChange}
-                />
-              </CardContent>
-            </Card>
+            <div className="glass-card rounded-2xl p-4 mt-6 animate-fade-in">
+              <ConfidenceRating
+                value={null}
+                onChange={handleConfidenceChange}
+              />
+            </div>
           )}
 
           {confidenceSubmitted && (
@@ -339,12 +330,12 @@ export default function Chat() {
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
             disabled={sending}
+            className="rounded-2xl"
           />
           <Button
-            variant="hero"
-            size="icon"
             onClick={sendMessage}
             disabled={sending || !newMessage.trim()}
+            className="rounded-2xl btn-primary px-6"
           >
             <Send className="h-5 w-5" />
           </Button>

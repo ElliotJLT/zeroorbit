@@ -19,9 +19,9 @@ function getStrengthLevel(attempts: number, correctAttempts: number): StrengthLe
 
 function getStrengthLabel(level: StrengthLevel): string {
   switch (level) {
-    case 'strong': return 'Strong';
-    case 'ok': return 'OK';
-    case 'weak': return 'Weak';
+    case 'strong': return 'Strong 💪';
+    case 'ok': return 'Getting there';
+    case 'weak': return 'Needs work';
     case 'none': return 'Not started';
   }
 }
@@ -31,19 +31,24 @@ export function TopicChip({ name, attempts, correctAttempts, className }: TopicC
   
   return (
     <div className={cn(
-      "flex items-center justify-between p-4 rounded-xl border transition-all duration-200",
-      level === 'strong' && "bg-secondary/10 border-secondary/30",
-      level === 'ok' && "bg-warning/10 border-warning/30",
-      level === 'weak' && "bg-destructive/10 border-destructive/30",
-      level === 'none' && "bg-surface-2 border-border",
+      "flex items-center justify-between p-4 rounded-2xl glass-card transition-all duration-200 hover:scale-[1.02]",
       className
     )}>
-      <span className="font-medium">{name}</span>
+      <div className="flex items-center gap-3">
+        <div className={cn(
+          "w-2 h-8 rounded-full",
+          level === 'strong' && "bg-secondary",
+          level === 'ok' && "bg-warning",
+          level === 'weak' && "bg-destructive",
+          level === 'none' && "bg-muted"
+        )} />
+        <span className="font-medium">{name}</span>
+      </div>
       <span className={cn(
-        "text-sm px-3 py-1 rounded-full font-medium",
-        level === 'strong' && "bg-secondary/20 text-secondary",
-        level === 'ok' && "bg-warning/20 text-warning",
-        level === 'weak' && "bg-destructive/20 text-destructive",
+        "text-sm px-3 py-1.5 rounded-full font-medium",
+        level === 'strong' && "bg-secondary/15 text-secondary",
+        level === 'ok' && "bg-warning/15 text-warning",
+        level === 'weak' && "bg-destructive/15 text-destructive",
         level === 'none' && "bg-muted text-muted-foreground"
       )}>
         {getStrengthLabel(level)}

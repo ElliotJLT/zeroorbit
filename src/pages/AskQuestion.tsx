@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, Upload, X } from 'lucide-react';
+import { ArrowLeft, Camera, Upload, X, Sparkles, Zap } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -40,7 +39,22 @@ export default function AskQuestion() {
 
   useEffect(() => {
     fetchTopics();
+    loadPendingQuestion();
   }, []);
+
+  const loadPendingQuestion = () => {
+    const pending = sessionStorage.getItem('pendingQuestion');
+    if (pending) {
+      try {
+        const { text, image } = JSON.parse(pending);
+        if (text) setQuestionText(text);
+        if (image) setQuestionPreview(image);
+        sessionStorage.removeItem('pendingQuestion');
+      } catch (e) {
+        console.error('Error loading pending question:', e);
+      }
+    }
+  };
 
   const fetchTopics = async () => {
     const { data } = await supabase.from('topics').select('*').order('name');
@@ -83,8 +97,19 @@ export default function AskQuestion() {
     return data.publicUrl;
   };
 
+  // Convert base64 to file for images from pending question
+  const base64ToFile = async (base64: string, filename: string): Promise<File | null> => {
+    try {
+      const res = await fetch(base64);
+      const blob = await res.blob();
+      return new File([blob], filename, { type: blob.type });
+    } catch {
+      return null;
+    }
+  };
+
   const handleSubmit = async () => {
-    if (!questionText.trim() && !questionImage) {
+    if (!questionText.trim() && !questionPreview) {
       toast({
         variant: 'destructive',
         title: 'Please add a question',
@@ -100,9 +125,16 @@ export default function AskQuestion() {
     let questionImageUrl: string | null = null;
     let workingImageUrl: string | null = null;
 
+    // Handle question image (could be from file or from pending base64)
     if (questionImage) {
       questionImageUrl = await uploadImage(questionImage, user.id);
+    } else if (questionPreview && questionPreview.startsWith('data:')) {
+      const file = await base64ToFile(questionPreview, 'question.jpg');
+      if (file) {
+        questionImageUrl = await uploadImage(file, user.id);
+      }
     }
+
     if (workingImage) {
       workingImageUrl = await uploadImage(workingImage, user.id);
     }
@@ -133,30 +165,33 @@ export default function AskQuestion() {
   };
 
   return (
-    <div className="min-h-screen p-4">
-      <div className="max-w-lg mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/home')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-h2">Ask a question</h1>
+    <div className="min-h-screen flex flex-col">
+      {/* Header */}
+      <div className="p-4 flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/home')} className="rounded-full">
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div className="flex items-center gap-2">
+          <Zap className="h-4 w-4 text-primary" />
+          <span className="text-sm text-muted-foreground">Ask a question</span>
         </div>
+      </div>
 
+      <div className="flex-1 p-4 max-w-lg mx-auto w-full space-y-6">
         {/* Question Text */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Your question</label>
+        <div className="space-y-3 animate-fade-in">
+          <h2 className="text-xl font-bold font-display">What's your question?</h2>
           <Textarea
-            placeholder="Type or paste your question here..."
+            placeholder="Type or paste your maths question here..."
             value={questionText}
             onChange={(e) => setQuestionText(e.target.value)}
-            className="min-h-[120px]"
+            className="min-h-[100px] rounded-2xl"
           />
         </div>
 
         {/* Question Image */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Photo of question</label>
+        <div className="space-y-3 animate-fade-in" style={{ animationDelay: '100ms' }}>
+          <h3 className="font-medium">Photo of question</h3>
           <input
             ref={questionInputRef}
             type="file"
@@ -176,36 +211,35 @@ export default function AskQuestion() {
               <img
                 src={questionPreview}
                 alt="Question"
-                className="w-full h-40 object-cover rounded-xl border border-border"
+                className="w-full h-48 object-cover rounded-2xl border border-border"
               />
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-2 right-2 bg-background/80"
+                className="absolute top-2 right-2 bg-background/80 backdrop-blur rounded-full"
                 onClick={() => handleImageChange(null, setQuestionImage, setQuestionPreview)}
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
           ) : (
-            <Card
-              className="cursor-pointer hover:border-primary transition-colors"
+            <button
               onClick={() => questionInputRef.current?.click()}
+              className="upload-zone w-full rounded-2xl p-6 flex flex-col items-center gap-3"
             >
-              <CardContent className="p-6 flex flex-col items-center gap-2 text-muted-foreground">
-                <Camera className="h-8 w-8" />
-                <span className="text-sm">Tap to take or upload a photo</span>
-              </CardContent>
-            </Card>
+              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                <Camera className="h-6 w-6 text-primary" />
+              </div>
+              <span className="text-sm text-muted-foreground">Tap to take or upload a photo</span>
+            </button>
           )}
         </div>
 
         {/* Working Image */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Photo of your working{' '}
-            <span className="text-muted-foreground">(optional)</span>
-          </label>
+        <div className="space-y-3 animate-fade-in" style={{ animationDelay: '200ms' }}>
+          <h3 className="font-medium">
+            Your working <span className="text-muted-foreground font-normal">(optional)</span>
+          </h3>
           <input
             ref={workingInputRef}
             type="file"
@@ -225,36 +259,33 @@ export default function AskQuestion() {
               <img
                 src={workingPreview}
                 alt="Working"
-                className="w-full h-40 object-cover rounded-xl border border-border"
+                className="w-full h-32 object-cover rounded-2xl border border-border"
               />
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-2 right-2 bg-background/80"
+                className="absolute top-2 right-2 bg-background/80 backdrop-blur rounded-full"
                 onClick={() => handleImageChange(null, setWorkingImage, setWorkingPreview)}
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
           ) : (
-            <Card
-              className="cursor-pointer hover:border-primary transition-colors"
+            <button
               onClick={() => workingInputRef.current?.click()}
+              className="upload-zone w-full rounded-2xl p-4 flex items-center justify-center gap-2"
             >
-              <CardContent className="p-4 flex items-center justify-center gap-2 text-muted-foreground">
-                <Upload className="h-5 w-5" />
-                <span className="text-sm">Add your working</span>
-              </CardContent>
-            </Card>
+              <Upload className="h-5 w-5 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Add your working</span>
+            </button>
           )}
         </div>
 
         {/* Topic Selection */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Topic{' '}
-            <span className="text-muted-foreground">(optional)</span>
-          </label>
+        <div className="space-y-3 animate-fade-in" style={{ animationDelay: '300ms' }}>
+          <h3 className="font-medium">
+            Topic <span className="text-muted-foreground font-normal">(optional)</span>
+          </h3>
           <div className="flex flex-wrap gap-2">
             {topics.map((topic) => (
               <button
@@ -264,10 +295,10 @@ export default function AskQuestion() {
                   setSelectedTopic(selectedTopic === topic.id ? '' : topic.id)
                 }
                 className={cn(
-                  "px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 border",
+                  "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
                   selectedTopic === topic.id
-                    ? "bg-primary/20 border-primary text-primary"
-                    : "bg-surface-2 border-border hover:border-primary/50"
+                    ? "bg-primary text-primary-foreground"
+                    : "glass-card hover:bg-accent"
                 )}
               >
                 {topic.name}
@@ -275,17 +306,24 @@ export default function AskQuestion() {
             ))}
           </div>
         </div>
+      </div>
 
-        {/* Submit */}
-        <Button
-          variant="hero"
-          size="pill-xl"
-          className="w-full"
-          onClick={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? 'Creating session...' : 'Get help'}
-        </Button>
+      {/* Submit */}
+      <div className="p-4 border-t border-border bg-background/80 backdrop-blur">
+        <div className="max-w-lg mx-auto">
+          <Button
+            onClick={handleSubmit}
+            disabled={loading || (!questionText.trim() && !questionPreview)}
+            className="w-full h-14 text-lg rounded-2xl btn-primary"
+          >
+            {loading ? 'Creating session...' : (
+              <>
+                <Sparkles className="h-5 w-5 mr-2" />
+                Get help
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );
