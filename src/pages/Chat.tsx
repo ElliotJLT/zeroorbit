@@ -363,9 +363,9 @@ export default function Chat() {
           <Button variant="ghost" size="icon" onClick={() => navigate('/home')} className="rounded-full">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="flex items-center gap-2">
-            <img src={orbitIcon} alt="Orbit" className="h-6 w-auto" />
-            <span className="font-medium">Orbit</span>
+          <div className="flex items-center gap-3">
+            <img src={orbitIcon} alt="Orbit" className="h-10 w-auto" />
+            <span className="font-semibold text-lg">Orbit</span>
           </div>
           <Button
             variant="ghost"
