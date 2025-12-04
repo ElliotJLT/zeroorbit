@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, ArrowRight, X, Volume2, VolumeX, Mic, Send } from 'lucide-react';
+import { Camera, ArrowRight, X, Volume2, VolumeX, Mic, MicOff, Send } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import orbitLogo from '@/assets/orbit-logo.png';
 import orbitIcon from '@/assets/orbit-icon.png';
+import tutorAvatar from '@/assets/tutor-avatar.png';
 
 interface QuestionAnalysis {
   questionSummary: string;
@@ -21,6 +22,7 @@ interface Message {
   id: string;
   sender: 'student' | 'tutor';
   content: string;
+  imageUrl?: string;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
@@ -45,10 +47,13 @@ export default function Index() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showInput, setShowInput] = useState(false);
   const [exchangeCount, setExchangeCount] = useState(0);
+  const [isRecording, setIsRecording] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const chatFileInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     if (!loading && user) {
@@ -59,6 +64,56 @@ export default function Index() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'en-GB';
+      
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript.trim()) {
+          sendMessage(transcript);
+        }
+        setIsRecording(false);
+      };
+      
+      recognitionRef.current.onerror = () => {
+        setIsRecording(false);
+        toast({
+          variant: 'destructive',
+          title: 'Voice not recognized',
+          description: 'Please try again or type your message.',
+        });
+      };
+      
+      recognitionRef.current.onend = () => {
+        setIsRecording(false);
+      };
+    }
+  }, []);
+
+  const startRecording = () => {
+    if (recognitionRef.current && !isRecording) {
+      setIsRecording(true);
+      stopSpeaking();
+      recognitionRef.current.start();
+    } else if (!recognitionRef.current) {
+      // Fallback to text input if speech recognition not available
+      setShowInput(true);
+    }
+  };
+
+  const stopRecording = () => {
+    if (recognitionRef.current && isRecording) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+    }
+  };
 
   const speakText = useCallback(async (text: string) => {
     if (!voiceEnabled) return;
@@ -113,6 +168,27 @@ export default function Index() {
     }
   };
 
+  const handleChatImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && step === 'chat') {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const newImageUrl = reader.result as string;
+        // Add image as a student message
+        const imageMessage: Message = {
+          id: `msg-${Date.now()}`,
+          sender: 'student',
+          content: 'Here\'s another part of my question:',
+          imageUrl: newImageUrl,
+        };
+        setMessages(prev => [...prev, imageMessage]);
+        // Send to AI
+        sendMessage('I\'ve uploaded another image related to my question. Can you help me with this part too?');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const analyzeAndStartChat = async () => {
     if (!imagePreview) return;
     
@@ -131,7 +207,6 @@ export default function Index() {
       const analysisData = response.data as QuestionAnalysis;
       setAnalysis(analysisData);
       
-      // Start chat with AI's opening
       const initialMessage: Message = {
         id: `msg-${Date.now()}`,
         sender: 'tutor',
@@ -144,7 +219,6 @@ export default function Index() {
       
     } catch (error) {
       console.error('Analysis error:', error);
-      // Fallback opening
       const fallbackMessage: Message = {
         id: `msg-${Date.now()}`,
         sender: 'tutor',
@@ -225,7 +299,6 @@ export default function Index() {
       }
     }
 
-    // Replace placeholder with final
     setMessages(prev => prev.map(m => 
       m.id === placeholderId ? { ...m, id: `msg-${Date.now()}`, content: fullResponse } : m
     ));
@@ -237,9 +310,7 @@ export default function Index() {
     const messageContent = content || newMessage.trim();
     if (!messageContent || sending) return;
 
-    // Check if reached limit
     if (exchangeCount >= MAX_FREE_EXCHANGES) {
-      // Store data and redirect to auth
       sessionStorage.setItem('pendingQuestion', JSON.stringify({
         text: questionText || 'See attached image',
         image: imagePreview,
@@ -269,7 +340,6 @@ export default function Index() {
       setExchangeCount(prev => prev + 1);
       speakText(response);
       
-      // Check if this was the last free exchange
       if (exchangeCount + 1 >= MAX_FREE_EXCHANGES) {
         setTimeout(() => {
           toast({
@@ -490,17 +560,14 @@ export default function Index() {
     );
   }
 
-  // Chat screen (unauthenticated, limited exchanges)
+  // Chat screen
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <button onClick={() => setStep('preview')} className="text-sm text-muted-foreground hover:text-foreground">← Back</button>
-          <div className="flex items-center gap-2">
-            <img src={orbitIcon} alt="Orbit" className="h-6 w-auto" />
-            <span className="font-medium">Orbit</span>
-          </div>
+          <img src={orbitLogo} alt="Orbit" className="h-8 w-auto" />
           <Button
             variant="ghost"
             size="icon"
@@ -521,12 +588,12 @@ export default function Index() {
           {/* Question Card */}
           {imagePreview && (
             <div className="bg-card border border-border rounded-2xl overflow-hidden">
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
-                <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
-                  <span className="text-xs text-primary font-medium">?</span>
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+                <img src={tutorAvatar} alt="Tutor" className="w-8 h-8 rounded-full object-cover" />
+                <div>
+                  <span className="font-medium text-sm">{analysis?.topic || 'Maths Question'}</span>
+                  {analysis?.difficulty && <span className="text-xs text-muted-foreground ml-2">{analysis.difficulty}</span>}
                 </div>
-                <span className="font-medium text-sm">{analysis?.topic || 'Maths Question'}</span>
-                {analysis?.difficulty && <span className="text-xs text-muted-foreground ml-auto">{analysis.difficulty}</span>}
               </div>
               <img src={imagePreview} alt="Question" className="w-full max-h-48 object-contain bg-muted/30" />
             </div>
@@ -540,11 +607,12 @@ export default function Index() {
             >
               {message.sender === 'tutor' && (
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
-                    <span className="text-[10px] text-primary font-bold">O</span>
-                  </div>
+                  <img src={tutorAvatar} alt="Orbit" className="w-6 h-6 rounded-full object-cover" />
                   <span className="text-xs text-muted-foreground">Orbit</span>
                 </div>
+              )}
+              {message.imageUrl && (
+                <img src={message.imageUrl} alt="Uploaded" className="w-full max-h-32 object-contain rounded-lg mb-2" />
               )}
               <p className={`text-sm leading-relaxed ${message.sender === 'student' ? 'text-right' : ''}`}>
                 {message.content || (
@@ -620,25 +688,62 @@ export default function Index() {
         <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border p-4">
           <div className="max-w-2xl mx-auto">
             <div className="flex items-center justify-center gap-4">
-              <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageChange} />
-              <button onClick={() => fileInputRef.current?.click()} disabled={sending} className="w-12 h-12 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors disabled:opacity-50">
+              {/* Hidden file input for chat image upload */}
+              <input 
+                ref={chatFileInputRef} 
+                type="file" 
+                accept="image/*" 
+                capture="environment" 
+                className="hidden" 
+                onChange={handleChatImageUpload} 
+              />
+              
+              {/* Camera button - adds to current chat */}
+              <button 
+                onClick={() => chatFileInputRef.current?.click()} 
+                disabled={sending} 
+                className="w-12 h-12 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors disabled:opacity-50"
+              >
                 <Camera className="h-5 w-5 text-muted-foreground" />
               </button>
 
+              {/* Mic button - records voice */}
               <button
-                onClick={() => setShowInput(true)}
+                onClick={isRecording ? stopRecording : startRecording}
                 disabled={sending}
-                className="w-16 h-16 rounded-full flex items-center justify-center transition-all disabled:opacity-50"
-                style={{ background: 'linear-gradient(135deg, #00FAD7 0%, #00C4AA 100%)', boxShadow: isSpeaking ? '0 0 30px rgba(0,250,215,0.5)' : '0 4px 20px rgba(0,250,215,0.3)' }}
+                className={`w-16 h-16 rounded-full flex items-center justify-center transition-all disabled:opacity-50 ${isRecording ? 'animate-pulse' : ''}`}
+                style={{ 
+                  background: isRecording 
+                    ? 'linear-gradient(135deg, #FF6B6B 0%, #EE5A5A 100%)' 
+                    : 'linear-gradient(135deg, #00FAD7 0%, #00C4AA 100%)', 
+                  boxShadow: isRecording 
+                    ? '0 0 30px rgba(255,107,107,0.5)' 
+                    : isSpeaking 
+                      ? '0 0 30px rgba(0,250,215,0.5)' 
+                      : '0 4px 20px rgba(0,250,215,0.3)' 
+                }}
               >
-                {sending ? <div className="h-5 w-5 border-2 border-background/30 border-t-background rounded-full animate-spin" /> : <Mic className="h-6 w-6 text-background" />}
+                {sending ? (
+                  <div className="h-5 w-5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+                ) : isRecording ? (
+                  <MicOff className="h-6 w-6 text-white" />
+                ) : (
+                  <Mic className="h-6 w-6 text-background" />
+                )}
               </button>
 
-              <button onClick={() => isSpeaking ? stopSpeaking() : setStep('intro')} className="w-12 h-12 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors">
-                <X className="h-5 w-5 text-muted-foreground" />
+              {/* Type button - opens text input */}
+              <button 
+                onClick={() => setShowInput(true)} 
+                disabled={sending}
+                className="w-12 h-12 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors disabled:opacity-50"
+              >
+                <Send className="h-5 w-5 text-muted-foreground" />
               </button>
             </div>
-            <p className="text-center text-xs text-muted-foreground mt-3">Tap mic to type • Camera for new question</p>
+            <p className="text-center text-xs text-muted-foreground mt-3">
+              {isRecording ? 'Listening... tap to stop' : 'Tap mic to speak • Camera for more images'}
+            </p>
           </div>
         </div>
       )}
