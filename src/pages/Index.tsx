@@ -9,7 +9,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import orbitLogo from '@/assets/orbit-logo.png';
 import orbitIcon from '@/assets/orbit-icon.png';
-import tutorAvatar from '@/assets/tutor-avatar.png';
 
 interface QuestionAnalysis {
   questionSummary: string;
@@ -567,7 +566,7 @@ export default function Index() {
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <button onClick={() => setStep('preview')} className="text-sm text-muted-foreground hover:text-foreground">← Back</button>
-          <img src={orbitLogo} alt="Orbit" className="h-8 w-auto" />
+          <img src={orbitLogo} alt="Orbit" className="h-12 w-auto" />
           <Button
             variant="ghost"
             size="icon"
@@ -589,9 +588,11 @@ export default function Index() {
           {imagePreview && (
             <div className="bg-card border border-border rounded-2xl overflow-hidden">
               <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-                <img src={tutorAvatar} alt="Tutor" className="w-8 h-8 rounded-full object-cover" />
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                  <span className="text-background font-bold text-sm">O</span>
+                </div>
                 <div>
-                  <span className="font-medium text-sm">{analysis?.topic || 'Maths Question'}</span>
+                  <span className="font-medium text-sm">Joe</span>
                   {analysis?.difficulty && <span className="text-xs text-muted-foreground ml-2">{analysis.difficulty}</span>}
                 </div>
               </div>
@@ -607,7 +608,9 @@ export default function Index() {
             >
               {message.sender === 'tutor' && (
                 <div className="flex items-center gap-2 mb-2">
-                  <img src={tutorAvatar} alt="Orbit" className="w-6 h-6 rounded-full object-cover" />
+                  <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                    <span className="text-background font-bold text-xs">O</span>
+                  </div>
                   <span className="text-xs text-muted-foreground">Orbit</span>
                 </div>
               )}
