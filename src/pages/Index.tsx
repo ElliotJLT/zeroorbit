@@ -765,43 +765,45 @@ export default function Index() {
             />
             
             <div className="flex items-center justify-center gap-3">
-              {/* Camera button - fades when input shown */}
-              <button 
-                onClick={() => chatFileInputRef.current?.click()} 
-                disabled={sending || showInput} 
-                className={`w-12 h-12 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-all duration-300 disabled:opacity-50 ${
-                  showInput ? 'opacity-0 scale-75 pointer-events-none w-0 -ml-3' : ''
-                }`}
-              >
-                <Camera className="h-5 w-5 text-muted-foreground" />
-              </button>
+              {/* Camera button - hidden when input shown */}
+              {!showInput && (
+                <button 
+                  onClick={() => chatFileInputRef.current?.click()} 
+                  disabled={sending} 
+                  className="w-12 h-12 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-all duration-300 disabled:opacity-50"
+                >
+                  <Camera className="h-5 w-5 text-muted-foreground" />
+                </button>
+              )}
 
-              {/* Mic button - fades when input shown */}
-              <button
-                onClick={isRecording ? stopRecording : startRecording}
-                disabled={sending || showInput}
-                className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 disabled:opacity-50 ${
-                  isRecording ? 'animate-pulse' : ''
-                } ${showInput ? 'opacity-0 scale-75 pointer-events-none w-0' : ''}`}
-                style={{ 
-                  background: isRecording 
-                    ? 'linear-gradient(135deg, #FF6B6B 0%, #EE5A5A 100%)' 
-                    : 'linear-gradient(135deg, #00FAD7 0%, #00C4AA 100%)', 
-                  boxShadow: isRecording 
-                    ? '0 0 30px rgba(255,107,107,0.5)' 
-                    : isSpeaking 
-                      ? '0 0 30px rgba(0,250,215,0.5)' 
-                      : '0 4px 20px rgba(0,250,215,0.3)' 
-                }}
-              >
-                {sending ? (
-                  <div className="h-5 w-5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
-                ) : isRecording ? (
-                  <MicOff className="h-6 w-6 text-white" />
-                ) : (
-                  <Mic className="h-6 w-6 text-background" />
-                )}
-              </button>
+              {/* Mic button - hidden when input shown */}
+              {!showInput && (
+                <button
+                  onClick={isRecording ? stopRecording : startRecording}
+                  disabled={sending}
+                  className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 disabled:opacity-50 ${
+                    isRecording ? 'animate-pulse' : ''
+                  }`}
+                  style={{ 
+                    background: isRecording 
+                      ? 'linear-gradient(135deg, #FF6B6B 0%, #EE5A5A 100%)' 
+                      : 'linear-gradient(135deg, #00FAD7 0%, #00C4AA 100%)', 
+                    boxShadow: isRecording 
+                      ? '0 0 30px rgba(255,107,107,0.5)' 
+                      : isSpeaking 
+                        ? '0 0 30px rgba(0,250,215,0.5)' 
+                        : '0 4px 20px rgba(0,250,215,0.3)' 
+                  }}
+                >
+                  {sending ? (
+                    <div className="h-5 w-5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+                  ) : isRecording ? (
+                    <MicOff className="h-6 w-6 text-white" />
+                  ) : (
+                    <Mic className="h-6 w-6 text-background" />
+                  )}
+                </button>
+              )}
 
               {/* Text input - appears when showInput is true */}
               <div className={`flex-1 transition-all duration-300 overflow-hidden ${
