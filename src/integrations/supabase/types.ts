@@ -86,6 +86,7 @@ export type Database = {
           id: string
           onboarding_completed: boolean | null
           target_grade: string | null
+          tier: string | null
           updated_at: string | null
           user_id: string
           year_group: string | null
@@ -97,6 +98,7 @@ export type Database = {
           id?: string
           onboarding_completed?: boolean | null
           target_grade?: string | null
+          tier?: string | null
           updated_at?: string | null
           user_id: string
           year_group?: string | null
@@ -108,6 +110,7 @@ export type Database = {
           id?: string
           onboarding_completed?: boolean | null
           target_grade?: string | null
+          tier?: string | null
           updated_at?: string | null
           user_id?: string
           year_group?: string | null
