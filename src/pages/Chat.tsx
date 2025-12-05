@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, Mic, MicOff, X, Volume2, VolumeX, Send } from 'lucide-react';
+import { ArrowLeft, Camera, Mic, X, Volume2, VolumeX, Send } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,22 @@ interface QuestionAnalysis {
   socraticOpening: string;
 }
 
+interface TutorResponse {
+  reply_text: string;
+  short_title?: string;
+  topic: string;
+  difficulty: string;
+  mode: string;
+  next_action: string;
+}
+
+interface UserContext {
+  level: string;
+  board: string;
+  tier?: string;
+  targetGrade?: string;
+}
+
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const TTS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/text-to-speech`;
 
@@ -43,9 +59,11 @@ export default function Chat() {
   const [sending, setSending] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
   const [analysis, setAnalysis] = useState<QuestionAnalysis | null>(null);
   const [showInput, setShowInput] = useState(false);
+  const [currentTopic, setCurrentTopic] = useState<string>('');
+  const [currentDifficulty, setCurrentDifficulty] = useState<string>('');
+  const [userContext, setUserContext] = useState<UserContext | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -59,6 +77,31 @@ export default function Chat() {
       navigate('/auth');
     }
   }, [user, authLoading, navigate]);
+
+  // Fetch user profile for context
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) return;
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('year_group, exam_board, tier, target_grade')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profile) {
+        const isGCSE = profile.year_group === 'Y10' || profile.year_group === 'Y11';
+        setUserContext({
+          level: isGCSE ? 'GCSE' : 'A-Level',
+          board: profile.exam_board || 'Unknown',
+          tier: isGCSE ? profile.tier || undefined : undefined,
+          targetGrade: profile.target_grade || undefined,
+        });
+      }
+    };
+    
+    fetchUserProfile();
+  }, [user]);
 
   useEffect(() => {
     if (sessionId && user) {
@@ -142,7 +185,7 @@ export default function Chat() {
 
     // Check for pre-analyzed data from session storage
     const pendingData = sessionStorage.getItem('pendingQuestion');
-    let initialMessage = "Hey! I can see your question. Let me take a look and help you work through it step by step. What have you tried so far?";
+    let initialMessage = "Right, let's see what you've got. What have you tried so far?";
     
     if (pendingData) {
       try {
@@ -150,6 +193,8 @@ export default function Chat() {
         if (parsed.analysis) {
           setAnalysis(parsed.analysis);
           initialMessage = parsed.analysis.socraticOpening;
+          if (parsed.analysis.topic) setCurrentTopic(parsed.analysis.topic);
+          if (parsed.analysis.difficulty) setCurrentDifficulty(parsed.analysis.difficulty);
         }
         sessionStorage.removeItem('pendingQuestion');
       } catch (e) {
@@ -185,7 +230,7 @@ export default function Chat() {
     setLoading(false);
   };
 
-  const streamChat = async (allMessages: Message[]) => {
+  const fetchTutorResponse = async (allMessages: Message[]): Promise<TutorResponse> => {
     const response = await fetch(CHAT_URL, {
       method: 'POST',
       headers: {
@@ -198,66 +243,27 @@ export default function Chat() {
           content: m.content,
         })),
         questionContext: session?.question_text,
+        userContext: userContext,
       }),
     });
 
-    if (!response.ok || !response.body) {
-      throw new Error('Failed to start stream');
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let textBuffer = '';
-    let fullResponse = '';
-    let streamDone = false;
-
-    const placeholderId = `temp-${Date.now()}`;
-    setMessages(prev => [...prev, {
-      id: placeholderId,
-      sender: 'tutor',
-      content: '',
-      created_at: new Date().toISOString(),
-    }]);
-
-    while (!streamDone) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      textBuffer += decoder.decode(value, { stream: true });
-
-      let newlineIndex: number;
-      while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
-        let line = textBuffer.slice(0, newlineIndex);
-        textBuffer = textBuffer.slice(newlineIndex + 1);
-
-        if (line.endsWith('\r')) line = line.slice(0, -1);
-        if (line.startsWith(':') || line.trim() === '') continue;
-        if (!line.startsWith('data: ')) continue;
-
-        const jsonStr = line.slice(6).trim();
-        if (jsonStr === '[DONE]') {
-          streamDone = true;
-          break;
-        }
-
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content;
-          if (content) {
-            fullResponse += content;
-            setMessages(prev => prev.map(m => 
-              m.id === placeholderId 
-                ? { ...m, content: fullResponse }
-                : m
-            ));
-          }
-        } catch {
-          textBuffer = line + '\n' + textBuffer;
-          break;
-        }
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please wait a moment and try again.');
       }
+      if (response.status === 402) {
+        throw new Error('AI credits depleted. Please try again later.');
+      }
+      throw new Error('Failed to get response');
     }
 
-    return { fullResponse, placeholderId };
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    return data as TutorResponse;
   };
 
   const sendMessage = async (content?: string) => {
@@ -291,16 +297,29 @@ export default function Chat() {
 
     setMessages(prev => [...prev, studentMessage]);
 
+    // Add placeholder for tutor response
+    const placeholderId = `temp-${Date.now()}`;
+    setMessages(prev => [...prev, {
+      id: placeholderId,
+      sender: 'tutor',
+      content: '',
+      created_at: new Date().toISOString(),
+    }]);
+
     try {
       const allMessages = [...messages, studentMessage];
-      const { fullResponse, placeholderId } = await streamChat(allMessages);
+      const tutorResponse = await fetchTutorResponse(allMessages);
+
+      // Update metadata from response
+      if (tutorResponse.topic) setCurrentTopic(tutorResponse.topic);
+      if (tutorResponse.difficulty) setCurrentDifficulty(tutorResponse.difficulty);
 
       const { data: tutorMessage } = await supabase
         .from('messages')
         .insert({
           session_id: sessionId,
           sender: 'tutor',
-          content: fullResponse,
+          content: tutorResponse.reply_text,
         })
         .select()
         .single();
@@ -309,14 +328,14 @@ export default function Chat() {
         setMessages(prev => prev.map(m => 
           m.id === placeholderId ? tutorMessage : m
         ));
-        speakText(fullResponse);
+        speakText(tutorResponse.reply_text);
       }
     } catch (error) {
-      console.error('Stream error:', error);
+      console.error('Response error:', error);
       toast({
         variant: 'destructive',
         title: 'Error getting response',
-        description: 'Please try again.',
+        description: error instanceof Error ? error.message : 'Please try again.',
       });
       setMessages(prev => prev.filter(m => !m.id.startsWith('temp-')));
     }
@@ -328,12 +347,8 @@ export default function Chat() {
     const file = e.target.files?.[0];
     if (!file || !sessionId) return;
 
-    // Upload new image and add as message
     const reader = new FileReader();
     reader.onloadend = async () => {
-      const imageData = reader.result as string;
-      // For now, just send a text message that a new image was added
-      // In future, we could store and display this
       await sendMessage("I have another question to show you (new image uploaded)");
     };
     reader.readAsDataURL(file);
@@ -353,8 +368,6 @@ export default function Chat() {
     );
   }
 
-  const latestTutorMessage = [...messages].reverse().find(m => m.sender === 'tutor');
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
@@ -363,9 +376,16 @@ export default function Chat() {
           <Button variant="ghost" size="icon" onClick={() => navigate('/home')} className="rounded-full">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="flex items-center gap-3">
-            <img src={orbitIcon} alt="Orbit" className="h-10 w-auto" />
-            <span className="font-semibold text-lg">Orbit</span>
+          <div className="flex flex-col items-center">
+            <div className="flex items-center gap-3">
+              <img src={orbitIcon} alt="Orbit" className="h-10 w-auto" />
+              <span className="font-semibold text-lg">Orbit</span>
+            </div>
+            {currentTopic && (
+              <span className="text-xs text-muted-foreground mt-0.5">
+                {currentTopic} {currentDifficulty && `• ${currentDifficulty}`}
+              </span>
+            )}
           </div>
           <Button
             variant="ghost"
@@ -397,11 +417,11 @@ export default function Chat() {
                   <span className="text-xs text-primary font-medium">?</span>
                 </div>
                 <span className="font-medium text-sm">
-                  {analysis?.topic || 'Maths Question'}
+                  {analysis?.topic || currentTopic || 'Maths Question'}
                 </span>
-                {analysis?.difficulty && (
+                {(analysis?.difficulty || currentDifficulty) && (
                   <span className="text-xs text-muted-foreground ml-auto">
-                    {analysis.difficulty}
+                    {analysis?.difficulty || currentDifficulty}
                   </span>
                 )}
               </div>
@@ -413,7 +433,7 @@ export default function Chat() {
             </div>
           )}
 
-          {/* Messages as thinking blocks */}
+          {/* Messages */}
           {messages.map((message) => (
             <div 
               key={message.id}
