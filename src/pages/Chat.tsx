@@ -314,12 +314,14 @@ export default function Chat() {
       if (tutorResponse.topic) setCurrentTopic(tutorResponse.topic);
       if (tutorResponse.difficulty) setCurrentDifficulty(tutorResponse.difficulty);
 
+      const replyText = tutorResponse.reply_text || "I'm having trouble responding. Could you try again?";
+      
       const { data: tutorMessage } = await supabase
         .from('messages')
         .insert({
           session_id: sessionId,
           sender: 'tutor',
-          content: tutorResponse.reply_text,
+          content: replyText,
         })
         .select()
         .single();
@@ -328,7 +330,9 @@ export default function Chat() {
         setMessages(prev => prev.map(m => 
           m.id === placeholderId ? tutorMessage : m
         ));
-        speakText(tutorResponse.reply_text);
+        if (replyText && replyText.trim()) {
+          speakText(replyText);
+        }
       }
     } catch (error) {
       console.error('Response error:', error);
