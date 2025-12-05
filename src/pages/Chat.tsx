@@ -314,9 +314,9 @@ export default function Chat() {
       if (tutorResponse.topic) setCurrentTopic(tutorResponse.topic);
       if (tutorResponse.difficulty) setCurrentDifficulty(tutorResponse.difficulty);
 
-      const replyText = tutorResponse.reply_text || "I'm having trouble responding. Could you try again?";
+      const replyText = tutorResponse?.reply_text?.trim() || "I'm having trouble responding. Could you try again?";
       
-      const { data: tutorMessage } = await supabase
+      const { data: tutorMessage, error: msgError } = await supabase
         .from('messages')
         .insert({
           session_id: sessionId,
@@ -326,22 +326,34 @@ export default function Chat() {
         .select()
         .single();
 
-      if (tutorMessage) {
-        setMessages(prev => prev.map(m => 
-          m.id === placeholderId ? tutorMessage : m
-        ));
-        if (replyText && replyText.trim()) {
-          speakText(replyText);
-        }
+      if (msgError) {
+        console.error('Message save error:', msgError);
+      }
+
+      // Always replace placeholder with actual message or fallback
+      setMessages(prev => prev.map(m => 
+        m.id === placeholderId 
+          ? (tutorMessage || { ...m, content: replyText }) 
+          : m
+      ));
+      
+      // Speak the response (TTS errors are handled internally)
+      if (replyText) {
+        speakText(replyText);
       }
     } catch (error) {
       console.error('Response error:', error);
+      // Replace placeholder with error message instead of removing
+      setMessages(prev => prev.map(m => 
+        m.id === placeholderId 
+          ? { ...m, content: "Sorry, I couldn't respond. Please try again." }
+          : m
+      ));
       toast({
         variant: 'destructive',
         title: 'Error getting response',
         description: error instanceof Error ? error.message : 'Please try again.',
       });
-      setMessages(prev => prev.filter(m => !m.id.startsWith('temp-')));
     }
 
     setSending(false);
