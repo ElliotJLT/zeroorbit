@@ -117,7 +117,7 @@ export default function Index() {
   };
 
   const speakText = useCallback(async (text: string, messageId?: string) => {
-    if (!voiceEnabled) {
+    if (!voiceEnabled || !text || !text.trim()) {
       setSpeakingMessageId(null);
       return;
     }
