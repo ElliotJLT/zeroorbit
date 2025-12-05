@@ -118,7 +118,7 @@ export default function Chat() {
   };
 
   const speakText = useCallback(async (text: string) => {
-    if (!voiceEnabled) return;
+    if (!voiceEnabled || !text || !text.trim()) return;
     
     try {
       setIsSpeaking(true);
