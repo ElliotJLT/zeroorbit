@@ -110,11 +110,10 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-5.2-2025-12-11",
         messages: aiMessages,
         tools: [tutorResponseTool],
         tool_choice: { type: "function", function: { name: "tutor_response" } },
-        temperature: 0.7,
       }),
     });
 
