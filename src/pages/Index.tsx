@@ -33,6 +33,7 @@ interface Message {
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const TTS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/text-to-speech`;
 const MAX_FREE_EXCHANGES = 4;
+const UNLIMITED_TESTING = true;
 
 export default function Index() {
   const { user, loading } = useAuth();
@@ -278,7 +279,7 @@ export default function Index() {
       
       setMessages([initialMessage]);
       setStep('chat');
-      speakText(analysisData.socraticOpening, initialMessage.id);
+      if (voiceEnabled) speakText(analysisData.socraticOpening, initialMessage.id);
       
     } catch (error) {
       console.error('Analysis error:', error);
@@ -289,7 +290,7 @@ export default function Index() {
       };
       setMessages([fallbackMessage]);
       setStep('chat');
-      speakText(fallbackMessage.content, fallbackMessage.id);
+      if (voiceEnabled) speakText(fallbackMessage.content, fallbackMessage.id);
     } finally {
       setIsAnalyzing(false);
     }
@@ -303,7 +304,7 @@ export default function Index() {
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
       body: JSON.stringify({
-        messages: allMessages.map(m => ({
+        messages: allMessages.map((m) => ({
           role: m.sender,
           content: m.content,
         })),
@@ -311,69 +312,17 @@ export default function Index() {
       }),
     });
 
-    if (!response.ok || !response.body) throw new Error('Failed to stream');
+    if (!response.ok) throw new Error('Failed to chat');
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let textBuffer = '';
-    let fullResponse = '';
-    let streamDone = false;
-
-    const placeholderId = `temp-${Date.now()}`;
-    setMessages(prev => [...prev, {
-      id: placeholderId,
-      sender: 'tutor',
-      content: '',
-    }]);
-
-    while (!streamDone) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      textBuffer += decoder.decode(value, { stream: true });
-
-      let newlineIndex: number;
-      while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
-        let line = textBuffer.slice(0, newlineIndex);
-        textBuffer = textBuffer.slice(newlineIndex + 1);
-
-        if (line.endsWith('\r')) line = line.slice(0, -1);
-        if (line.startsWith(':') || line.trim() === '') continue;
-        if (!line.startsWith('data: ')) continue;
-
-        const jsonStr = line.slice(6).trim();
-        if (jsonStr === '[DONE]') {
-          streamDone = true;
-          break;
-        }
-
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content;
-          if (content) {
-            fullResponse += content;
-            setMessages(prev => prev.map(m => 
-              m.id === placeholderId ? { ...m, content: fullResponse } : m
-            ));
-          }
-        } catch {
-          textBuffer = line + '\n' + textBuffer;
-          break;
-        }
-      }
-    }
-
-    setMessages(prev => prev.map(m => 
-      m.id === placeholderId ? { ...m, id: `msg-${Date.now()}`, content: fullResponse } : m
-    ));
-
-    return fullResponse;
+    const data = await response.json();
+    return data.reply_text || data.content || "I'm having trouble responding. Try again?";
   };
 
   const sendMessage = async (content?: string) => {
     const messageContent = content || newMessage.trim();
     if (!messageContent || sending) return;
 
-    if (exchangeCount >= MAX_FREE_EXCHANGES) {
+    if (!UNLIMITED_TESTING && exchangeCount >= MAX_FREE_EXCHANGES) {
       sessionStorage.setItem('pendingQuestion', JSON.stringify({
         text: questionText || 'See attached image',
         image: imagePreview,
@@ -395,29 +344,35 @@ export default function Index() {
       content: messageContent,
     };
 
-    setMessages(prev => [...prev, studentMessage]);
+    const placeholderId = `temp-${Date.now()}`;
+    setMessages((prev) => [
+      ...prev,
+      studentMessage,
+      { id: placeholderId, sender: 'tutor', content: '' },
+    ]);
 
     try {
       const allMessages = [...messages, studentMessage];
-      const response = await streamChat(allMessages);
-      setExchangeCount(prev => prev + 1);
-      
-      // Get the last tutor message ID for voice-first mode
-      setMessages(prev => {
-        const lastTutorMsg = [...prev].reverse().find(m => m.sender === 'tutor');
-        if (lastTutorMsg) {
-          speakText(response, lastTutorMsg.id);
+      const responseText = await streamChat(allMessages);
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === placeholderId
+            ? { ...m, id: `msg-${Date.now()}`, content: responseText }
+            : m
+        )
+      );
+
+      if (!UNLIMITED_TESTING) {
+        setExchangeCount((prev) => prev + 1);
+        if (exchangeCount + 1 >= MAX_FREE_EXCHANGES) {
+          setTimeout(() => {
+            toast({
+              title: "You're doing great!",
+              description: 'Sign up free to keep chatting with Orbit',
+            });
+          }, 2000);
         }
-        return prev;
-      });
-      
-      if (exchangeCount + 1 >= MAX_FREE_EXCHANGES) {
-        setTimeout(() => {
-          toast({
-            title: "You're doing great!",
-            description: "Sign up free to keep chatting with Orbit",
-          });
-        }, 2000);
       }
     } catch (error) {
       console.error('Chat error:', error);
@@ -426,7 +381,7 @@ export default function Index() {
         title: 'Error',
         description: 'Please try again.',
       });
-      setMessages(prev => prev.filter(m => !m.id.startsWith('temp-')));
+      setMessages((prev) => prev.filter((m) => m.id !== placeholderId));
     }
 
     setSending(false);
@@ -594,7 +549,7 @@ export default function Index() {
             </div>
           </div>
 
-          <div className="pt-6">
+          <div className="pt-6 space-y-3">
             <Button
               onClick={() => setStep('upload')}
               disabled={!canContinue}
@@ -603,6 +558,13 @@ export default function Index() {
               Continue
               <ArrowRight className="h-5 w-5 ml-2" />
             </Button>
+            <button
+              type="button"
+              onClick={() => setStep('upload')}
+              className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Skip for now
+            </button>
           </div>
         </main>
       </div>
@@ -845,7 +807,7 @@ export default function Index() {
           ))}
 
           {/* Signup prompt after limit */}
-          {exchangeCount >= MAX_FREE_EXCHANGES && (
+          {!UNLIMITED_TESTING && exchangeCount >= MAX_FREE_EXCHANGES && (
             <div className="bg-primary/10 border border-primary/30 rounded-2xl p-6 text-center space-y-4 animate-fade-in">
               <h3 className="font-semibold text-lg">You&apos;re doing great! 🎉</h3>
               <p className="text-sm text-muted-foreground">Sign up free to keep chatting with Orbit and save your progress</p>
@@ -863,13 +825,15 @@ export default function Index() {
       </div>
 
       {/* Free exchanges counter */}
-      <div className="text-center py-2 text-xs text-muted-foreground">
-        {exchangeCount < MAX_FREE_EXCHANGES ? (
-          `${MAX_FREE_EXCHANGES - exchangeCount} free messages left`
-        ) : (
-          'Sign up to continue'
-        )}
-      </div>
+      {!UNLIMITED_TESTING && (
+        <div className="text-center py-2 text-xs text-muted-foreground">
+          {exchangeCount < MAX_FREE_EXCHANGES ? (
+            `${MAX_FREE_EXCHANGES - exchangeCount} free messages left`
+          ) : (
+            'Sign up to continue'
+          )}
+        </div>
+      )}
 
       {/* Click outside to close input */}
       {showInput && (
@@ -880,7 +844,7 @@ export default function Index() {
       )}
 
       {/* Bottom action bar */}
-      {exchangeCount < MAX_FREE_EXCHANGES && (
+      {(UNLIMITED_TESTING || exchangeCount < MAX_FREE_EXCHANGES) && (
         <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))] z-20">
           <div className="max-w-2xl mx-auto">
             {/* Hidden file input for chat image upload */}
