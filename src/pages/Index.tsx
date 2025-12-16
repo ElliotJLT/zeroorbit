@@ -221,8 +221,10 @@ export default function Index() {
     setIsAnalyzing(true);
     setStep('chat');
     
+    const messageId = `msg-${Date.now()}`;
+    setMessages([{ id: messageId, sender: 'tutor', content: '' }]);
+    
     try {
-      // Send the question directly to chat and get the first response
       const response = await fetch(CHAT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -232,49 +234,19 @@ export default function Index() {
         }),
       });
 
-      if (!response.ok || !response.body) throw new Error('Failed to get response');
+      if (!response.ok) throw new Error('Failed to get response');
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let fullContent = '';
-      const messageId = `msg-${Date.now()}`;
+      const data = await response.json();
+      const replyText = data.reply_text || data.content || "I'm having trouble responding. Try again?";
       
-      setMessages([{ id: messageId, sender: 'tutor', content: '' }]);
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-        
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') continue;
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.content) {
-                fullContent += parsed.content;
-                setMessages([{ id: messageId, sender: 'tutor', content: fullContent }]);
-              }
-            } catch {}
-          }
-        }
-      }
-      
-      if (voiceEnabled && fullContent) {
-        speakText(fullContent, messageId);
-      }
+      setMessages([{ id: messageId, sender: 'tutor', content: replyText }]);
     } catch (error) {
       console.error('Chat error:', error);
-      const fallbackMessage: Message = {
-        id: `msg-${Date.now()}`,
-        sender: 'tutor',
-        content: "Hey! I can see your question. Let me help you work through it step by step. What have you tried so far?",
-      };
-      setMessages([fallbackMessage]);
-      speakText(fallbackMessage.content, fallbackMessage.id);
+      setMessages([{ 
+        id: messageId, 
+        sender: 'tutor', 
+        content: "Hey! I can see your question. Let me help you work through it step by step. What have you tried so far?" 
+      }]);
     } finally {
       setIsAnalyzing(false);
     }
