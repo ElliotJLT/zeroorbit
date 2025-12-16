@@ -215,6 +215,71 @@ export default function Index() {
     }
   };
 
+  const startTextOnlyChat = async () => {
+    if (!questionText.trim()) return;
+    
+    setIsAnalyzing(true);
+    setStep('chat');
+    
+    try {
+      // Send the question directly to chat and get the first response
+      const response = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [],
+          questionContext: `A-Level student (${examBoard || 'Unknown board'}), current grade: ${currentGrade || 'Unknown'}, target: ${targetGrade || 'Unknown'}. Struggles with: ${struggles || 'Not specified'}. Question: ${questionText}`,
+        }),
+      });
+
+      if (!response.ok || !response.body) throw new Error('Failed to get response');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullContent = '';
+      const messageId = `msg-${Date.now()}`;
+      
+      setMessages([{ id: messageId, sender: 'tutor', content: '' }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') continue;
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.content) {
+                fullContent += parsed.content;
+                setMessages([{ id: messageId, sender: 'tutor', content: fullContent }]);
+              }
+            } catch {}
+          }
+        }
+      }
+      
+      if (voiceEnabled && fullContent) {
+        speakText(fullContent, messageId);
+      }
+    } catch (error) {
+      console.error('Chat error:', error);
+      const fallbackMessage: Message = {
+        id: `msg-${Date.now()}`,
+        sender: 'tutor',
+        content: "Hey! I can see your question. Let me help you work through it step by step. What have you tried so far?",
+      };
+      setMessages([fallbackMessage]);
+      speakText(fallbackMessage.content, fallbackMessage.id);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const analyzeAndStartChat = async () => {
     if (!imagePreview) return;
     
@@ -615,10 +680,11 @@ export default function Index() {
             />
             {questionText.trim() && (
               <Button
-                onClick={() => setStep('preview')}
+                onClick={startTextOnlyChat}
+                disabled={isAnalyzing}
                 className="w-full mt-3 bg-primary text-background hover:bg-primary/90"
               >
-                Continue
+                {isAnalyzing ? 'Starting...' : 'Continue'}
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             )}
