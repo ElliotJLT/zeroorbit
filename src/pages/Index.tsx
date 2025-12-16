@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, ArrowRight, X, Volume2, VolumeX, Mic, MicOff, Send, Upload } from 'lucide-react';
+import { Camera, ArrowRight, X, Volume2, VolumeX, Mic, MicOff, Send, Upload, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,7 +9,13 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import orbitLogo from '@/assets/orbit-logo.png';
 import orbitIcon from '@/assets/orbit-icon.png';
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 interface QuestionAnalysis {
   questionSummary: string;
   topic: string;
@@ -32,12 +38,17 @@ export default function Index() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [step, setStep] = useState<'intro' | 'upload' | 'preview' | 'chat'>('intro');
+  const [step, setStep] = useState<'intro' | 'setup' | 'upload' | 'preview' | 'chat'>('intro');
   const [questionText, setQuestionText] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<QuestionAnalysis | null>(null);
-  const [level, setLevel] = useState<'gcse' | 'a-level'>('gcse');
+  
+  // Student context
+  const [currentGrade, setCurrentGrade] = useState('');
+  const [targetGrade, setTargetGrade] = useState('');
+  const [examBoard, setExamBoard] = useState('');
+  const [struggles, setStruggles] = useState('');
   
   // Chat state
   const [messages, setMessages] = useState<Message[]>([]);
@@ -259,7 +270,7 @@ export default function Index() {
           role: m.sender,
           content: m.content,
         })),
-        questionContext: `Student level: ${level.toUpperCase()}. ${questionText || 'See attached image'}`,
+        questionContext: `A-Level student (${examBoard || 'Unknown board'}), current grade: ${currentGrade || 'Unknown'}, target: ${targetGrade || 'Unknown'}. Struggles with: ${struggles || 'Not specified'}. Question: ${questionText || 'See attached image'}`,
       }),
     });
 
@@ -417,7 +428,7 @@ export default function Index() {
             </div>
 
             <Button
-              onClick={() => setStep('upload')}
+              onClick={() => setStep('setup')}
               className="w-full max-w-xs mx-auto h-14 text-base rounded-full font-medium transition-all text-white"
               style={{ background: '#111416', border: '1px solid #00FAD7' }}
               onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 16px rgba(0,250,215,0.25)'}
@@ -450,38 +461,125 @@ export default function Index() {
     );
   }
 
+  // Setup screen - ask for student context
+  if (step === 'setup') {
+    const canContinue = currentGrade && targetGrade && examBoard;
+    
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <div className="p-4 flex items-center justify-between">
+          <button onClick={() => setStep('intro')} className="text-sm text-muted-foreground hover:text-foreground transition-colors">← Back</button>
+          <h2 className="text-lg font-medium">Quick Setup</h2>
+          <div className="w-12" />
+        </div>
+
+        <main className="flex-1 flex flex-col p-6 max-w-lg mx-auto w-full">
+          <div className="space-y-2 mb-8">
+            <h1 className="text-2xl font-semibold">Tell us about yourself</h1>
+            <p className="text-muted-foreground">This helps Orbit give you better, more targeted help.</p>
+          </div>
+
+          <div className="space-y-6 flex-1">
+            {/* Exam Board */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Exam Board</label>
+              <Select value={examBoard} onValueChange={setExamBoard}>
+                <SelectTrigger className="w-full h-12 bg-card border-border">
+                  <SelectValue placeholder="Select your exam board" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border z-50">
+                  <SelectItem value="AQA">AQA</SelectItem>
+                  <SelectItem value="Edexcel">Edexcel</SelectItem>
+                  <SelectItem value="OCR">OCR</SelectItem>
+                  <SelectItem value="OCR MEI">OCR MEI</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Current Grade */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Current Grade</label>
+              <Select value={currentGrade} onValueChange={setCurrentGrade}>
+                <SelectTrigger className="w-full h-12 bg-card border-border">
+                  <SelectValue placeholder="What grade are you getting now?" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border z-50">
+                  <SelectItem value="U">U</SelectItem>
+                  <SelectItem value="E">E</SelectItem>
+                  <SelectItem value="D">D</SelectItem>
+                  <SelectItem value="C">C</SelectItem>
+                  <SelectItem value="B">B</SelectItem>
+                  <SelectItem value="A">A</SelectItem>
+                  <SelectItem value="A*">A*</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Target Grade */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Target Grade</label>
+              <Select value={targetGrade} onValueChange={setTargetGrade}>
+                <SelectTrigger className="w-full h-12 bg-card border-border">
+                  <SelectValue placeholder="What grade are you aiming for?" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border z-50">
+                  <SelectItem value="E">E</SelectItem>
+                  <SelectItem value="D">D</SelectItem>
+                  <SelectItem value="C">C</SelectItem>
+                  <SelectItem value="B">B</SelectItem>
+                  <SelectItem value="A">A</SelectItem>
+                  <SelectItem value="A*">A*</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Struggles */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">What do you struggle with most? <span className="text-muted-foreground font-normal">(optional)</span></label>
+              <Select value={struggles} onValueChange={setStruggles}>
+                <SelectTrigger className="w-full h-12 bg-card border-border">
+                  <SelectValue placeholder="Select a topic" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border z-50">
+                  <SelectItem value="Pure - Algebra & Functions">Pure - Algebra & Functions</SelectItem>
+                  <SelectItem value="Pure - Coordinate Geometry">Pure - Coordinate Geometry</SelectItem>
+                  <SelectItem value="Pure - Sequences & Series">Pure - Sequences & Series</SelectItem>
+                  <SelectItem value="Pure - Trigonometry">Pure - Trigonometry</SelectItem>
+                  <SelectItem value="Pure - Exponentials & Logs">Pure - Exponentials & Logs</SelectItem>
+                  <SelectItem value="Pure - Differentiation">Pure - Differentiation</SelectItem>
+                  <SelectItem value="Pure - Integration">Pure - Integration</SelectItem>
+                  <SelectItem value="Pure - Vectors">Pure - Vectors</SelectItem>
+                  <SelectItem value="Statistics">Statistics</SelectItem>
+                  <SelectItem value="Mechanics">Mechanics</SelectItem>
+                  <SelectItem value="Proof">Proof</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="pt-6">
+            <Button
+              onClick={() => setStep('upload')}
+              disabled={!canContinue}
+              className="w-full h-14 text-base rounded-full font-medium"
+            >
+              Continue
+              <ArrowRight className="h-5 w-5 ml-2" />
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   // Camera screen
   if (step === 'upload') {
     return (
       <div className="min-h-screen flex flex-col bg-black">
         <div className="p-4 flex items-center justify-between">
-          <button onClick={() => setStep('intro')} className="text-sm text-white/70 hover:text-white transition-colors">← Back</button>
+          <button onClick={() => setStep('setup')} className="text-sm text-white/70 hover:text-white transition-colors">← Back</button>
           <h2 className="text-lg font-medium text-white">Snap your question</h2>
           <div className="w-12" />
-        </div>
-
-        {/* Level selector */}
-        <div className="flex justify-center gap-2 px-4 pb-4">
-          <button
-            onClick={() => setLevel('gcse')}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              level === 'gcse' 
-                ? 'bg-primary text-background' 
-                : 'bg-white/10 text-white/70 hover:bg-white/20'
-            }`}
-          >
-            GCSE
-          </button>
-          <button
-            onClick={() => setLevel('a-level')}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              level === 'a-level' 
-                ? 'bg-primary text-background' 
-                : 'bg-white/10 text-white/70 hover:bg-white/20'
-            }`}
-          >
-            A-Level
-          </button>
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center p-4">
