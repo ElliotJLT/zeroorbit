@@ -501,9 +501,33 @@ export default function Index() {
           <p className="text-white/40 text-xs mt-4 text-center max-w-xs">
             Works best on printed or clearly written questions
           </p>
+
+          {/* Paste option */}
+          <div className="w-full max-w-sm mt-6">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex-1 h-px bg-white/20" />
+              <span className="text-white/50 text-sm">or paste it</span>
+              <div className="flex-1 h-px bg-white/20" />
+            </div>
+            <Textarea
+              value={questionText}
+              onChange={(e) => setQuestionText(e.target.value)}
+              placeholder="Paste your question here..."
+              className="bg-white/5 border-white/20 text-white placeholder:text-white/40 min-h-[100px] resize-none rounded-xl"
+            />
+            {questionText.trim() && (
+              <Button
+                onClick={() => setStep('preview')}
+                className="w-full mt-3 bg-primary text-background hover:bg-primary/90"
+              >
+                Continue
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            )}
+          </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-6 pt-0">
           <button
             onClick={() => {
               const input = document.createElement('input');
@@ -525,7 +549,7 @@ export default function Index() {
             className="flex items-center justify-center gap-2 text-sm text-white/60 hover:text-white transition-colors py-2"
           >
             <Upload className="h-4 w-4" />
-            Upload
+            Upload from gallery
           </button>
         </div>
       </div>
