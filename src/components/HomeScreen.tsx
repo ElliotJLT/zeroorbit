@@ -93,6 +93,11 @@ export default function HomeScreen({
             <span>Snap a Question</span>
           </Button>
 
+          {/* Value Proposition */}
+          <p className="text-center text-sm text-muted-foreground px-4">
+            Snap your exam question and chat with the latest AI tutor. Get step-by-step guidance, not just answers.
+          </p>
+
           {/* Or Divider */}
           <div className="flex items-center gap-4">
             <div className="flex-1 h-px bg-border" />
