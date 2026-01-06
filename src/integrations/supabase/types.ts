@@ -187,21 +187,38 @@ export type Database = {
           created_at: string | null
           id: string
           name: string
+          parent_id: string | null
+          section: string | null
           slug: string
+          sort_order: number | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           name: string
+          parent_id?: string | null
+          section?: string | null
           slug: string
+          sort_order?: number | null
         }
         Update: {
           created_at?: string | null
           id?: string
           name?: string
+          parent_id?: string | null
+          section?: string | null
           slug?: string
+          sort_order?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "topics_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

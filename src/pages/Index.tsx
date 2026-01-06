@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, ArrowRight, X, Volume2, VolumeX, Mic, MicOff, Send, Upload, ChevronDown, LogOut, Phone, MessageSquare } from 'lucide-react';
+import { Camera, ArrowRight, X, Volume2, VolumeX, Mic, MicOff, Send, Upload, ChevronDown, LogOut, Phone, MessageSquare, BookOpen } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,6 +12,7 @@ import orbitIcon from '@/assets/orbit-icon.png';
 import BetaEntryModal from '@/components/BetaEntryModal';
 import PostSessionSurvey from '@/components/PostSessionSurvey';
 import VoiceSession from '@/components/VoiceSession';
+import SyllabusBrowser from '@/components/SyllabusBrowser';
 import {
   Select,
   SelectContent,
@@ -46,7 +47,8 @@ export default function Index() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [step, setStep] = useState<'intro' | 'setup' | 'upload' | 'preview' | 'mode-select' | 'voice' | 'chat'>('intro');
+  const [step, setStep] = useState<'intro' | 'setup' | 'upload' | 'syllabus' | 'preview' | 'mode-select' | 'voice' | 'chat'>('intro');
+  const [selectedTopic, setSelectedTopic] = useState<{ id: string; name: string; slug: string } | null>(null);
   const [questionText, setQuestionText] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -393,6 +395,19 @@ export default function Index() {
     startTextChat();
   };
 
+  const handleSelectSyllabusTopic = (topic: { id: string; name: string; slug: string; section?: string | null }) => {
+    setSelectedTopic(topic);
+    setQuestionText(`I need help with ${topic.name}`);
+    // Create analysis for the topic
+    setAnalysis({
+      questionSummary: `Practice question on ${topic.name}`,
+      topic: topic.name,
+      difficulty: 'A-Level',
+      socraticOpening: `Alright, let's work on ${topic.name}. What specific aspect are you finding tricky, or would you like me to give you a practice question?`,
+    });
+    setStep('mode-select');
+  };
+
   const streamChat = async (allMessages: Message[]): Promise<{ reply_messages: string[]; student_behavior?: string }> => {
     const response = await fetch(CHAT_URL, {
       method: 'POST',
@@ -704,39 +719,55 @@ export default function Index() {
       <div className="min-h-screen flex flex-col bg-black">
         <div className="p-4 flex items-center justify-between">
           <button onClick={() => setStep('setup')} className="text-sm text-white/70 hover:text-white transition-colors">← Back</button>
-          <h2 className="text-lg font-medium text-white">Snap your question</h2>
+          <h2 className="text-lg font-medium text-white">Get help</h2>
           <div className="w-12" />
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center p-4">
-          <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageChange} />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full max-w-sm aspect-[3/4] rounded-3xl border-2 border-white/20 bg-white/5 flex flex-col items-center justify-center gap-6 transition-all hover:border-primary/50 hover:bg-white/10"
-          >
-            <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,250,215,0.2)' }}>
-              <Camera className="h-10 w-10 text-primary" />
-            </div>
-            <div className="text-center space-y-2">
-              <p className="text-white font-medium">Tap to open camera</p>
-              <p className="text-white/50 text-sm">Make sure the whole question is in frame and in focus</p>
-            </div>
-          </button>
-          <p className="text-white/40 text-xs mt-4 text-center max-w-xs">
-            Works best on printed or clearly written questions
-          </p>
+          {/* Two main options: Camera and Syllabus */}
+          <div className="w-full max-w-sm space-y-4">
+            <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageChange} />
+            
+            {/* Camera option */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full p-6 rounded-2xl border-2 border-white/20 bg-white/5 flex items-center gap-4 transition-all hover:border-primary/50 hover:bg-white/10"
+            >
+              <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(0,250,215,0.2)' }}>
+                <Camera className="h-7 w-7 text-primary" />
+              </div>
+              <div className="text-left">
+                <p className="text-white font-medium">Snap a question</p>
+                <p className="text-white/50 text-sm">Take a photo of your textbook or worksheet</p>
+              </div>
+            </button>
+
+            {/* Syllabus browser option */}
+            <button
+              onClick={() => setStep('syllabus')}
+              className="w-full p-6 rounded-2xl border-2 border-white/20 bg-white/5 flex items-center gap-4 transition-all hover:border-primary/50 hover:bg-white/10"
+            >
+              <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(0,250,215,0.2)' }}>
+                <BookOpen className="h-7 w-7 text-primary" />
+              </div>
+              <div className="text-left">
+                <p className="text-white font-medium">Browse syllabus</p>
+                <p className="text-white/50 text-sm">Pick a topic from the A-Level curriculum</p>
+              </div>
+            </button>
+          </div>
 
           {/* Paste option */}
-          <div className="w-full max-w-sm mt-6">
+          <div className="w-full max-w-sm mt-8">
             <div className="flex items-center gap-3 mb-3">
               <div className="flex-1 h-px bg-white/20" />
-              <span className="text-white/50 text-sm">or paste it</span>
+              <span className="text-white/50 text-sm">or type your question</span>
               <div className="flex-1 h-px bg-white/20" />
             </div>
             <Textarea
               value={questionText}
               onChange={(e) => setQuestionText(e.target.value)}
-              placeholder="Paste your question here..."
+              placeholder="Type or paste your question here..."
               className="bg-white/5 border-white/20 text-white placeholder:text-white/40 min-h-[100px] resize-none rounded-xl"
             />
             {questionText.trim() && (
@@ -778,6 +809,16 @@ export default function Index() {
           </button>
         </div>
       </div>
+    );
+  }
+
+  // Syllabus browser screen
+  if (step === 'syllabus') {
+    return (
+      <SyllabusBrowser
+        onSelectTopic={handleSelectSyllabusTopic}
+        onBack={() => setStep('upload')}
+      />
     );
   }
 
