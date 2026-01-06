@@ -161,11 +161,11 @@ export default function HomeScreen({
       </main>
 
       {/* Footer */}
-      <footer className="p-4 border-t border-border text-center">
-        <img src={orbitIcon} alt="Zero Gravity" className="h-6 w-auto mx-auto mb-1 opacity-50" />
-        <p className="text-xs text-muted-foreground">
-          Built with Zero Gravity
-        </p>
+      <footer className="p-4 border-t border-border">
+        <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+          <span>Built with</span>
+          <img src={orbitIcon} alt="Zero Gravity" className="h-5 w-auto" />
+        </div>
       </footer>
     </div>
   );
