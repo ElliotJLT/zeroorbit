@@ -47,32 +47,17 @@ Return ONLY the extracted text, nothing else. If there's LaTeX or mathematical n
         }
       ];
 
-      // Add timeout to prevent hanging
-      const ocrController = new AbortController();
-      const ocrTimeoutId = setTimeout(() => ocrController.abort(), 30000);
-      
-      let ocrResponse;
-      try {
-        ocrResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
-            messages: ocrMessages,
-          }),
-          signal: ocrController.signal,
-        });
-      } catch (fetchError: unknown) {
-        clearTimeout(ocrTimeoutId);
-        console.error("OCR fetch error:", fetchError);
-        return new Response(JSON.stringify({ detectedText: null }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      clearTimeout(ocrTimeoutId);
+      const ocrResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: ocrMessages,
+        }),
+      });
 
       if (!ocrResponse.ok) {
         const errorText = await ocrResponse.text();
@@ -133,42 +118,17 @@ Be encouraging and supportive. Never give the answer directly - always guide wit
       }
     ];
 
-    // Add timeout to prevent hanging
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 55000); // 55 second timeout
-    
-    let response;
-    try {
-      response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages,
-        }),
-        signal: controller.signal,
-      });
-    } catch (fetchError: unknown) {
-      clearTimeout(timeoutId);
-      console.error("Fetch error:", fetchError);
-      const error = fetchError as Error;
-      if (error.name === 'AbortError') {
-        return new Response(JSON.stringify({ 
-          error: "Request timed out. Please try again.",
-          questionSummary: "A maths question",
-          topic: "Mathematics",
-          difficulty: "A-Level",
-          socraticOpening: "I can see your question! Let's work through this together. What do you think is the first step?"
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      throw fetchError;
-    }
-    clearTimeout(timeoutId);
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages,
+      }),
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
