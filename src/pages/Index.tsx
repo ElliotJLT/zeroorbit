@@ -346,7 +346,8 @@ export default function Index() {
       
       setMessages([initialMessage]);
       setStep('chat');
-      if (voiceEnabled) speakText(analysisData.socraticOpening, initialMessage.id);
+      // Delay voice slightly to ensure text renders first
+      if (voiceEnabled) setTimeout(() => speakText(analysisData.socraticOpening, initialMessage.id), 100);
       
     } catch (error) {
       console.error('Analysis error:', error);
@@ -357,7 +358,8 @@ export default function Index() {
       };
       setMessages([fallbackMessage]);
       setStep('chat');
-      if (voiceEnabled) speakText(fallbackMessage.content, fallbackMessage.id);
+      // Delay voice slightly to ensure text renders first
+      if (voiceEnabled) setTimeout(() => speakText(fallbackMessage.content, fallbackMessage.id), 100);
     } finally {
       setIsAnalyzing(false);
     }
@@ -446,8 +448,8 @@ export default function Index() {
         )
       );
       
-      // Auto-play voice for first reply
-      if (voiceEnabled) speakText(firstMsg, firstMsgId);
+      // Delay voice slightly to ensure text renders first
+      if (voiceEnabled) setTimeout(() => speakText(firstMsg, firstMsgId), 100);
       
       // Add remaining messages with slight delays for natural feel
       for (let i = 0; i < remainingMsgs.length; i++) {
