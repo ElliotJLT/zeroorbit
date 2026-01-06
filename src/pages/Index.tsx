@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, ArrowRight, X, Volume2, VolumeX, Mic, MicOff, Send, Upload, ChevronDown, LogOut } from 'lucide-react';
+import { Camera, ArrowRight, X, Volume2, VolumeX, Mic, MicOff, Send, Upload, ChevronDown, LogOut, Phone, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,6 +11,7 @@ import orbitLogo from '@/assets/orbit-logo.png';
 import orbitIcon from '@/assets/orbit-icon.png';
 import BetaEntryModal from '@/components/BetaEntryModal';
 import PostSessionSurvey from '@/components/PostSessionSurvey';
+import VoiceSession from '@/components/VoiceSession';
 import {
   Select,
   SelectContent,
@@ -45,7 +46,7 @@ export default function Index() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [step, setStep] = useState<'intro' | 'setup' | 'upload' | 'preview' | 'chat'>('intro');
+  const [step, setStep] = useState<'intro' | 'setup' | 'upload' | 'preview' | 'mode-select' | 'voice' | 'chat'>('intro');
   const [questionText, setQuestionText] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -343,29 +344,53 @@ export default function Index() {
       const analysisData = response.data as QuestionAnalysis;
       setAnalysis(analysisData);
       
-      const initialMessage: Message = {
-        id: `msg-${Date.now()}`,
-        sender: 'tutor',
-        content: analysisData.socraticOpening,
-      };
-      
-      setMessages([initialMessage]);
-      setStep('chat');
-      if (voiceEnabled) speakText(analysisData.socraticOpening, initialMessage.id);
+      // Show mode selection
+      setStep('mode-select');
       
     } catch (error) {
       console.error('Analysis error:', error);
-      const fallbackMessage: Message = {
-        id: `msg-${Date.now()}`,
-        sender: 'tutor',
-        content: "Hey! I can see your question. Let me help you work through it step by step. What have you tried so far?",
-      };
-      setMessages([fallbackMessage]);
-      setStep('chat');
-      if (voiceEnabled) speakText(fallbackMessage.content, fallbackMessage.id);
+      // Even on error, let user choose mode
+      setAnalysis({
+        questionSummary: questionText || 'Question from image',
+        topic: 'Unknown',
+        difficulty: 'Unknown',
+        socraticOpening: "Hey! I can see your question. Let me help you work through it step by step. What have you tried so far?",
+      });
+      setStep('mode-select');
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const startTextChat = () => {
+    if (!analysis) return;
+    
+    const initialMessage: Message = {
+      id: `msg-${Date.now()}`,
+      sender: 'tutor',
+      content: analysis.socraticOpening,
+    };
+    
+    setMessages([initialMessage]);
+    setStep('chat');
+    if (voiceEnabled) speakText(analysis.socraticOpening, initialMessage.id);
+  };
+
+  const startVoiceChat = () => {
+    setStep('voice');
+  };
+
+  const handleVoiceSessionEnd = () => {
+    // Return to mode select or intro based on context
+    if (analysis) {
+      setStep('mode-select');
+    } else {
+      setStep('intro');
+    }
+  };
+
+  const handleSwitchToTextFromVoice = () => {
+    startTextChat();
   };
 
   const streamChat = async (allMessages: Message[]): Promise<{ reply_messages: string[]; student_behavior?: string }> => {
@@ -827,6 +852,105 @@ export default function Index() {
           </div>
         </div>
       </div>
+    );
+  }
+
+  // Mode selection screen - choose between voice and text
+  if (step === 'mode-select') {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <div className="p-4 flex items-center justify-between">
+          <button onClick={() => setStep('preview')} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            ← Back
+          </button>
+          <h2 className="text-lg font-medium">Choose how to chat</h2>
+          <div className="w-12" />
+        </div>
+
+        <main className="flex-1 flex flex-col items-center justify-center p-6">
+          <div className="max-w-md w-full space-y-8 animate-fade-in">
+            {/* Question preview */}
+            {imagePreview && (
+              <div className="bg-card border border-border rounded-xl overflow-hidden">
+                <img src={imagePreview} alt="Question" className="w-full max-h-32 object-contain bg-muted/30" />
+                {analysis && (
+                  <div className="p-3 border-t border-border">
+                    <p className="text-sm font-medium">{analysis.topic}</p>
+                    <p className="text-xs text-muted-foreground">{analysis.difficulty}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="text-center space-y-2">
+              <h1 className="text-2xl font-semibold">How would you like to learn?</h1>
+              <p className="text-muted-foreground text-sm">Pick the mode that works best for you</p>
+            </div>
+
+            <div className="space-y-4">
+              {/* Voice mode - primary option */}
+              <button
+                onClick={startVoiceChat}
+                className="w-full p-6 rounded-2xl border-2 border-primary bg-primary/5 hover:bg-primary/10 transition-all group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <Phone className="w-6 h-6 text-background" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <h3 className="font-semibold text-lg">Voice Conversation</h3>
+                    <p className="text-sm text-muted-foreground">Talk naturally like you're with a tutor</p>
+                  </div>
+                  <div className="px-2 py-1 bg-primary/20 rounded-full">
+                    <span className="text-xs font-medium text-primary">Recommended</span>
+                  </div>
+                </div>
+              </button>
+
+              {/* Text mode */}
+              <button
+                onClick={startTextChat}
+                className="w-full p-6 rounded-2xl border border-border bg-card hover:bg-muted/50 transition-all group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <MessageSquare className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <h3 className="font-semibold text-lg">Text Chat</h3>
+                    <p className="text-sm text-muted-foreground">Type your questions and get written help</p>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <p className="text-center text-xs text-muted-foreground">
+              You can switch between modes at any time
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Voice session screen
+  if (step === 'voice') {
+    return (
+      <VoiceSession
+        config={{
+          userContext: {
+            level: 'A-Level',
+            board: examBoard,
+            currentGrade: currentGrade,
+            targetGrade: targetGrade,
+            struggles: struggles,
+          },
+          questionContext: analysis?.questionSummary || questionText || 'Question from image',
+          questionSummary: analysis?.socraticOpening,
+        }}
+        onEnd={handleVoiceSessionEnd}
+        onSwitchToText={handleSwitchToTextFromVoice}
+      />
     );
   }
 
