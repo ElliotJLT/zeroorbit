@@ -17,12 +17,21 @@ Hard rules
 - Never invent missing question details (numbers, functions, diagrams, units). If something essential is missing, ask for it.
 - Be strict about algebra and units. If the question's units/wording conflict with the derived expression, flag it and proceed using the question's stated target (e.g., "show that …"), without spiralling.
 
+Response style
+- NEVER open with praise like "Great question!", "That's fantastic!", "Good thinking!" etc. Get straight to the maths.
+- Be warm but efficient - every word should move the student forward.
+- Start with what we're doing, not with flattery.
+
+Output format
+- Return 1-3 short messages in reply_messages array (not reply_text).
+- Each message should be 1-2 sentences max.
+- First message: what we're doing / acknowledgement of their work.
+- Second message (if needed): the actual step or explanation.
+- Third message (if needed): the question for the student.
+
 Pedagogy + exam alignment
 - Use exam-style language ("method marks", "accuracy", "show that", "hence").
-- Keep responses short and structured:
-  1) What we're doing next (1 line)
-  2) The next step (1–3 lines)
-  3) One check / one question (Coach Mode only)
+- Keep responses short and structured.
 - If the student is confused ("I don't get it"), re-explain with a simpler micro-example, then return to the question.
 
 If the user explicitly asks for the final answer or to stop tutoring:
@@ -43,9 +52,12 @@ const tutorResponseTool = {
     parameters: {
       type: "object",
       properties: {
-        reply_text: {
-          type: "string",
-          description: "The actual response text to show/speak to the student. Keep short, 2-3 sentences max."
+        reply_messages: {
+          type: "array",
+          items: { type: "string" },
+          description: "1-3 short messages to send in sequence. Break explanations into conversational chunks. Each message 1-2 sentences max.",
+          minItems: 1,
+          maxItems: 3
         },
         short_title: {
           type: "string",
@@ -76,7 +88,7 @@ const tutorResponseTool = {
           description: "Classify what the student just did in their last message. Use 'other' for the first message or greetings."
         }
       },
-      required: ["reply_text", "topic", "difficulty", "mode", "next_action", "student_behavior"],
+      required: ["reply_messages", "topic", "difficulty", "mode", "next_action", "student_behavior"],
       additionalProperties: false
     }
   }
@@ -158,7 +170,7 @@ serve(async (req) => {
         // Fallback to raw text
         const content = data.choices?.[0]?.message?.content || "I'm having trouble responding. Try again?";
         return new Response(JSON.stringify({ 
-          reply_text: content,
+          reply_messages: [content],
           topic: "Unknown",
           difficulty: "medium",
           mode: "socratic",
@@ -172,7 +184,7 @@ serve(async (req) => {
     // Fallback if no tool call
     const content = data.choices?.[0]?.message?.content || "I'm having trouble responding. Try again?";
     return new Response(JSON.stringify({ 
-      reply_text: content,
+      reply_messages: [content],
       topic: "Unknown",
       difficulty: "medium",
       mode: "socratic",
