@@ -359,7 +359,7 @@ export default function Index() {
     }
   };
 
-  const streamChat = async (allMessages: Message[]): Promise<{ reply_text: string; student_behavior?: string }> => {
+  const streamChat = async (allMessages: Message[]): Promise<{ reply_messages: string[]; student_behavior?: string }> => {
     const response = await fetch(CHAT_URL, {
       method: 'POST',
       headers: {
@@ -378,8 +378,10 @@ export default function Index() {
     if (!response.ok) throw new Error('Failed to chat');
 
     const data = await response.json();
+    // Handle both new reply_messages array and legacy reply_text
+    const messages = data.reply_messages || [data.reply_text || data.content || "I'm having trouble responding. Try again?"];
     return {
-      reply_text: data.reply_text || data.content || "I'm having trouble responding. Try again?",
+      reply_messages: messages,
       student_behavior: data.student_behavior,
     };
   };
@@ -425,15 +427,29 @@ export default function Index() {
 
     try {
       const allMessages = [...messages, studentMessage];
-      const { reply_text, student_behavior } = await streamChat(allMessages);
+      const { reply_messages, student_behavior } = await streamChat(allMessages);
 
+      // Replace placeholder with first message, then add remaining messages with delay
+      const firstMsg = reply_messages[0];
+      const remainingMsgs = reply_messages.slice(1);
+      
       setMessages((prev) =>
         prev.map((m) =>
           m.id === placeholderId
-            ? { ...m, id: `msg-${Date.now()}`, content: reply_text, studentBehavior: student_behavior }
+            ? { ...m, id: `msg-${Date.now()}`, content: firstMsg, studentBehavior: student_behavior }
             : m
         )
       );
+      
+      // Add remaining messages with slight delays for natural feel
+      for (let i = 0; i < remainingMsgs.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, 400));
+        const msgContent = remainingMsgs[i];
+        setMessages((prev) => [
+          ...prev,
+          { id: `msg-${Date.now()}-${i}`, sender: 'tutor', content: msgContent }
+        ]);
+      }
 
       if (!UNLIMITED_TESTING) {
         setExchangeCount((prev) => prev + 1);
@@ -843,10 +859,12 @@ export default function Index() {
             <div className="bg-card border border-border rounded-2xl overflow-hidden">
               <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
                 <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                  <span className="text-background font-bold text-sm">O</span>
+                  <span className="text-background font-bold text-sm">
+                    {betaTesterName?.charAt(0).toUpperCase() || 'S'}
+                  </span>
                 </div>
                 <div>
-                  <span className="font-medium text-sm">Joe</span>
+                  <span className="font-medium text-sm">{betaTesterName || 'Student'}</span>
                   {analysis?.difficulty && <span className="text-xs text-muted-foreground ml-2">{analysis.difficulty}</span>}
                 </div>
               </div>
@@ -862,9 +880,11 @@ export default function Index() {
             >
               {message.sender === 'tutor' && (
                 <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-6 h-6 rounded-full bg-primary flex items-center justify-center ${speakingMessageId === message.id ? 'animate-pulse' : ''}`}>
-                    <span className="text-background font-bold text-xs">O</span>
-                  </div>
+                  <img 
+                    src={orbitIcon} 
+                    alt="Orbit" 
+                    className={`w-6 h-6 rounded-full object-cover ${speakingMessageId === message.id ? 'animate-pulse' : ''}`}
+                  />
                   <span className="text-xs text-muted-foreground">
                     {speakingMessageId === message.id ? 'Orbit is speaking...' : 'Orbit'}
                   </span>
