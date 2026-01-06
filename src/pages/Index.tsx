@@ -67,6 +67,7 @@ export default function Index() {
   const [showInput, setShowInput] = useState(false);
   const [exchangeCount, setExchangeCount] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
+  const [justFinishedSpeaking, setJustFinishedSpeaking] = useState(false);
   
   // Beta testing state
   const [betaTesterName, setBetaTesterName] = useState<string | null>(() => 
@@ -177,6 +178,9 @@ export default function Index() {
       audio.onended = () => {
         setIsSpeaking(false);
         setSpeakingMessageId(null);
+        // Trigger subtle "your turn" pulse
+        setJustFinishedSpeaking(true);
+        setTimeout(() => setJustFinishedSpeaking(false), 3000);
       };
       audio.onerror = () => {
         setIsSpeaking(false);
@@ -432,22 +436,27 @@ export default function Index() {
       // Replace placeholder with first message, then add remaining messages with delay
       const firstMsg = reply_messages[0];
       const remainingMsgs = reply_messages.slice(1);
+      const firstMsgId = `msg-${Date.now()}`;
       
       setMessages((prev) =>
         prev.map((m) =>
           m.id === placeholderId
-            ? { ...m, id: `msg-${Date.now()}`, content: firstMsg, studentBehavior: student_behavior }
+            ? { ...m, id: firstMsgId, content: firstMsg, studentBehavior: student_behavior }
             : m
         )
       );
+      
+      // Auto-play voice for first reply
+      if (voiceEnabled) speakText(firstMsg, firstMsgId);
       
       // Add remaining messages with slight delays for natural feel
       for (let i = 0; i < remainingMsgs.length; i++) {
         await new Promise(resolve => setTimeout(resolve, 400));
         const msgContent = remainingMsgs[i];
+        const msgId = `msg-${Date.now()}-${i}`;
         setMessages((prev) => [
           ...prev,
-          { id: `msg-${Date.now()}-${i}`, sender: 'tutor', content: msgContent }
+          { id: msgId, sender: 'tutor', content: msgContent }
         ]);
       }
 
@@ -894,13 +903,7 @@ export default function Index() {
                 <img src={message.imageUrl} alt="Uploaded" className="w-full max-h-32 object-contain rounded-lg mb-2" />
               )}
               <p className={`text-sm leading-relaxed ${message.sender === 'student' ? 'text-right' : ''}`}>
-                {speakingMessageId === message.id && message.sender === 'tutor' ? (
-                  <span className="inline-flex items-center gap-1 text-muted-foreground">
-                    <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </span>
-                ) : message.content || (
+                {message.content || (
                   <span className="inline-flex items-center gap-1">
                     <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -981,7 +984,7 @@ export default function Index() {
                   disabled={sending}
                   className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 disabled:opacity-50 ${
                     isRecording ? 'animate-pulse' : ''
-                  }`}
+                  } ${justFinishedSpeaking && !isRecording && !isSpeaking ? 'animate-pulse-subtle' : ''}`}
                   style={{ 
                     background: isRecording 
                       ? 'linear-gradient(135deg, #FF6B6B 0%, #EE5A5A 100%)' 

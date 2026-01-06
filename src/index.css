@@ -227,6 +227,22 @@
     0% { transform: translateX(-100%); }
     100% { transform: translateX(100%); }
   }
+
+  /* Subtle "your turn" pulse for mic button */
+  @keyframes pulse-subtle {
+    0%, 100% { 
+      transform: scale(1); 
+      box-shadow: 0 4px 20px rgba(0,250,215,0.3);
+    }
+    50% { 
+      transform: scale(1.05); 
+      box-shadow: 0 0 25px rgba(0,250,215,0.5);
+    }
+  }
+
+  .animate-pulse-subtle {
+    animation: pulse-subtle 1.5s ease-in-out infinite;
+  }
 }
 
 @layer utilities {
