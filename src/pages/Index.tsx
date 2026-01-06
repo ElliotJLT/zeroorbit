@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, ArrowRight, X, Volume2, VolumeX, Mic, MicOff, Send, Upload, ChevronDown, LogOut, Phone, MessageSquare, BookOpen } from 'lucide-react';
+import { Camera, ArrowRight, X, Volume2, VolumeX, Mic, MicOff, Send, Upload, LogOut, Phone, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,7 +12,8 @@ import orbitIcon from '@/assets/orbit-icon.png';
 import BetaEntryModal from '@/components/BetaEntryModal';
 import PostSessionSurvey from '@/components/PostSessionSurvey';
 import VoiceSession from '@/components/VoiceSession';
-import SyllabusBrowser from '@/components/SyllabusBrowser';
+import HomeScreen from '@/components/HomeScreen';
+import BurgerMenu from '@/components/BurgerMenu';
 import {
   Select,
   SelectContent,
@@ -20,6 +21,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+
+interface Topic {
+  id: string;
+  name: string;
+  slug: string;
+  section: string | null;
+}
 
 interface QuestionAnalysis {
   questionSummary: string;
@@ -47,8 +55,12 @@ export default function Index() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [step, setStep] = useState<'intro' | 'setup' | 'upload' | 'syllabus' | 'preview' | 'mode-select' | 'voice' | 'chat'>('intro');
+  const [step, setStep] = useState<'home' | 'setup' | 'upload' | 'preview' | 'mode-select' | 'voice' | 'chat'>('home');
   const [selectedTopic, setSelectedTopic] = useState<{ id: string; name: string; slug: string } | null>(null);
+  
+  // Topics for syllabus browser
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [loadingTopics, setLoadingTopics] = useState(true);
   const [questionText, setQuestionText] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -86,6 +98,21 @@ export default function Index() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  // Fetch topics for syllabus browser
+  useEffect(() => {
+    const fetchTopics = async () => {
+      const { data, error } = await supabase
+        .from('topics')
+        .select('*')
+        .order('sort_order');
+      if (!error && data) {
+        setTopics(data as Topic[]);
+      }
+      setLoadingTopics(false);
+    };
+    fetchTopics();
+  }, []);
 
   useEffect(() => {
     if (!loading && user) {
@@ -271,7 +298,7 @@ export default function Index() {
     });
     
     // Reset for next session
-    setStep('intro');
+    setStep('home');
     setMessages([]);
     setFirstInputMethod(null);
   };
@@ -281,7 +308,7 @@ export default function Index() {
     if (BETA_MODE && messages.length > 2) {
       setShowSurvey(true);
     } else {
-      setStep('intro');
+      setStep('home');
       setMessages([]);
     }
   };
@@ -387,7 +414,7 @@ export default function Index() {
     if (analysis) {
       setStep('mode-select');
     } else {
-      setStep('intro');
+      setStep('home');
     }
   };
 
@@ -536,62 +563,24 @@ export default function Index() {
     setStep('upload');
   };
 
-  // Intro screen
-  if (step === 'intro') {
+  // Handle test me - random topic
+  const handleTestMe = () => {
+    if (topics.length === 0) return;
+    const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+    handleSelectSyllabusTopic(randomTopic);
+  };
+
+  // Home screen with new design
+  if (step === 'home') {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <div className="max-w-lg w-full space-y-12 animate-fade-in">
-            <div className="relative flex flex-col items-center mb-8">
-              <div 
-                className="absolute w-48 h-48 blur-2xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                style={{ background: 'radial-gradient(circle, rgba(0,250,215,0.35) 0%, transparent 70%)' }}
-              />
-              <img src={orbitLogo} alt="Orbit" className="relative h-44 w-auto" />
-            </div>
-
-            <div className="space-y-4">
-              <h1 className="text-4xl tracking-tight leading-[1.15]" style={{ textShadow: '0 0 40px rgba(0,250,215,0.08)' }}>
-                <span className="font-semibold">Stuck on a maths question?</span>
-                <br />
-                <span className="font-semibold" style={{ color: 'rgba(255,255,255,0.8)' }}>Show Orbit.</span>
-              </h1>
-              <p className="text-lg text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                Get a step-by-step walkthrough made for AQA, Edexcel and OCR students.
-              </p>
-            </div>
-
-            <Button
-              onClick={() => setStep('setup')}
-              className="w-full max-w-xs mx-auto h-14 text-base rounded-full font-medium transition-all text-white"
-              style={{ background: '#111416', border: '1px solid #00FAD7' }}
-              onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 16px rgba(0,250,215,0.25)'}
-              onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
-            >
-              <Camera className="h-5 w-5 mr-2" />
-              Snap a Question
-            </Button>
-
-            <div className="pt-8 border-t border-border">
-              <p className="text-sm text-muted-foreground">
-                24/7 • Step-by-step GCSE & A-Level help • No sign-up to try
-              </p>
-              <p className="text-xs text-muted-foreground/70 mt-2">
-                Built with Zero Gravity mentors
-              </p>
-            </div>
-          </div>
-        </main>
-
-        <footer className="p-6 text-center space-y-6">
-          <button onClick={() => navigate('/auth')} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Already have an account? <span className="text-primary">Sign in</span>
-          </button>
-          <div className="pt-2">
-            <img src={orbitIcon} alt="Zero Gravity" className="h-10 w-auto mx-auto opacity-50" />
-          </div>
-        </footer>
-      </div>
+      <HomeScreen
+        topics={topics}
+        loadingTopics={loadingTopics}
+        onSnapQuestion={() => setStep('upload')}
+        onSelectTopic={handleSelectSyllabusTopic}
+        onTestMe={handleTestMe}
+        onSignIn={() => navigate('/auth')}
+      />
     );
   }
 
@@ -602,7 +591,7 @@ export default function Index() {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <div className="p-4 flex items-center justify-between">
-          <button onClick={() => setStep('intro')} className="text-sm text-muted-foreground hover:text-foreground transition-colors">← Back</button>
+          <button onClick={() => setStep('home')} className="text-sm text-muted-foreground hover:text-foreground transition-colors">← Back</button>
           <h2 className="text-lg font-medium">Quick Setup</h2>
           <div className="w-12" />
         </div>
@@ -713,51 +702,61 @@ export default function Index() {
     );
   }
 
-  // Camera screen
+  // Camera/upload screen - simplified since syllabus is on home
   if (step === 'upload') {
     return (
       <div className="min-h-screen flex flex-col bg-black">
         <div className="p-4 flex items-center justify-between">
-          <button onClick={() => setStep('setup')} className="text-sm text-white/70 hover:text-white transition-colors">← Back</button>
-          <h2 className="text-lg font-medium text-white">Get help</h2>
+          <button onClick={() => setStep('home')} className="text-sm text-white/70 hover:text-white transition-colors">← Back</button>
+          <h2 className="text-lg font-medium text-white">Snap a Question</h2>
           <div className="w-12" />
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center p-4">
-          {/* Two main options: Camera and Syllabus */}
-          <div className="w-full max-w-sm space-y-4">
+          <div className="w-full max-w-sm space-y-6">
             <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageChange} />
             
-            {/* Camera option */}
+            {/* Camera button - primary action */}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-full p-6 rounded-2xl border-2 border-white/20 bg-white/5 flex items-center gap-4 transition-all hover:border-primary/50 hover:bg-white/10"
+              className="w-full p-8 rounded-2xl border-2 border-primary/50 bg-primary/10 flex flex-col items-center gap-4 transition-all hover:border-primary hover:bg-primary/20"
             >
-              <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(0,250,215,0.2)' }}>
-                <Camera className="h-7 w-7 text-primary" />
+              <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,250,215,0.3)' }}>
+                <Camera className="h-10 w-10 text-primary" />
               </div>
-              <div className="text-left">
-                <p className="text-white font-medium">Snap a question</p>
-                <p className="text-white/50 text-sm">Take a photo of your textbook or worksheet</p>
+              <div className="text-center">
+                <p className="text-white font-medium text-lg">Take Photo</p>
+                <p className="text-white/50 text-sm">Snap your textbook or worksheet</p>
               </div>
             </button>
 
-            {/* Syllabus browser option */}
+            {/* Upload from gallery */}
             <button
-              onClick={() => setStep('syllabus')}
-              className="w-full p-6 rounded-2xl border-2 border-white/20 bg-white/5 flex items-center gap-4 transition-all hover:border-primary/50 hover:bg-white/10"
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      setImagePreview(reader.result as string);
+                      setStep('preview');
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                };
+                input.click();
+              }}
+              className="w-full p-4 rounded-xl border border-white/20 bg-white/5 flex items-center justify-center gap-2 transition-all hover:bg-white/10"
             >
-              <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(0,250,215,0.2)' }}>
-                <BookOpen className="h-7 w-7 text-primary" />
-              </div>
-              <div className="text-left">
-                <p className="text-white font-medium">Browse syllabus</p>
-                <p className="text-white/50 text-sm">Pick a topic from the A-Level curriculum</p>
-              </div>
+              <Upload className="h-5 w-5 text-white/60" />
+              <span className="text-white/60">Upload from gallery</span>
             </button>
           </div>
 
-          {/* Paste option */}
+          {/* Or type option */}
           <div className="w-full max-w-sm mt-8">
             <div className="flex items-center gap-3 mb-3">
               <div className="flex-1 h-px bg-white/20" />
@@ -782,43 +781,7 @@ export default function Index() {
             )}
           </div>
         </div>
-
-        <div className="p-6 pt-0">
-          <button
-            onClick={() => {
-              const input = document.createElement('input');
-              input.type = 'file';
-              input.accept = 'image/*';
-              input.onchange = (e) => {
-                const file = (e.target as HTMLInputElement).files?.[0];
-                if (file) {
-                  const reader = new FileReader();
-                  reader.onloadend = () => {
-                    setImagePreview(reader.result as string);
-                    setStep('preview');
-                  };
-                  reader.readAsDataURL(file);
-                }
-              };
-              input.click();
-            }}
-            className="flex items-center justify-center gap-2 text-sm text-white/60 hover:text-white transition-colors py-2"
-          >
-            <Upload className="h-4 w-4" />
-            Upload from gallery
-          </button>
-        </div>
       </div>
-    );
-  }
-
-  // Syllabus browser screen
-  if (step === 'syllabus') {
-    return (
-      <SyllabusBrowser
-        onSelectTopic={handleSelectSyllabusTopic}
-        onBack={() => setStep('upload')}
-      />
     );
   }
 
@@ -998,11 +961,31 @@ export default function Index() {
   // Chat screen
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Header */}
+      {/* Header with burger menu */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-4 pt-[max(1rem,env(safe-area-inset-top))]">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <button onClick={() => setStep('preview')} className="text-sm text-muted-foreground hover:text-foreground">← Back</button>
-          <img src={orbitLogo} alt="Orbit" className="h-12 w-auto" />
+          <BurgerMenu
+            onNewProblem={() => {
+              setStep('home');
+              setMessages([]);
+              setImagePreview(null);
+              setAnalysis(null);
+              setQuestionText('');
+            }}
+            onBrowseSyllabus={() => {
+              setStep('home');
+              setMessages([]);
+              setImagePreview(null);
+              setAnalysis(null);
+            }}
+            onSettings={() => setStep('setup')}
+          />
+          <div className="flex items-center gap-2">
+            <img src={orbitIcon} alt="Orbit" className="h-8 w-auto" />
+            {analysis?.topic && (
+              <span className="text-sm text-muted-foreground">{analysis.topic}</span>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
