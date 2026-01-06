@@ -28,6 +28,8 @@ const VoiceSession: React.FC<VoiceSessionProps> = ({ config, onEnd, onSwitchToTe
   
   const chatRef = useRef<RealtimeChat | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
+  const initializingRef = useRef(false);
+  const currentTranscriptRef = useRef('');
 
   // Auto-scroll transcript
   useEffect(() => {
@@ -68,17 +70,19 @@ const VoiceSession: React.FC<VoiceSessionProps> = ({ config, onEnd, onSwitchToTe
       case 'response.audio_transcript.delta':
         // AI is speaking - accumulate transcript
         if (event.delta) {
-          setCurrentTranscript(prev => prev + event.delta);
+          currentTranscriptRef.current += event.delta;
+          setCurrentTranscript(currentTranscriptRef.current);
           setIsSpeaking(true);
         }
         break;
         
       case 'response.audio_transcript.done':
         // AI finished speaking this segment
-        if (currentTranscript || event.transcript) {
-          const content = (event.transcript as string) || currentTranscript;
+        if (currentTranscriptRef.current || event.transcript) {
+          const content = (event.transcript as string) || currentTranscriptRef.current;
           const id = event.item_id || `assistant-${Date.now()}`;
           setTranscript(prev => [...prev, { id, role: 'assistant', content }]);
+          currentTranscriptRef.current = '';
           setCurrentTranscript('');
         }
         break;
@@ -101,7 +105,7 @@ const VoiceSession: React.FC<VoiceSessionProps> = ({ config, onEnd, onSwitchToTe
         });
         break;
     }
-  }, [currentTranscript, toast]);
+  }, [toast]);
 
   const handleConnectionChange = useCallback((connected: boolean) => {
     if (connected) {
@@ -116,8 +120,14 @@ const VoiceSession: React.FC<VoiceSessionProps> = ({ config, onEnd, onSwitchToTe
     }
   }, [connectionState, toast]);
 
-  // Initialize realtime chat
+  // Initialize realtime chat - only once
   useEffect(() => {
+    // Prevent multiple initializations
+    if (initializingRef.current || chatRef.current) {
+      return;
+    }
+    initializingRef.current = true;
+
     const initChat = async () => {
       try {
         chatRef.current = new RealtimeChat(handleEvent, handleConnectionChange);
@@ -137,8 +147,11 @@ const VoiceSession: React.FC<VoiceSessionProps> = ({ config, onEnd, onSwitchToTe
 
     return () => {
       chatRef.current?.disconnect();
+      chatRef.current = null;
+      initializingRef.current = false;
     };
-  }, [config, handleEvent, handleConnectionChange, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleEndCall = () => {
     chatRef.current?.disconnect();
