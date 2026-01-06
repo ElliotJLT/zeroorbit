@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Camera, Shuffle, ChevronRight, Calculator, BarChart3, Compass, BookOpen } from 'lucide-react';
+import { Camera, Shuffle, ChevronRight, Calculator, BarChart3, Compass, BookOpen, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import orbitLogo from '@/assets/orbit-logo.png';
 import orbitIcon from '@/assets/orbit-icon.png';
@@ -39,7 +39,8 @@ export default function HomeScreen({
   onSelectTopic,
   onTestMe,
   onSignIn,
-}: HomeScreenProps) {
+  onShowInfo,
+}: HomeScreenProps & { onShowInfo?: () => void }) {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -56,10 +57,12 @@ export default function HomeScreen({
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
       <header className="p-4 flex items-center justify-between border-b border-border">
-        <div className="flex items-center gap-2">
-          <img src={orbitIcon} alt="Orbit" className="h-8 w-auto" />
-          <span className="font-semibold text-lg">Orbit</span>
-        </div>
+        <button 
+          onClick={onShowInfo}
+          className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors"
+        >
+          <Info className="h-5 w-5 text-muted-foreground" />
+        </button>
         <button onClick={onSignIn} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
           Sign in
         </button>
@@ -158,9 +161,10 @@ export default function HomeScreen({
       </main>
 
       {/* Footer */}
-      <footer className="p-4 border-t border-border">
-        <p className="text-xs text-muted-foreground text-center">
-          Built with Zero Gravity mentors • 24/7 help
+      <footer className="p-4 border-t border-border text-center">
+        <img src={orbitIcon} alt="Zero Gravity" className="h-6 w-auto mx-auto mb-1 opacity-50" />
+        <p className="text-xs text-muted-foreground">
+          Built with Zero Gravity
         </p>
       </footer>
     </div>
