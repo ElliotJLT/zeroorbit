@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, X, Camera, BookOpen, Settings } from 'lucide-react';
+import { Menu, Camera, BookOpen, Settings, TrendingUp, Lock } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 interface BurgerMenuProps {
@@ -57,6 +57,20 @@ export default function BurgerMenu({ onNewProblem, onBrowseSyllabus, onSettings 
                 <p className="text-sm text-muted-foreground">Pick a topic to practice</p>
               </div>
             </button>
+
+            {/* My Progress - Locked */}
+            <div className="w-full flex items-center gap-3 p-4 rounded-xl bg-muted/30 opacity-60 cursor-not-allowed">
+              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center relative">
+                <TrendingUp className="h-5 w-5 text-muted-foreground" />
+                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-muted-foreground flex items-center justify-center">
+                  <Lock className="h-2.5 w-2.5 text-background" />
+                </div>
+              </div>
+              <div>
+                <p className="font-medium text-muted-foreground">My Progress</p>
+                <p className="text-sm text-muted-foreground/70">Coming soon</p>
+              </div>
+            </div>
 
             {onSettings && (
               <button

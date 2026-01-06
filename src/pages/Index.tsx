@@ -580,6 +580,12 @@ export default function Index() {
         onSelectTopic={handleSelectSyllabusTopic}
         onTestMe={handleTestMe}
         onSignIn={() => navigate('/auth')}
+        onShowInfo={() => {
+          toast({
+            title: 'About Orbit',
+            description: 'Orbit is your AI maths tutor, available 24/7 to help you ace A-Level Maths. Built by Zero Gravity mentors.',
+          });
+        }}
       />
     );
   }
