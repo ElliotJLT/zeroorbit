@@ -84,33 +84,24 @@ export default function HomeScreen({
             <p className="text-muted-foreground">AQA • Edexcel • OCR</p>
           </div>
 
-          {/* Primary Actions */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* Test Me Button */}
-            <Button
-              onClick={onTestMe}
-              className="h-24 flex flex-col items-center justify-center gap-2 rounded-2xl bg-primary/10 hover:bg-primary/20 border border-primary/30 text-foreground"
-            >
-              <Shuffle className="h-6 w-6 text-primary" />
-              <span className="font-medium">Test Me</span>
-            </Button>
+          {/* Primary CTA - Snap a Question */}
+          <Button
+            onClick={onSnapQuestion}
+            className="w-full h-16 flex items-center justify-center gap-3 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-lg shadow-lg"
+          >
+            <Camera className="h-6 w-6" />
+            <span>Snap a Question</span>
+          </Button>
 
-            {/* Snap Question Button */}
-            <Button
-              onClick={onSnapQuestion}
-              className="h-24 flex flex-col items-center justify-center gap-2 rounded-2xl bg-card hover:bg-muted border border-border text-foreground"
-            >
-              <Camera className="h-6 w-6 text-muted-foreground" />
-              <span className="font-medium">Snap Question</span>
-            </Button>
+          {/* Or Divider */}
+          <div className="flex items-center gap-4">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-sm text-muted-foreground">or</span>
+            <div className="flex-1 h-px bg-border" />
           </div>
 
-          {/* Syllabus Browser */}
+          {/* Secondary - Browse Syllabus */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary" />
-              <h2 className="font-medium">Browse Syllabus</h2>
-            </div>
 
             {loadingTopics ? (
               <div className="text-center py-8 text-muted-foreground">Loading syllabus...</div>
