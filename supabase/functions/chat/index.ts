@@ -69,9 +69,14 @@ const tutorResponseTool = {
           type: "string",
           enum: ["ask_student", "wait_for_working", "give_hint", "move_on"],
           description: "What should happen next in the conversation"
+        },
+        student_behavior: {
+          type: "string",
+          enum: ["attempted_step", "asked_for_answer", "expressed_confusion", "asked_clarification", "other"],
+          description: "Classify what the student just did in their last message. Use 'other' for the first message or greetings."
         }
       },
-      required: ["reply_text", "topic", "difficulty", "mode", "next_action"],
+      required: ["reply_text", "topic", "difficulty", "mode", "next_action", "student_behavior"],
       additionalProperties: false
     }
   }

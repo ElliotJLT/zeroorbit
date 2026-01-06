@@ -19,22 +19,28 @@ export type Database = {
           content: string
           created_at: string | null
           id: string
+          input_method: string | null
           sender: Database["public"]["Enums"]["message_sender"]
           session_id: string
+          student_behavior: string | null
         }
         Insert: {
           content: string
           created_at?: string | null
           id?: string
+          input_method?: string | null
           sender: Database["public"]["Enums"]["message_sender"]
           session_id: string
+          student_behavior?: string | null
         }
         Update: {
           content?: string
           created_at?: string | null
           id?: string
+          input_method?: string | null
           sender?: Database["public"]["Enums"]["message_sender"]
           session_id?: string
+          student_behavior?: string | null
         }
         Relationships: [
           {
@@ -119,34 +125,52 @@ export type Database = {
       }
       sessions: {
         Row: {
+          beta_feedback: string | null
+          beta_tester_name: string | null
           confidence_after: number | null
           created_at: string | null
+          first_input_method: string | null
           id: string
+          post_confidence: number | null
           question_image_url: string | null
           question_text: string
+          session_completed: boolean | null
           topic_id: string | null
           user_id: string
           working_image_url: string | null
+          would_use_again: string | null
         }
         Insert: {
+          beta_feedback?: string | null
+          beta_tester_name?: string | null
           confidence_after?: number | null
           created_at?: string | null
+          first_input_method?: string | null
           id?: string
+          post_confidence?: number | null
           question_image_url?: string | null
           question_text: string
+          session_completed?: boolean | null
           topic_id?: string | null
           user_id: string
           working_image_url?: string | null
+          would_use_again?: string | null
         }
         Update: {
+          beta_feedback?: string | null
+          beta_tester_name?: string | null
           confidence_after?: number | null
           created_at?: string | null
+          first_input_method?: string | null
           id?: string
+          post_confidence?: number | null
           question_image_url?: string | null
           question_text?: string
+          session_completed?: boolean | null
           topic_id?: string | null
           user_id?: string
           working_image_url?: string | null
+          would_use_again?: string | null
         }
         Relationships: [
           {

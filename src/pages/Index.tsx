@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, ArrowRight, X, Volume2, VolumeX, Mic, MicOff, Send, Upload, ChevronDown } from 'lucide-react';
+import { Camera, ArrowRight, X, Volume2, VolumeX, Mic, MicOff, Send, Upload, ChevronDown, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import orbitLogo from '@/assets/orbit-logo.png';
 import orbitIcon from '@/assets/orbit-icon.png';
+import BetaEntryModal from '@/components/BetaEntryModal';
+import PostSessionSurvey from '@/components/PostSessionSurvey';
 import {
   Select,
   SelectContent,
@@ -16,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+
 interface QuestionAnalysis {
   questionSummary: string;
   topic: string;
@@ -28,12 +31,15 @@ interface Message {
   sender: 'student' | 'tutor';
   content: string;
   imageUrl?: string;
+  inputMethod?: 'text' | 'voice' | 'photo';
+  studentBehavior?: string;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const TTS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/text-to-speech`;
 const MAX_FREE_EXCHANGES = 4;
 const UNLIMITED_TESTING = true;
+const BETA_MODE = true; // Enable beta testing features
 
 export default function Index() {
   const { user, loading } = useAuth();
@@ -61,6 +67,15 @@ export default function Index() {
   const [showInput, setShowInput] = useState(false);
   const [exchangeCount, setExchangeCount] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
+  
+  // Beta testing state
+  const [betaTesterName, setBetaTesterName] = useState<string | null>(() => 
+    BETA_MODE ? localStorage.getItem('betaTesterName') : null
+  );
+  const [showBetaEntry, setShowBetaEntry] = useState(BETA_MODE && !localStorage.getItem('betaTesterName'));
+  const [showSurvey, setShowSurvey] = useState(false);
+  const [firstInputMethod, setFirstInputMethod] = useState<'text' | 'voice' | 'photo' | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatFileInputRef = useRef<HTMLInputElement>(null);
@@ -90,7 +105,7 @@ export default function Index() {
       recognitionRef.current.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
         if (transcript.trim()) {
-          sendMessage(transcript);
+          sendMessage(transcript, 'voice');
         }
         setIsRecording(false);
       };
@@ -201,18 +216,66 @@ export default function Index() {
       const reader = new FileReader();
       reader.onloadend = () => {
         const newImageUrl = reader.result as string;
+        // Track photo as first input method if not set
+        if (BETA_MODE && !firstInputMethod) {
+          setFirstInputMethod('photo');
+        }
         // Add image as a student message
         const imageMessage: Message = {
           id: `msg-${Date.now()}`,
           sender: 'student',
           content: 'Here\'s another part of my question:',
           imageUrl: newImageUrl,
+          inputMethod: 'photo',
         };
         setMessages(prev => [...prev, imageMessage]);
         // Send to AI
-        sendMessage('I\'ve uploaded another image related to my question. Can you help me with this part too?');
+        sendMessage('I\'ve uploaded another image related to my question. Can you help me with this part too?', 'photo');
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle beta entry completion
+  const handleBetaEntryComplete = (name: string) => {
+    setBetaTesterName(name);
+    setShowBetaEntry(false);
+  };
+
+  // Handle survey completion
+  const handleSurveyComplete = async (data: {
+    confidence: number;
+    wouldUseAgain: 'yes' | 'no' | 'maybe';
+    feedback: string;
+  }) => {
+    // Log the beta session data
+    console.log('Beta session complete:', {
+      betaTesterName,
+      firstInputMethod,
+      messageCount: messages.length,
+      studentBehaviors: messages.filter(m => m.studentBehavior).map(m => m.studentBehavior),
+      ...data,
+    });
+    
+    setShowSurvey(false);
+    toast({
+      title: 'Thanks for your feedback! 🙏',
+      description: 'Your input helps us improve Orbit.',
+    });
+    
+    // Reset for next session
+    setStep('intro');
+    setMessages([]);
+    setFirstInputMethod(null);
+  };
+
+  // End session and show survey
+  const handleEndSession = () => {
+    if (BETA_MODE && messages.length > 2) {
+      setShowSurvey(true);
+    } else {
+      setStep('intro');
+      setMessages([]);
     }
   };
 
@@ -296,7 +359,7 @@ export default function Index() {
     }
   };
 
-  const streamChat = async (allMessages: Message[]): Promise<string> => {
+  const streamChat = async (allMessages: Message[]): Promise<{ reply_text: string; student_behavior?: string }> => {
     const response = await fetch(CHAT_URL, {
       method: 'POST',
       headers: {
@@ -315,12 +378,20 @@ export default function Index() {
     if (!response.ok) throw new Error('Failed to chat');
 
     const data = await response.json();
-    return data.reply_text || data.content || "I'm having trouble responding. Try again?";
+    return {
+      reply_text: data.reply_text || data.content || "I'm having trouble responding. Try again?",
+      student_behavior: data.student_behavior,
+    };
   };
 
-  const sendMessage = async (content?: string) => {
+  const sendMessage = async (content?: string, inputMethod: 'text' | 'voice' | 'photo' = 'text') => {
     const messageContent = content || newMessage.trim();
     if (!messageContent || sending) return;
+
+    // Track first input method for beta testing
+    if (BETA_MODE && !firstInputMethod) {
+      setFirstInputMethod(inputMethod);
+    }
 
     if (!UNLIMITED_TESTING && exchangeCount >= MAX_FREE_EXCHANGES) {
       sessionStorage.setItem('pendingQuestion', JSON.stringify({
@@ -342,6 +413,7 @@ export default function Index() {
       id: `msg-${Date.now()}`,
       sender: 'student',
       content: messageContent,
+      inputMethod,
     };
 
     const placeholderId = `temp-${Date.now()}`;
@@ -353,12 +425,12 @@ export default function Index() {
 
     try {
       const allMessages = [...messages, studentMessage];
-      const responseText = await streamChat(allMessages);
+      const { reply_text, student_behavior } = await streamChat(allMessages);
 
       setMessages((prev) =>
         prev.map((m) =>
           m.id === placeholderId
-            ? { ...m, id: `msg-${Date.now()}`, content: responseText }
+            ? { ...m, id: `msg-${Date.now()}`, content: reply_text, studentBehavior: student_behavior }
             : m
         )
       );
@@ -736,17 +808,30 @@ export default function Index() {
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <button onClick={() => setStep('preview')} className="text-sm text-muted-foreground hover:text-foreground">← Back</button>
           <img src={orbitLogo} alt="Orbit" className="h-12 w-auto" />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              if (isSpeaking) stopSpeaking();
-              setVoiceEnabled(!voiceEnabled);
-            }}
-            className={`rounded-full ${isSpeaking ? 'text-primary' : ''}`}
-          >
-            {voiceEnabled ? <Volume2 className={`h-5 w-5 ${isSpeaking ? 'animate-pulse' : ''}`} /> : <VolumeX className="h-5 w-5" />}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                if (isSpeaking) stopSpeaking();
+                setVoiceEnabled(!voiceEnabled);
+              }}
+              className={`rounded-full ${isSpeaking ? 'text-primary' : ''}`}
+            >
+              {voiceEnabled ? <Volume2 className={`h-5 w-5 ${isSpeaking ? 'animate-pulse' : ''}`} /> : <VolumeX className="h-5 w-5" />}
+            </Button>
+            {BETA_MODE && messages.length > 2 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleEndSession}
+                className="rounded-full text-muted-foreground hover:text-foreground"
+                title="End Session"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -939,6 +1024,18 @@ export default function Index() {
           </div>
         </div>
       )}
+      
+      {/* Beta Entry Modal */}
+      <BetaEntryModal 
+        open={showBetaEntry} 
+        onComplete={handleBetaEntryComplete} 
+      />
+      
+      {/* Post-Session Survey Modal */}
+      <PostSessionSurvey 
+        open={showSurvey} 
+        onComplete={handleSurveyComplete} 
+      />
     </div>
   );
 }
