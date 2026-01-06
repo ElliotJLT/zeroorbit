@@ -326,12 +326,17 @@ export default function Index() {
     setIsAnalyzing(true);
     
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+      
       const response = await supabase.functions.invoke('analyze-question', {
         body: { 
           imageBase64: imagePreview,
           questionText: questionText 
-        }
+        },
       });
+      
+      clearTimeout(timeoutId);
 
       if (response.error) throw new Error(response.error.message);
 
