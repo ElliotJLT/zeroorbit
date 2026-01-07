@@ -245,6 +245,9 @@ export default function Index() {
     }
   };
 
+  // State for pending image upload (to show intent chips)
+  const [pendingImage, setPendingImage] = useState<{ url: string; mode: 'working' | 'question' } | null>(null);
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, mode: 'working' | 'question') => {
     const file = e.target.files?.[0];
     if (file && step === 'chat') {
@@ -256,30 +259,127 @@ export default function Index() {
           setFirstInputMethod('photo');
         }
         
-        const messageContent = mode === 'working' 
-          ? "Here's my working." 
-          : "New question.";
-        
-        // Add image as a student message
-        const imageMessage: Message = {
-          id: `msg-${Date.now()}`,
-          sender: 'student',
-          content: messageContent,
-          imageUrl: newImageUrl,
-          inputMethod: 'photo',
-        };
-        setMessages(prev => [...prev, imageMessage]);
-        
-        // Send to AI with image_type context
-        const aiPrompt = mode === 'working'
-          ? '[image_type:working] Student has uploaded their working. Check for errors and guide next step.'
-          : '[image_type:question] Student has uploaded a new question image.';
-        sendMessage(aiPrompt, 'photo');
+        // Show the image with intent chips instead of auto-sending
+        setPendingImage({ url: newImageUrl, mode });
       };
       reader.readAsDataURL(file);
     }
     // Reset the input so same file can be selected again
     e.target.value = '';
+  };
+
+  const confirmImageUpload = (intent: string) => {
+    if (!pendingImage) return;
+    
+    // Add image as a student message with the selected intent
+    const imageMessage: Message = {
+      id: `msg-${Date.now()}`,
+      sender: 'student',
+      content: intent,
+      imageUrl: pendingImage.url,
+      inputMethod: 'photo',
+    };
+    setMessages(prev => [...prev, imageMessage]);
+    
+    // Clear pending image
+    const imageMode = pendingImage.mode;
+    setPendingImage(null);
+    
+    // Get tutor response with image context (pass mode via streamChat)
+    fetchTutorResponseWithImage(imageMessage, imageMode);
+  };
+
+  const fetchTutorResponseWithImage = async (studentMessage: Message, imageMode: 'working' | 'question') => {
+    setSending(true);
+    
+    const placeholderId = `temp-${Date.now()}`;
+    setMessages((prev) => [
+      ...prev,
+      { id: placeholderId, sender: 'tutor', content: '' },
+    ]);
+    
+    try {
+      const allMessages = [...messages, studentMessage];
+      const response = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          messages: allMessages.map((m) => ({
+            role: m.sender,
+            content: m.content,
+          })),
+          questionContext: `A-Level student (${examBoard || 'Unknown board'}), current grade: ${currentGrade || 'Unknown'}, target: ${targetGrade || 'Unknown'}. Struggles with: ${struggles || 'Not specified'}. Question: ${questionText || 'See attached image'}`,
+          image_type: imageMode,
+          latest_image_url: studentMessage.imageUrl,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to chat');
+
+      const data = await response.json();
+      const replyMessages = data.reply_messages || [data.reply_text || data.content || "I'm having trouble responding. Try again?"];
+      
+      // Display messages with typing effect
+      await displayMessagesSequentially(replyMessages, placeholderId, data.student_behavior);
+      
+    } catch (error) {
+      console.error('Chat error:', error);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === placeholderId
+            ? { ...m, content: "Sorry, I'm having trouble. Try again?" }
+            : m
+        )
+      );
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const displayMessagesSequentially = async (
+    replyMessages: string[], 
+    placeholderId: string, 
+    studentBehavior?: string
+  ) => {
+    // First message replaces placeholder with typing effect
+    const firstReply = replyMessages[0];
+    await typeMessage(placeholderId, firstReply, studentBehavior);
+    
+    // Additional messages appear after delay with typing effect
+    for (let i = 1; i < replyMessages.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      const newMsgId = `msg-${Date.now()}-${i}`;
+      setMessages(prev => [...prev, { id: newMsgId, sender: 'tutor', content: '' }]);
+      await typeMessage(newMsgId, replyMessages[i]);
+    }
+    
+    // Speak the last message
+    if (voiceEnabled && replyMessages.length > 0) {
+      const lastMsg = replyMessages[replyMessages.length - 1];
+      speakText(lastMsg, `msg-${Date.now()}`);
+    }
+  };
+
+  const typeMessage = async (messageId: string, fullText: string, studentBehavior?: string) => {
+    const words = fullText.split(' ');
+    let currentText = '';
+    
+    for (let i = 0; i < words.length; i++) {
+      currentText += (i === 0 ? '' : ' ') + words[i];
+      const textToShow = currentText;
+      setMessages(prev =>
+        prev.map(m =>
+          m.id === messageId
+            ? { ...m, content: textToShow, studentBehavior: i === words.length - 1 ? studentBehavior : undefined }
+            : m
+        )
+      );
+      // Variable delay for natural feel
+      await new Promise(resolve => setTimeout(resolve, 20 + Math.random() * 30));
+    }
   };
 
   // Handle beta entry completion
@@ -517,31 +617,29 @@ export default function Index() {
       const allMessages = [...messages, studentMessage];
       const { reply_messages, student_behavior } = await streamChat(allMessages);
 
-      // Replace placeholder with first message, then add remaining messages with delay
+      // Replace placeholder with first message using typing effect
       const firstMsg = reply_messages[0];
       const remainingMsgs = reply_messages.slice(1);
-      const firstMsgId = `msg-${Date.now()}`;
       
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === placeholderId
-            ? { ...m, id: firstMsgId, content: firstMsg, studentBehavior: student_behavior }
-            : m
-        )
-      );
+      // Type out first message
+      await typeMessage(placeholderId, firstMsg, student_behavior);
       
-      // Auto-play voice for first reply
-      if (voiceEnabled) speakText(firstMsg, firstMsgId);
+      // Auto-play voice for combined messages
+      if (voiceEnabled) {
+        const fullText = reply_messages.join(' ');
+        speakText(fullText, placeholderId);
+      }
       
-      // Add remaining messages with slight delays for natural feel
+      // Add remaining messages with slight delays and typing effect
       for (let i = 0; i < remainingMsgs.length; i++) {
         await new Promise(resolve => setTimeout(resolve, 400));
         const msgContent = remainingMsgs[i];
         const msgId = `msg-${Date.now()}-${i}`;
         setMessages((prev) => [
           ...prev,
-          { id: msgId, sender: 'tutor', content: msgContent }
+          { id: msgId, sender: 'tutor', content: '' }
         ]);
+        await typeMessage(msgId, msgContent);
       }
 
       if (!UNLIMITED_TESTING) {
@@ -1144,8 +1242,82 @@ export default function Index() {
               onChange={(e) => handleImageUpload(e, 'question')} 
             />
             
-            {/* Text input - full width when shown */}
-            {showInput ? (
+            {/* Pending image with intent chips */}
+            {pendingImage ? (
+              <div className="flex flex-col items-center gap-4">
+                {/* Image preview */}
+                <div className="relative">
+                  <img 
+                    src={pendingImage.url} 
+                    alt="Your upload" 
+                    className="max-h-32 rounded-xl border border-border"
+                  />
+                  <button
+                    onClick={() => setPendingImage(null)}
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive flex items-center justify-center"
+                  >
+                    <X className="h-3 w-3 text-destructive-foreground" />
+                  </button>
+                </div>
+                
+                {/* Intent chips based on mode */}
+                <div className="flex flex-wrap justify-center gap-2">
+                  {pendingImage.mode === 'working' ? (
+                    <>
+                      <button
+                        onClick={() => confirmImageUpload("Check my working")}
+                        className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                      >
+                        Check my working
+                      </button>
+                      <button
+                        onClick={() => confirmImageUpload("Is this right?")}
+                        className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                      >
+                        Is this right?
+                      </button>
+                      <button
+                        onClick={() => confirmImageUpload("What's next?")}
+                        className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                      >
+                        What's next?
+                      </button>
+                      <button
+                        onClick={() => confirmImageUpload("I'm stuck here")}
+                        className="px-4 py-2 rounded-full bg-muted text-muted-foreground text-sm hover:bg-muted/80 transition-colors"
+                      >
+                        I'm stuck here
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => confirmImageUpload("Help me solve this")}
+                        className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                      >
+                        Help me solve this
+                      </button>
+                      <button
+                        onClick={() => confirmImageUpload("Where do I start?")}
+                        className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                      >
+                        Where do I start?
+                      </button>
+                      <button
+                        onClick={() => confirmImageUpload("Explain the question")}
+                        className="px-4 py-2 rounded-full bg-muted text-muted-foreground text-sm hover:bg-muted/80 transition-colors"
+                      >
+                        Explain the question
+                      </button>
+                    </>
+                  )}
+                </div>
+                
+                <p className="text-xs text-muted-foreground">
+                  Tap an option or type your own message
+                </p>
+              </div>
+            ) : showInput ? (
               <div className="flex items-center gap-2">
                 <Input
                   placeholder="Type your message..."
