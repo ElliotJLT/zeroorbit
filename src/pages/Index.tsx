@@ -1242,9 +1242,9 @@ export default function Index() {
               onChange={(e) => handleImageUpload(e, 'question')} 
             />
             
-            {/* Pending image with intent chips */}
+            {/* Pending image with intent chips + optional text */}
             {pendingImage ? (
-              <div className="flex flex-col items-center gap-4">
+              <div className="flex flex-col items-center gap-4 w-full">
                 {/* Image preview */}
                 <div className="relative">
                   <img 
@@ -1313,9 +1313,31 @@ export default function Index() {
                   )}
                 </div>
                 
-                <p className="text-xs text-muted-foreground">
-                  Tap an option or type your own message
-                </p>
+                {/* Optional text input */}
+                <div className="w-full flex items-center gap-2">
+                  <Input
+                    placeholder="Add context or specify what you need help with (optional)"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        confirmImageUpload(newMessage.trim() || (pendingImage.mode === 'working' ? "Check my working" : "Help me with this"));
+                      }
+                    }}
+                    className="flex-1 rounded-2xl bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary h-12"
+                  />
+                  <button 
+                    onClick={() => confirmImageUpload(newMessage.trim() || (pendingImage.mode === 'working' ? "Check my working" : "Help me with this"))}
+                    disabled={sending}
+                    className="w-12 h-12 rounded-full flex items-center justify-center disabled:opacity-50"
+                    style={{ 
+                      background: 'linear-gradient(135deg, #00FAD7 0%, #00C4AA 100%)', 
+                    }}
+                  >
+                    <Send className="h-5 w-5 text-background" />
+                  </button>
+                </div>
               </div>
             ) : showInput ? (
               <div className="flex items-center gap-2">
