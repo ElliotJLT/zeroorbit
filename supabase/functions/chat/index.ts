@@ -5,9 +5,29 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const buildSystemPrompt = (userContext?: { level: string; board: string; tier?: string; targetGrade?: string }) => {
+const buildSystemPrompt = (
+  userContext?: { level: string; board: string; tier?: string; targetGrade?: string },
+  imageType?: 'working' | 'question'
+) => {
   const contextLine = userContext 
     ? `\n\nStudent: ${userContext.level}, board ${userContext.board || 'Unknown'}, current grade ${userContext.tier || 'unknown'}, target ${userContext.targetGrade || 'unknown'}.`
+    : '';
+
+  const imageHandling = imageType === 'working'
+    ? `\n\n## Working Image Context
+The student has just uploaded an image of their working. Your job is to:
+1. Analyse their work carefully - look for correct steps AND mistakes
+2. Acknowledge what they got right first (briefly)
+3. If there's an error, point it out clearly and ask them to try again
+4. If correct, guide them to the next step
+5. Do NOT re-explain the original question or ask "what is this question about"
+6. Focus on: "I can see you've done X. Now let's look at Y."`
+    : imageType === 'question'
+    ? `\n\n## New Question Context
+The student has just uploaded a new question image. Your job is to:
+1. Parse and understand the question
+2. Start the tutoring flow - ask what they've tried or suggest a first step
+3. Do NOT solve it for them immediately`
     : '';
 
   return `You are Orbit, a UK A-Level Maths tutor. Your job is to help the student learn and perform in exams.
@@ -41,7 +61,7 @@ If the user explicitly asks for the final answer or to stop tutoring:
   - Give the final answer.
   - Show the minimum working needed to verify correctness.
   - Do not introduce new concepts or ask Socratic questions.
-- If the user has not demonstrated understanding yet, explain why you can't give a bare answer and offer a short hint instead.${contextLine}`;
+- If the user has not demonstrated understanding yet, explain why you can't give a bare answer and offer a short hint instead.${contextLine}${imageHandling}`;
 };
 
 const tutorResponseTool = {
@@ -100,19 +120,22 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, questionContext, userContext } = await req.json();
+    const { messages, questionContext, userContext, image_type, latest_image_url } = await req.json();
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
     if (!OPENAI_API_KEY) {
       throw new Error("OPENAI_API_KEY is not configured");
     }
 
-    console.log("Chat request with", messages.length, "messages, user context:", userContext);
+    console.log("Chat request with", messages.length, "messages, user context:", userContext, "image_type:", image_type);
 
-    // Build context-aware system prompt
-    let systemPrompt = buildSystemPrompt(userContext);
+    // Build context-aware system prompt with image type
+    let systemPrompt = buildSystemPrompt(userContext, image_type);
     if (questionContext) {
       systemPrompt += `\n\n## Current Question Context\n${questionContext}`;
+    }
+    if (latest_image_url) {
+      systemPrompt += `\n\n[Student has just uploaded an image: ${latest_image_url}]`;
     }
 
     // Build messages array for AI

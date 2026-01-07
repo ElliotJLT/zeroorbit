@@ -19,6 +19,7 @@ export type Database = {
           content: string
           created_at: string | null
           id: string
+          image_url: string | null
           input_method: string | null
           sender: Database["public"]["Enums"]["message_sender"]
           session_id: string
@@ -28,6 +29,7 @@ export type Database = {
           content: string
           created_at?: string | null
           id?: string
+          image_url?: string | null
           input_method?: string | null
           sender: Database["public"]["Enums"]["message_sender"]
           session_id: string
@@ -37,6 +39,7 @@ export type Database = {
           content?: string
           created_at?: string | null
           id?: string
+          image_url?: string | null
           input_method?: string | null
           sender?: Database["public"]["Enums"]["message_sender"]
           session_id?: string
