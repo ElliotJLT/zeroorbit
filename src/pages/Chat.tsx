@@ -22,7 +22,10 @@ interface Message {
   sender: 'student' | 'tutor';
   content: string;
   created_at: string;
+  image_url?: string | null;
 }
+
+type CameraMode = 'working' | 'question';
 
 interface QuestionAnalysis {
   questionSummary: string;
@@ -64,10 +67,12 @@ export default function Chat() {
   const [currentTopic, setCurrentTopic] = useState<string>('');
   const [currentDifficulty, setCurrentDifficulty] = useState<string>('');
   const [userContext, setUserContext] = useState<UserContext | null>(null);
+  const [cameraMode, setCameraMode] = useState<CameraMode>('working');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const workingFileInputRef = useRef<HTMLInputElement>(null);
+  const questionFileInputRef = useRef<HTMLInputElement>(null);
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -359,15 +364,178 @@ export default function Chat() {
     setSending(false);
   };
 
-  const handleNewImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, mode: CameraMode) => {
     const file = e.target.files?.[0];
-    if (!file || !sessionId) return;
+    if (!file || !sessionId || !user) return;
 
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      await sendMessage("I have another question to show you (new image uploaded)");
-    };
-    reader.readAsDataURL(file);
+    setSending(true);
+
+    try {
+      // Upload to storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${sessionId}/${Date.now()}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('question-images')
+        .upload(fileName, file);
+
+      if (uploadError) {
+        toast({
+          variant: 'destructive',
+          title: 'Upload failed',
+          description: uploadError.message,
+        });
+        setSending(false);
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('question-images')
+        .getPublicUrl(fileName);
+
+      const messageContent = mode === 'working' 
+        ? "Here's my working." 
+        : "New question.";
+
+      // Create student message with image
+      const { data: studentMessage, error: studentError } = await supabase
+        .from('messages')
+        .insert({
+          session_id: sessionId,
+          sender: 'student',
+          content: messageContent,
+          image_url: publicUrl,
+        })
+        .select()
+        .single();
+
+      if (studentError) {
+        toast({
+          variant: 'destructive',
+          title: 'Error sending message',
+          description: studentError.message,
+        });
+        setSending(false);
+        return;
+      }
+
+      // If new question, update session's question_image_url
+      if (mode === 'question') {
+        await supabase
+          .from('sessions')
+          .update({ question_image_url: publicUrl })
+          .eq('id', sessionId);
+        
+        // Update local session state
+        setSession(prev => prev ? { ...prev, question_image_url: publicUrl } : prev);
+      }
+
+      setMessages(prev => [...prev, studentMessage]);
+
+      // Add placeholder for tutor response
+      const placeholderId = `temp-${Date.now()}`;
+      setMessages(prev => [...prev, {
+        id: placeholderId,
+        sender: 'tutor',
+        content: '',
+        created_at: new Date().toISOString(),
+      }]);
+
+      // Fetch tutor response with image context
+      const allMessages = [...messages, studentMessage];
+      const tutorResponse = await fetchTutorResponseWithImage(allMessages, mode, publicUrl);
+
+      if (tutorResponse.topic) setCurrentTopic(tutorResponse.topic);
+      if (tutorResponse.difficulty) setCurrentDifficulty(tutorResponse.difficulty);
+
+      const replyText = tutorResponse?.reply_text?.trim() || "I'm having trouble responding. Could you try again?";
+      
+      const { data: tutorMessage, error: msgError } = await supabase
+        .from('messages')
+        .insert({
+          session_id: sessionId,
+          sender: 'tutor',
+          content: replyText,
+        })
+        .select()
+        .single();
+
+      if (msgError) {
+        console.error('Message save error:', msgError);
+      }
+
+      setMessages(prev => prev.map(m => 
+        m.id === placeholderId 
+          ? (tutorMessage || { ...m, content: replyText }) 
+          : m
+      ));
+      
+      if (replyText) {
+        speakText(replyText);
+      }
+    } catch (error) {
+      console.error('Image upload error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error uploading image',
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
+    }
+
+    setSending(false);
+    // Reset file input
+    e.target.value = '';
+  };
+
+  const fetchTutorResponseWithImage = async (
+    allMessages: Message[], 
+    imageType: CameraMode, 
+    imageUrl: string
+  ): Promise<TutorResponse> => {
+    const response = await fetch(CHAT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({
+        messages: allMessages.map(m => ({
+          role: m.sender,
+          content: m.content,
+          image_url: m.image_url,
+        })),
+        questionContext: session?.question_text,
+        userContext: userContext,
+        image_type: imageType,
+        latest_image_url: imageUrl,
+      }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+      }
+      if (response.status === 402) {
+        throw new Error('AI credits depleted. Please try again later.');
+      }
+      throw new Error('Failed to get response');
+    }
+
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    // Handle reply_messages array format
+    if (data.reply_messages && Array.isArray(data.reply_messages)) {
+      return {
+        ...data,
+        reply_text: data.reply_messages.join('\n\n'),
+      };
+    }
+
+    return data as TutorResponse;
   };
 
   if (loading) {
@@ -465,6 +633,16 @@ export default function Chat() {
                   <span className="text-sm font-medium text-foreground">Orbit</span>
                 </div>
               )}
+              
+              {/* Show attached image if present */}
+              {message.image_url && (
+                <img 
+                  src={message.image_url} 
+                  alt="Student working"
+                  className="w-full max-h-48 object-contain rounded-xl mb-2 bg-muted/30"
+                />
+              )}
+              
               <p className={`text-sm leading-relaxed ${message.sender === 'student' ? 'text-right' : ''}`}>
                 {message.content || (
                   <span className="inline-flex items-center gap-1">
@@ -522,58 +700,66 @@ export default function Chat() {
       {/* Bottom action bar */}
       <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border p-4">
         <div className="max-w-2xl mx-auto">
-          <div className="flex items-center justify-center gap-4">
-            {/* Camera button */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={handleNewImage}
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={sending}
-              className="w-12 h-12 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors disabled:opacity-50"
-            >
-              <Camera className="h-5 w-5 text-muted-foreground" />
-            </button>
+          {/* Hidden file inputs */}
+          <input
+            ref={workingFileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => handleImageUpload(e, 'working')}
+          />
+          <input
+            ref={questionFileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => handleImageUpload(e, 'question')}
+          />
 
-            {/* Main mic/record button */}
+          {/* Primary CTA: Add working */}
+          <button
+            onClick={() => workingFileInputRef.current?.click()}
+            disabled={sending}
+            className="w-full py-4 px-6 rounded-2xl flex items-center justify-center gap-3 font-medium transition-all disabled:opacity-50"
+            style={{ 
+              background: 'linear-gradient(135deg, #00FAD7 0%, #00C4AA 100%)',
+              boxShadow: '0 4px 20px rgba(0,250,215,0.3)',
+              color: '#0B0D0F'
+            }}
+          >
+            {sending ? (
+              <div className="h-5 w-5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+            ) : (
+              <>
+                <Camera className="h-5 w-5" />
+                <span>Add working</span>
+              </>
+            )}
+          </button>
+
+          {/* Secondary actions */}
+          <div className="flex items-center justify-center gap-6 mt-4">
+            <button
+              onClick={() => questionFileInputRef.current?.click()}
+              disabled={sending}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+            >
+              New question
+            </button>
+            <span className="text-muted-foreground/50">•</span>
             <button
               onClick={() => setShowInput(true)}
               disabled={sending}
-              className="w-16 h-16 rounded-full flex items-center justify-center transition-all disabled:opacity-50"
-              style={{ 
-                background: 'linear-gradient(135deg, #00FAD7 0%, #00C4AA 100%)',
-                boxShadow: isSpeaking ? '0 0 30px rgba(0,250,215,0.5)' : '0 4px 20px rgba(0,250,215,0.3)'
-              }}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
             >
-              {sending ? (
-                <div className="h-5 w-5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
-              ) : (
-                <Mic className="h-6 w-6 text-background" />
-              )}
-            </button>
-
-            {/* Close/stop button */}
-            <button
-              onClick={() => {
-                if (isSpeaking) {
-                  stopSpeaking();
-                } else {
-                  navigate('/home');
-                }
-              }}
-              className="w-12 h-12 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
-            >
-              <X className="h-5 w-5 text-muted-foreground" />
+              Type a line
             </button>
           </div>
           
-          <p className="text-center text-xs text-muted-foreground mt-3">
-            Tap mic to type • Camera for new question
+          <p className="text-center text-xs text-muted-foreground mt-4">
+            Paper is your whiteboard — snap your work
           </p>
         </div>
       </div>
