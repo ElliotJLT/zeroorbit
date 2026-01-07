@@ -94,7 +94,8 @@ export default function Index() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const chatFileInputRef = useRef<HTMLInputElement>(null);
+  const workingFileInputRef = useRef<HTMLInputElement>(null);
+  const questionFileInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -244,7 +245,7 @@ export default function Index() {
     }
   };
 
-  const handleChatImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, mode: 'working' | 'question') => {
     const file = e.target.files?.[0];
     if (file && step === 'chat') {
       const reader = new FileReader();
@@ -254,20 +255,31 @@ export default function Index() {
         if (BETA_MODE && !firstInputMethod) {
           setFirstInputMethod('photo');
         }
+        
+        const messageContent = mode === 'working' 
+          ? "Here's my working." 
+          : "New question.";
+        
         // Add image as a student message
         const imageMessage: Message = {
           id: `msg-${Date.now()}`,
           sender: 'student',
-          content: 'Here\'s another part of my question:',
+          content: messageContent,
           imageUrl: newImageUrl,
           inputMethod: 'photo',
         };
         setMessages(prev => [...prev, imageMessage]);
-        // Send to AI
-        sendMessage('I\'ve uploaded another image related to my question. Can you help me with this part too?', 'photo');
+        
+        // Send to AI with image_type context
+        const aiPrompt = mode === 'working'
+          ? '[image_type:working] Student has uploaded their working. Check for errors and guide next step.'
+          : '[image_type:question] Student has uploaded a new question image.';
+        sendMessage(aiPrompt, 'photo');
       };
       reader.readAsDataURL(file);
     }
+    // Reset the input so same file can be selected again
+    e.target.value = '';
   };
 
   // Handle beta entry completion
@@ -1114,95 +1126,96 @@ export default function Index() {
       {(UNLIMITED_TESTING || exchangeCount < MAX_FREE_EXCHANGES) && (
         <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))] z-20">
           <div className="max-w-2xl mx-auto">
-            {/* Hidden file input for chat image upload */}
+            {/* Hidden file inputs for image uploads */}
             <input 
-              ref={chatFileInputRef} 
+              ref={workingFileInputRef} 
               type="file" 
               accept="image/*" 
               capture="environment" 
               className="hidden" 
-              onChange={handleChatImageUpload} 
+              onChange={(e) => handleImageUpload(e, 'working')} 
+            />
+            <input 
+              ref={questionFileInputRef} 
+              type="file" 
+              accept="image/*" 
+              capture="environment" 
+              className="hidden" 
+              onChange={(e) => handleImageUpload(e, 'question')} 
             />
             
-            <div className="flex items-center justify-center gap-3">
-              {/* Camera button - hidden when input shown */}
-              {!showInput && (
-                <button 
-                  onClick={() => chatFileInputRef.current?.click()} 
-                  disabled={sending} 
-                  className="w-12 h-12 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-all duration-300 disabled:opacity-50"
-                >
-                  <Camera className="h-5 w-5 text-muted-foreground" />
-                </button>
-              )}
-
-              {/* Mic button - hidden when input shown */}
-              {!showInput && (
-                <button
-                  onClick={isRecording ? stopRecording : startRecording}
-                  disabled={sending}
-                  className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 disabled:opacity-50 ${
-                    isRecording ? 'animate-pulse' : ''
-                  } ${justFinishedSpeaking && !isRecording && !isSpeaking ? 'animate-pulse-subtle' : ''}`}
-                  style={{ 
-                    background: isRecording 
-                      ? 'linear-gradient(135deg, #FF6B6B 0%, #EE5A5A 100%)' 
-                      : 'linear-gradient(135deg, #00FAD7 0%, #00C4AA 100%)', 
-                    boxShadow: isRecording 
-                      ? '0 0 30px rgba(255,107,107,0.5)' 
-                      : isSpeaking 
-                        ? '0 0 30px rgba(0,250,215,0.5)' 
-                        : '0 4px 20px rgba(0,250,215,0.3)' 
-                  }}
-                >
-                  {sending ? (
-                    <div className="h-5 w-5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
-                  ) : isRecording ? (
-                    <MicOff className="h-6 w-6 text-white" />
-                  ) : (
-                    <Mic className="h-6 w-6 text-background" />
-                  )}
-                </button>
-              )}
-
-              {/* Text input - appears when showInput is true */}
-              <div className={`flex-1 transition-all duration-300 overflow-hidden ${
-                showInput ? 'max-w-md opacity-100' : 'max-w-0 opacity-0'
-              }`}>
+            {/* Text input - full width when shown */}
+            {showInput ? (
+              <div className="flex items-center gap-2">
                 <Input
                   placeholder="Type your message..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
                   disabled={sending}
-                  autoFocus={showInput}
-                  className="rounded-2xl bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary h-12"
+                  autoFocus
+                  className="flex-1 rounded-2xl bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary h-12"
                 />
+                <button 
+                  onClick={() => newMessage.trim() && sendMessage()}
+                  disabled={sending || !newMessage.trim()}
+                  className="w-12 h-12 rounded-full bg-primary flex items-center justify-center disabled:opacity-50"
+                >
+                  <Send className="h-5 w-5 text-primary-foreground" />
+                </button>
+                <button 
+                  onClick={() => setShowInput(false)}
+                  className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
+                >
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </button>
               </div>
-
-              {/* Send button - transforms position */}
-              <button 
-                onClick={() => {
-                  if (showInput && newMessage.trim()) {
-                    sendMessage();
-                  } else {
-                    setShowInput(true);
-                  }
-                }}
-                disabled={sending || (showInput && !newMessage.trim())}
-                className={`rounded-full flex items-center justify-center transition-all duration-300 disabled:opacity-50 ${
-                  showInput 
-                    ? 'w-12 h-12 bg-primary' 
-                    : 'w-12 h-12 bg-muted hover:bg-muted/80'
-                }`}
-              >
-                <Send className={`h-5 w-5 transition-colors ${showInput ? 'text-background' : 'text-muted-foreground'}`} />
-              </button>
-            </div>
-            
-            <p className={`text-center text-xs text-muted-foreground mt-3 transition-opacity duration-300 ${showInput ? 'opacity-0' : ''}`}>
-              {isRecording ? 'Listening... tap to stop' : 'Tap mic to speak • Camera for more images'}
-            </p>
+            ) : (
+              <div className="flex flex-col items-center gap-3">
+                {/* Primary CTA: Add working */}
+                <button 
+                  onClick={() => workingFileInputRef.current?.click()} 
+                  disabled={sending} 
+                  className="flex items-center gap-2 px-6 py-3 rounded-full disabled:opacity-50 transition-all duration-300"
+                  style={{ 
+                    background: 'linear-gradient(135deg, #00FAD7 0%, #00C4AA 100%)', 
+                    boxShadow: '0 4px 20px rgba(0,250,215,0.3)' 
+                  }}
+                >
+                  {sending ? (
+                    <div className="h-5 w-5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Camera className="h-5 w-5 text-background" />
+                      <span className="font-medium text-background">Add working</span>
+                    </>
+                  )}
+                </button>
+                
+                {/* Secondary actions */}
+                <div className="flex items-center gap-4 text-sm">
+                  <button 
+                    onClick={() => questionFileInputRef.current?.click()}
+                    disabled={sending}
+                    className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                  >
+                    New question
+                  </button>
+                  <span className="text-muted-foreground/50">•</span>
+                  <button 
+                    onClick={() => setShowInput(true)}
+                    disabled={sending}
+                    className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                  >
+                    Type a line
+                  </button>
+                </div>
+                
+                <p className="text-center text-xs text-muted-foreground mt-1">
+                  Paper is your whiteboard — snap your work
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}
