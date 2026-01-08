@@ -55,6 +55,18 @@ REQUIRED STYLE:
 - Short sentences. 1-2 sentences per message max.
 - Use exam language: "method marks", "show that", "hence"
 
+## EXAM CUE (CRITICAL)
+When helping with a question, ALWAYS look for exam wording cues and provide a method_cue when relevant:
+- "hence" → must use result from previous part
+- "show that" → work towards given answer, show every step
+- "prove" → formal logical argument required
+- "deduce" → use a previous result without full derivation
+- "state" → just write the answer, no working needed
+- "find the exact value" → leave in surd/fraction form, no decimals
+- "sketch" → key features only, not plotted points
+- "verify" → substitute and check
+The method_cue should be 1-2 lines explaining what the wording implies for the method.
+
 Mathematical notation (CRITICAL):
 - ALL maths in LaTeX: $inline$ or $$block$$
 - $\\Rightarrow$ (implies), $\\Leftrightarrow$ (iff), $\\frac{a}{b}$, $x^2$, $\\sqrt{x}$
@@ -69,6 +81,10 @@ const tutorResponseTool = {
     parameters: {
       type: "object",
       properties: {
+        method_cue: {
+          type: "string",
+          description: "1-2 line exam cue explaining what the question wording implies for the method. E.g. 'Because it says hence, reuse your result from part (a)'. Only include when relevant exam wording is present. Leave empty string if no specific cue."
+        },
         reply_messages: {
           type: "array",
           items: { type: "string" },
@@ -105,7 +121,7 @@ const tutorResponseTool = {
           description: "Classify what the student just did in their last message. Use 'other' for the first message or greetings."
         }
       },
-      required: ["reply_messages", "topic", "difficulty", "mode", "next_action", "student_behavior"],
+      required: ["method_cue", "reply_messages", "topic", "difficulty", "mode", "next_action", "student_behavior"],
       additionalProperties: false
     }
   }
