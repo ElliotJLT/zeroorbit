@@ -1068,12 +1068,11 @@ export default function Index() {
             onSettings={() => setStep('setup')}
           />
           <div className="w-8" /> {/* Spacer for symmetry */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Button
               variant="ghost"
-              size="sm"
               onClick={() => setShowNewProblemModal(true)}
-              className="rounded-full text-muted-foreground hover:text-foreground gap-1.5 px-3"
+              className="h-11 rounded-full text-muted-foreground hover:text-foreground active:scale-95 gap-1.5 px-4 transition-all"
             >
               <Camera className="h-4 w-4" />
               <span className="text-sm">New Problem</span>
@@ -1083,7 +1082,7 @@ export default function Index() {
                 variant="ghost"
                 size="icon"
                 onClick={handleEndSession}
-                className="rounded-full text-muted-foreground hover:text-foreground"
+                className="w-11 h-11 rounded-full text-muted-foreground hover:text-foreground active:scale-95 transition-all"
                 title="End Session"
               >
                 <LogOut className="h-5 w-5" />
@@ -1218,9 +1217,9 @@ export default function Index() {
                   />
                   <button
                     onClick={() => setPendingImage(null)}
-                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive flex items-center justify-center"
+                    className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-destructive flex items-center justify-center active:scale-90 transition-transform"
                   >
-                    <X className="h-3 w-3 text-destructive-foreground" />
+                    <X className="h-4 w-4 text-destructive-foreground" />
                   </button>
                 </div>
                 
@@ -1230,25 +1229,25 @@ export default function Index() {
                     <>
                       <button
                         onClick={() => confirmImageUpload("Check my working")}
-                        className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                        className="min-h-[44px] px-5 py-3 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 active:scale-95 transition-all"
                       >
                         Check my working
                       </button>
                       <button
                         onClick={() => confirmImageUpload("Is this right?")}
-                        className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                        className="min-h-[44px] px-5 py-3 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 active:scale-95 transition-all"
                       >
                         Is this right?
                       </button>
                       <button
                         onClick={() => confirmImageUpload("What's next?")}
-                        className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                        className="min-h-[44px] px-5 py-3 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 active:scale-95 transition-all"
                       >
                         What's next?
                       </button>
                       <button
                         onClick={() => confirmImageUpload("I'm stuck here")}
-                        className="px-4 py-2 rounded-full bg-muted text-muted-foreground text-sm hover:bg-muted/80 transition-colors"
+                        className="min-h-[44px] px-5 py-3 rounded-full bg-muted text-muted-foreground text-sm hover:bg-muted/80 active:scale-95 transition-all"
                       >
                         I'm stuck here
                       </button>
@@ -1257,19 +1256,19 @@ export default function Index() {
                     <>
                       <button
                         onClick={() => confirmImageUpload("Help me solve this")}
-                        className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                        className="min-h-[44px] px-5 py-3 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 active:scale-95 transition-all"
                       >
                         Help me solve this
                       </button>
                       <button
                         onClick={() => confirmImageUpload("Where do I start?")}
-                        className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                        className="min-h-[44px] px-5 py-3 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 active:scale-95 transition-all"
                       >
                         Where do I start?
                       </button>
                       <button
                         onClick={() => confirmImageUpload("Explain the question")}
-                        className="px-4 py-2 rounded-full bg-muted text-muted-foreground text-sm hover:bg-muted/80 transition-colors"
+                        className="min-h-[44px] px-5 py-3 rounded-full bg-muted text-muted-foreground text-sm hover:bg-muted/80 active:scale-95 transition-all"
                       >
                         Explain the question
                       </button>
@@ -1323,9 +1322,9 @@ export default function Index() {
                 </button>
                 <button 
                   onClick={() => setShowInput(false)}
-                  className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
+                  className="w-11 h-11 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-all"
                 >
-                  <X className="h-4 w-4 text-muted-foreground" />
+                  <X className="h-5 w-5 text-muted-foreground" />
                 </button>
               </div>
             ) : (
@@ -1350,20 +1349,20 @@ export default function Index() {
                   )}
                 </button>
                 
-                {/* Secondary actions */}
-                <div className="flex items-center gap-4 text-sm">
+                {/* Secondary actions - 44pt touch targets per Apple HIG */}
+                <div className="flex items-center gap-6 text-sm">
                   <button 
                     onClick={() => questionFileInputRef.current?.click()}
                     disabled={sending}
-                    className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                    className="min-h-[44px] min-w-[44px] px-3 flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-95 transition-all disabled:opacity-50"
                   >
                     New question
                   </button>
-                  <span className="text-muted-foreground/50">•</span>
+                  <span className="text-muted-foreground/30">•</span>
                   <button 
                     onClick={() => setShowInput(true)}
                     disabled={sending}
-                    className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                    className="min-h-[44px] min-w-[44px] px-3 flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-95 transition-all disabled:opacity-50"
                   >
                     Type a line
                   </button>

@@ -54,15 +54,18 @@ export default function HomeScreen({
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Header */}
+      {/* Header - 44pt touch targets per Apple HIG */}
       <header className="p-4 flex items-center justify-between border-b border-border">
         <button 
           onClick={onShowInfo}
-          className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors"
+          className="w-11 h-11 -ml-1 rounded-full flex items-center justify-center hover:bg-muted active:scale-95 transition-all"
         >
           <Info className="h-5 w-5 text-muted-foreground" />
         </button>
-        <button onClick={onSignIn} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <button 
+          onClick={onSignIn} 
+          className="h-11 px-4 rounded-full text-sm text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition-all"
+        >
           Sign in
         </button>
       </header>
@@ -80,10 +83,10 @@ export default function HomeScreen({
             <p className="text-muted-foreground">AQA • Edexcel • OCR</p>
           </div>
 
-          {/* Primary CTA - Snap a Question */}
+          {/* Primary CTA - Snap a Question (min 44pt height, active feedback) */}
           <Button
             onClick={onSnapQuestion}
-            className="w-full h-16 flex items-center justify-center gap-3 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-lg shadow-lg"
+            className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl bg-primary hover:bg-primary/90 active:scale-[0.98] text-primary-foreground font-semibold text-lg shadow-lg transition-all"
           >
             <Camera className="h-6 w-6" />
             <span>Snap a Question</span>
@@ -101,11 +104,11 @@ export default function HomeScreen({
             <div className="flex-1 h-px bg-border" />
           </div>
 
-          {/* Arena CTA */}
+          {/* Arena CTA (min 44pt height, active feedback) */}
           <Button
             onClick={onTestMe}
             variant="outline"
-            className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl border-primary/30 hover:bg-primary/5 font-medium text-base"
+            className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl border-primary/30 hover:bg-primary/5 active:scale-[0.98] font-medium text-base transition-all"
           >
             <Swords className="h-5 w-5 text-primary" />
             <span>Test yourself in our Arena</span>
