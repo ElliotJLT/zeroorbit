@@ -1121,7 +1121,6 @@ export default function Index() {
                       <>Get Help<ArrowRight className="h-4 w-4 ml-2" /></>
                     )}
                   </Button>
-                  <p className="text-center text-xs text-muted-foreground">No sign-up required</p>
                 </div>
               </>
             )}

@@ -112,9 +112,6 @@ export default function HomeScreen({
           >
             <Swords className="h-5 w-5 text-primary" />
             <span>Test yourself in our Arena</span>
-            {!loadingTopics && (
-              <span className="text-muted-foreground text-sm">({topics.length} topics)</span>
-            )}
           </Button>
 
           {/* Topics Preview (non-interactive) */}
