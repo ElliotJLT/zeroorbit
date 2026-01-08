@@ -17,6 +17,7 @@ export interface QuestionAnalysis {
   topic: string;
   difficulty: string;
   socraticOpening: string;
+  methodCue?: string | null;
 }
 
 interface UserContext {
