@@ -224,7 +224,7 @@ export function useArenaSession() {
   }, [currentQuestionIndex, questionCount, selectedTopics, generateQuestion]);
 
   const skipQuestion = useCallback(() => {
-    // Record as skipped (incorrect)
+    // Record as skipped (incorrect) - fire and forget for speed
     if (currentQuestion) {
       const attemptData = {
         session_id: sessionId,
@@ -236,9 +236,11 @@ export function useArenaSession() {
         feedback_summary: 'Skipped',
       };
       
-      supabase.from('arena_attempts').insert(attemptData);
+      // Don't await - let it run in background
+      supabase.from('arena_attempts').insert(attemptData).then(() => {});
     }
     
+    // Immediately move to next question
     nextQuestion();
   }, [currentQuestion, sessionId, nextQuestion]);
 

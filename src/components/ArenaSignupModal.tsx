@@ -66,30 +66,30 @@ export default function ArenaSignupModal({
 
           {/* Benefits of signing up */}
           <div className="bg-muted/50 rounded-xl p-4 space-y-3">
-            <p className="font-semibold text-sm">Create an account to unlock:</p>
+            <p className="font-semibold text-sm">Get A-Level ready:</p>
             
             <div className="space-y-2">
               <div className="flex items-start gap-3">
                 <TrendingUp className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <div>
                   <p className="font-medium text-sm">Track your progress</p>
-                  <p className="text-xs text-muted-foreground">See your improvement over time</p>
+                  <p className="text-xs text-muted-foreground">Monitor your improvement across topics</p>
                 </div>
               </div>
               
               <div className="flex items-start gap-3">
                 <Target className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm">Personalised practice</p>
-                  <p className="text-xs text-muted-foreground">Questions adapt to your weak areas</p>
+                  <p className="font-medium text-sm">Target weak spots</p>
+                  <p className="text-xs text-muted-foreground">AI adapts to focus on your gaps</p>
                 </div>
               </div>
               
               <div className="flex items-start gap-3">
                 <Sparkles className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm">Spaced repetition</p>
-                  <p className="text-xs text-muted-foreground">Review topics at the perfect time</p>
+                  <p className="font-medium text-sm">Exam-ready revision</p>
+                  <p className="text-xs text-muted-foreground">Spaced practice for long-term retention</p>
                 </div>
               </div>
             </div>

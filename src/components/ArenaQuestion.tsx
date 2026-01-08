@@ -71,9 +71,11 @@ export default function ArenaQuestion({
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="bg-card rounded-xl p-4 border border-border">
           <p className="text-sm font-medium text-muted-foreground mb-2">Question</p>
-          <div className="prose prose-sm dark:prose-invert max-w-none">
-            <div className="whitespace-pre-wrap leading-relaxed">
-              <MathText text={question.question_text} />
+          <div className="border-t border-border pt-3">
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              <div className="whitespace-pre-wrap leading-relaxed">
+                <MathText text={question.question_text} />
+              </div>
             </div>
           </div>
         </div>
