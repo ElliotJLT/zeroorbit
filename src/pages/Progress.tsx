@@ -1,17 +1,26 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trophy, TrendingUp, Zap, Target, Flame } from 'lucide-react';
+import { ArrowLeft, Target, Flame, Clock, HelpCircle, TrendingDown, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import orbitLogo from '@/assets/orbit-logo.png';
+
+interface TopicStats {
+  attempts: number;
+  correct: number;
+  totalHints: number;
+  totalTimeSec: number;
+}
 
 interface LocalStats {
   questionsAttempted: number;
   questionsCorrect: number;
   sessionsCompleted: number;
   currentStreak: number;
-  topicBreakdown: Record<string, { attempts: number; correct: number }>;
+  topicBreakdown: Record<string, TopicStats>;
   lastPracticeDate?: string;
+  totalHintsUsed: number;
+  totalTimeSec: number;
 }
 
 const DEFAULT_STATS: LocalStats = {
@@ -20,6 +29,8 @@ const DEFAULT_STATS: LocalStats = {
   sessionsCompleted: 0,
   currentStreak: 0,
   topicBreakdown: {},
+  totalHintsUsed: 0,
+  totalTimeSec: 0,
 };
 
 function getLocalStats(): LocalStats {
@@ -38,20 +49,29 @@ export function updateLocalStats(update: Partial<LocalStats>) {
   localStorage.setItem('orbitProgress', JSON.stringify(updated));
 }
 
-export function recordAttempt(topicName: string, isCorrect: boolean) {
+export function recordAttempt(
+  topicName: string, 
+  isCorrect: boolean, 
+  hintsUsed: number = 0, 
+  timeSec: number = 0
+) {
   const stats = getLocalStats();
   const today = new Date().toDateString();
   
   // Update totals
   stats.questionsAttempted += 1;
   if (isCorrect) stats.questionsCorrect += 1;
+  stats.totalHintsUsed += hintsUsed;
+  stats.totalTimeSec += timeSec;
   
   // Update topic breakdown
   if (!stats.topicBreakdown[topicName]) {
-    stats.topicBreakdown[topicName] = { attempts: 0, correct: 0 };
+    stats.topicBreakdown[topicName] = { attempts: 0, correct: 0, totalHints: 0, totalTimeSec: 0 };
   }
   stats.topicBreakdown[topicName].attempts += 1;
   if (isCorrect) stats.topicBreakdown[topicName].correct += 1;
+  stats.topicBreakdown[topicName].totalHints += hintsUsed;
+  stats.topicBreakdown[topicName].totalTimeSec += timeSec;
   
   // Update streak
   if (stats.lastPracticeDate !== today) {
@@ -74,6 +94,13 @@ export function recordSessionComplete() {
   localStorage.setItem('orbitProgress', JSON.stringify(stats));
 }
 
+function formatTime(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+}
+
 export default function Progress() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<LocalStats>(DEFAULT_STATS);
@@ -82,19 +109,39 @@ export default function Progress() {
     setStats(getLocalStats());
   }, []);
 
-  const accuracy = stats.questionsAttempted > 0 
-    ? Math.round((stats.questionsCorrect / stats.questionsAttempted) * 100) 
+  const avgTimePerQuestion = stats.questionsAttempted > 0 
+    ? Math.round(stats.totalTimeSec / stats.questionsAttempted) 
     : 0;
+  
+  const avgHintsPerQuestion = stats.questionsAttempted > 0 
+    ? (stats.totalHintsUsed / stats.questionsAttempted).toFixed(1) 
+    : '0';
 
-  const topTopics = Object.entries(stats.topicBreakdown)
+  // Get weak skills (lowest accuracy with at least 2 attempts)
+  const weakSkills = Object.entries(stats.topicBreakdown)
+    .filter(([_, data]) => data.attempts >= 2)
     .map(([name, data]) => ({
       name,
       attempts: data.attempts,
       correct: data.correct,
       accuracy: data.attempts > 0 ? Math.round((data.correct / data.attempts) * 100) : 0,
+      avgHints: data.attempts > 0 ? (data.totalHints / data.attempts).toFixed(1) : '0',
+      avgTime: data.attempts > 0 ? Math.round(data.totalTimeSec / data.attempts) : 0,
     }))
-    .sort((a, b) => b.attempts - a.attempts)
-    .slice(0, 5);
+    .sort((a, b) => a.accuracy - b.accuracy)
+    .slice(0, 3);
+
+  // All topics sorted by attempts for fluency view
+  const allTopics = Object.entries(stats.topicBreakdown)
+    .map(([name, data]) => ({
+      name,
+      attempts: data.attempts,
+      correct: data.correct,
+      accuracy: data.attempts > 0 ? Math.round((data.correct / data.attempts) * 100) : 0,
+      avgHints: data.attempts > 0 ? (data.totalHints / data.attempts).toFixed(1) : '0',
+      avgTime: data.attempts > 0 ? Math.round(data.totalTimeSec / data.attempts) : 0,
+    }))
+    .sort((a, b) => b.attempts - a.attempts);
 
   const hasData = stats.questionsAttempted > 0;
 
@@ -106,7 +153,7 @@ export default function Progress() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <img src={orbitLogo} alt="Orbit" className="h-6 w-auto" />
-        <h1 className="text-lg font-semibold">Your Progress</h1>
+        <h1 className="text-lg font-semibold">Fluency Progress</h1>
       </div>
 
       <div className="px-4 py-6 max-w-lg mx-auto space-y-6">
@@ -117,9 +164,9 @@ export default function Progress() {
               <Target className="h-10 w-10 text-primary" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold mb-2">Start your journey</h2>
+              <h2 className="text-xl font-semibold mb-2">Start building fluency</h2>
               <p className="text-muted-foreground max-w-xs mx-auto">
-                Complete practice sessions in the Arena to track your progress here.
+                Practice in the Arena to track your speed and confidence over time.
               </p>
             </div>
             <Button onClick={() => navigate('/practice-arena')} className="mt-4">
@@ -128,45 +175,85 @@ export default function Progress() {
           </div>
         ) : (
           <>
-            {/* Stat Cards */}
+            {/* Fluency Stats */}
             <div className="grid grid-cols-2 gap-3 animate-fade-in">
-              <StatCard 
-                icon={<TrendingUp className="h-6 w-6 text-primary" />}
-                value={`${accuracy}%`}
-                label="accuracy"
-              />
-              <StatCard 
-                icon={<Zap className="h-6 w-6 text-primary" />}
-                value={stats.questionsAttempted}
-                label="questions"
-              />
-              <StatCard 
-                icon={<Trophy className="h-6 w-6 text-primary" />}
-                value={stats.sessionsCompleted}
-                label="sessions"
-              />
               <StatCard 
                 icon={<Flame className="h-6 w-6 text-primary" />}
                 value={stats.currentStreak}
                 label="day streak"
               />
+              <StatCard 
+                icon={<Zap className="h-6 w-6 text-primary" />}
+                value={stats.questionsAttempted}
+                label="attempts"
+              />
+              <StatCard 
+                icon={<Clock className="h-6 w-6 text-primary" />}
+                value={avgTimePerQuestion > 0 ? formatTime(avgTimePerQuestion) : '—'}
+                label="avg per Q"
+              />
+              <StatCard 
+                icon={<HelpCircle className="h-6 w-6 text-primary" />}
+                value={avgHintsPerQuestion}
+                label="hints per Q"
+              />
             </div>
 
-            {/* Top Topics */}
-            {topTopics.length > 0 && (
-              <div className="space-y-4 animate-fade-in" style={{ animationDelay: '100ms' }}>
-                <h2 className="text-lg font-semibold">Topics Practiced</h2>
-                <div className="space-y-3">
-                  {topTopics.map((topic, index) => (
+            {/* Weak Skills - Focus Area */}
+            {weakSkills.length > 0 && (
+              <div className="space-y-3 animate-fade-in" style={{ animationDelay: '100ms' }}>
+                <div className="flex items-center gap-2">
+                  <TrendingDown className="h-4 w-4 text-destructive" />
+                  <h2 className="text-lg font-semibold">Focus Areas</h2>
+                </div>
+                <p className="text-sm text-muted-foreground -mt-1">
+                  Topics where you're struggling most
+                </p>
+                <div className="space-y-2">
+                  {weakSkills.map((topic, index) => (
                     <div
                       key={topic.name}
-                      className="bg-muted rounded-2xl p-4 border border-border animate-fade-in"
+                      className="bg-destructive/5 border border-destructive/20 rounded-xl p-4 animate-fade-in"
                       style={{ animationDelay: `${(index + 1) * 50}ms` }}
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-medium">{topic.name}</h3>
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-medium text-sm">{topic.name}</h3>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-destructive/15 text-destructive font-medium">
+                          {topic.accuracy}%
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span>{topic.attempts} attempts</span>
+                        <span>•</span>
+                        <span>{topic.avgHints} hints/Q</span>
+                        {topic.avgTime > 0 && (
+                          <>
+                            <span>•</span>
+                            <span>{formatTime(topic.avgTime)}/Q</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* All Topics */}
+            {allTopics.length > 0 && (
+              <div className="space-y-3 animate-fade-in" style={{ animationDelay: '150ms' }}>
+                <h2 className="text-lg font-semibold">All Topics</h2>
+                <div className="space-y-2">
+                  {allTopics.map((topic, index) => (
+                    <div
+                      key={topic.name}
+                      className="bg-muted rounded-xl p-4 border border-border animate-fade-in"
+                      style={{ animationDelay: `${(index + 1) * 30}ms` }}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-medium text-sm">{topic.name}</h3>
                         <span className={cn(
-                          "text-xs px-2 py-1 rounded-full font-medium",
+                          "text-xs px-2 py-0.5 rounded-full font-medium",
                           topic.accuracy >= 70 ? "bg-secondary/15 text-secondary" :
                           topic.accuracy >= 40 ? "bg-warning/15 text-warning" :
                           "bg-destructive/15 text-destructive"
@@ -174,10 +261,18 @@ export default function Progress() {
                           {topic.accuracy}%
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{topic.correct}/{topic.attempts} correct</span>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span>{topic.correct}/{topic.attempts}</span>
+                        <span>•</span>
+                        <span>{topic.avgHints} hints</span>
+                        {topic.avgTime > 0 && (
+                          <>
+                            <span>•</span>
+                            <span>{formatTime(topic.avgTime)}</span>
+                          </>
+                        )}
                       </div>
-                      <div className="h-1.5 rounded-full bg-accent overflow-hidden mt-2">
+                      <div className="h-1 rounded-full bg-accent overflow-hidden mt-2">
                         <div
                           className={cn(
                             "h-full rounded-full transition-all duration-500",
@@ -194,17 +289,10 @@ export default function Progress() {
               </div>
             )}
 
-            {/* Motivation */}
-            <div className="text-center p-6 bg-muted rounded-2xl animate-fade-in border border-border" style={{ animationDelay: '200ms' }}>
-              <p className="text-2xl mb-2">
-                {accuracy >= 70 ? '🌟' : accuracy >= 40 ? '💪' : '📚'}
-              </p>
-              <p className="text-muted-foreground">
-                {accuracy >= 70 
-                  ? "You're doing amazing! Keep up the great work."
-                  : accuracy >= 40 
-                  ? "Good progress! Practice makes perfect."
-                  : "Every expert was once a beginner. Keep going!"}
+            {/* Fluency Tip */}
+            <div className="text-center p-5 bg-muted rounded-xl animate-fade-in border border-border" style={{ animationDelay: '200ms' }}>
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">Fluency tip:</span> Aim to reduce hints needed and time per question over time.
               </p>
             </div>
 
@@ -224,15 +312,15 @@ export default function Progress() {
 
 function StatCard({ icon, value, label }: { icon: React.ReactNode; value: string | number; label: string }) {
   return (
-    <div className="bg-muted rounded-2xl p-5 text-center border border-border">
+    <div className="bg-muted rounded-xl p-4 text-center border border-border">
       <div 
-        className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-3"
-        style={{ background: 'rgba(0,250,215,0.15)' }}
+        className="inline-flex items-center justify-center w-10 h-10 rounded-full mb-2"
+        style={{ background: 'hsl(var(--primary) / 0.15)' }}
       >
         {icon}
       </div>
-      <p className="text-3xl font-bold">{value}</p>
-      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="text-2xl font-bold">{value}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   );
 }
