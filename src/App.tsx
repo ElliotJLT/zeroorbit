@@ -14,6 +14,7 @@ import Progress from "./pages/Progress";
 import Admin from "./pages/Admin";
 import Settings from "./pages/Settings";
 import PracticeArena from "./pages/PracticeArena";
+import ArenaSession from "./pages/ArenaSession";
 import PastPapers from "./pages/PastPapers";
 import NotFound from "./pages/NotFound";
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/practice-arena" element={<PracticeArena />} />
+            <Route path="/arena-session" element={<ArenaSession />} />
             <Route path="/past-papers" element={<PastPapers />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

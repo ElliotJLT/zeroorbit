@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.realtime-session]
 verify_jwt = false
+
+[functions.generate-arena-question]
+verify_jwt = false
+
+[functions.evaluate-arena-answer]
+verify_jwt = false

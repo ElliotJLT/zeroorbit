@@ -14,6 +14,107 @@ export type Database = {
   }
   public: {
     Tables: {
+      arena_attempts: {
+        Row: {
+          created_at: string | null
+          difficulty_tier: number
+          feedback_summary: string | null
+          id: string
+          marks_estimate: string | null
+          question_id: string
+          self_rating: string | null
+          session_id: string
+          status: string | null
+          topic_id: string
+          user_id: string | null
+          working_image_urls: string[] | null
+        }
+        Insert: {
+          created_at?: string | null
+          difficulty_tier: number
+          feedback_summary?: string | null
+          id?: string
+          marks_estimate?: string | null
+          question_id: string
+          self_rating?: string | null
+          session_id: string
+          status?: string | null
+          topic_id: string
+          user_id?: string | null
+          working_image_urls?: string[] | null
+        }
+        Update: {
+          created_at?: string | null
+          difficulty_tier?: number
+          feedback_summary?: string | null
+          id?: string
+          marks_estimate?: string | null
+          question_id?: string
+          self_rating?: string | null
+          session_id?: string
+          status?: string | null
+          topic_id?: string
+          user_id?: string | null
+          working_image_urls?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_attempts_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "arena_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arena_attempts_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      arena_questions: {
+        Row: {
+          created_at: string | null
+          difficulty_tier: number
+          final_answer: string
+          id: string
+          marking_points: string[]
+          question_text: string
+          topic_id: string
+          worked_solution: string
+        }
+        Insert: {
+          created_at?: string | null
+          difficulty_tier: number
+          final_answer: string
+          id?: string
+          marking_points: string[]
+          question_text: string
+          topic_id: string
+          worked_solution: string
+        }
+        Update: {
+          created_at?: string | null
+          difficulty_tier?: number
+          final_answer?: string
+          id?: string
+          marking_points?: string[]
+          question_text?: string
+          topic_id?: string
+          worked_solution?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_questions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
