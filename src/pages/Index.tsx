@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, ArrowRight, X, Volume2, VolumeX, Mic, MicOff, Send, Upload, LogOut, Phone, MessageSquare } from 'lucide-react';
+import { Camera, ArrowRight, X, Mic, MicOff, Send, Upload, LogOut, Phone, MessageSquare, Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -1081,13 +1081,6 @@ export default function Index() {
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-4 pt-[max(1rem,env(safe-area-inset-top))]">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <BurgerMenu
-            onNewProblem={() => {
-              setStep('home');
-              setMessages([]);
-              setImagePreview(null);
-              setAnalysis(null);
-              setQuestionText('');
-            }}
             onBrowseSyllabus={() => {
               setStep('home');
               setMessages([]);
@@ -1105,14 +1098,18 @@ export default function Index() {
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
-              size="icon"
+              size="sm"
               onClick={() => {
-                if (isSpeaking) stopSpeaking();
-                setVoiceEnabled(!voiceEnabled);
+                setStep('home');
+                setMessages([]);
+                setImagePreview(null);
+                setAnalysis(null);
+                setQuestionText('');
               }}
-              className={`rounded-full ${isSpeaking ? 'text-primary' : ''}`}
+              className="rounded-full text-muted-foreground hover:text-foreground gap-1.5 px-3"
             >
-              {voiceEnabled ? <Volume2 className={`h-5 w-5 ${isSpeaking ? 'animate-pulse' : ''}`} /> : <VolumeX className="h-5 w-5" />}
+              <Plus className="h-4 w-4" />
+              <span className="text-sm">New</span>
             </Button>
             {BETA_MODE && messages.length > 2 && (
               <Button
