@@ -101,10 +101,43 @@ export default function Index() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        const base64 = reader.result as string;
+        setImagePreview(base64);
         setStep('preview');
+        // Start analysis immediately for tags
+        runPreviewAnalysis(base64);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  // Run analysis in background to show topic/difficulty tags on preview
+  const runPreviewAnalysis = async (base64: string) => {
+    setIsAnalyzing(true);
+    setNotMathsError(null);
+    
+    try {
+      const response = await supabase.functions.invoke('analyze-question', {
+        body: { 
+          imageBase64: base64,
+          questionText: questionText 
+        },
+      });
+
+      if (response.data?.error === 'not_maths') {
+        setNotMathsError(response.data.rejectionReason || "This doesn't appear to be a maths question");
+        setIsAnalyzing(false);
+        return;
+      }
+
+      if (response.error) throw new Error(response.error.message);
+
+      const analysisData = response.data as QuestionAnalysis;
+      setAnalysis(analysisData);
+    } catch (error) {
+      console.error('Analysis error:', error);
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -443,8 +476,10 @@ export default function Index() {
                   if (file) {
                     const reader = new FileReader();
                     reader.onloadend = () => {
-                      setImagePreview(reader.result as string);
+                      const base64 = reader.result as string;
+                      setImagePreview(base64);
                       setStep('preview');
+                      runPreviewAnalysis(base64);
                     };
                     reader.readAsDataURL(file);
                   }
@@ -580,6 +615,18 @@ export default function Index() {
                   )}
                 </div>
 
+                {/* Topic & difficulty tags - shown when analysis is complete */}
+                {analysis && !isAnalyzing && (
+                  <div className="flex flex-wrap gap-2 justify-center animate-fade-in">
+                    <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-sm font-medium">
+                      {analysis.topic}
+                    </span>
+                    <span className="px-3 py-1 rounded-full bg-muted text-muted-foreground text-sm">
+                      {analysis.difficulty}
+                    </span>
+                  </div>
+                )}
+
                 <div className={`transition-opacity duration-300 ${isAnalyzing ? 'opacity-30 pointer-events-none' : ''}`}>
                   <Textarea
                     placeholder="Add context or specify what you need help with (optional)"
@@ -591,7 +638,19 @@ export default function Index() {
                 </div>
 
                 <div className="space-y-3 pt-2">
-                  <Button onClick={analyzeAndStartChat} disabled={isAnalyzing} className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 active:scale-[0.98] disabled:opacity-70 transition-all">
+                  <Button 
+                    onClick={() => {
+                      if (analysis) {
+                        // Analysis already done, just start chat
+                        startTextChatWithAnalysis(analysis);
+                      } else {
+                        // Fallback: run analysis then start chat
+                        analyzeAndStartChat();
+                      }
+                    }} 
+                    disabled={isAnalyzing} 
+                    className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 active:scale-[0.98] disabled:opacity-70 transition-all"
+                  >
                     {isAnalyzing ? (
                       <span className="flex items-center gap-2">
                         <span className="h-4 w-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />
