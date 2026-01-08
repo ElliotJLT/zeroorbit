@@ -1,15 +1,12 @@
 import { useRef, useEffect, useState } from 'react';
-import { Camera, X, Send, LogOut, Volume2, VolumeX, Mic } from 'lucide-react';
+import { Camera, X, Send, LogOut, Mic, Keyboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import orbitIcon from '@/assets/orbit-icon.png';
 import BurgerMenu from '@/components/BurgerMenu';
 import NewProblemModal from '@/components/NewProblemModal';
-import BetaEntryModal from '@/components/BetaEntryModal';
-import PostSessionSurvey from '@/components/PostSessionSurvey';
 import { useToast } from '@/hooks/use-toast';
 import { type Message, type QuestionAnalysis } from '@/hooks/useGuestChat';
-import { useSpeech } from '@/hooks/useSpeech';
 
 interface GuestChatProps {
   messages: Message[];
@@ -18,7 +15,6 @@ interface GuestChatProps {
   imagePreview: string | null;
   analysis: QuestionAnalysis | null;
   betaTesterName: string | null;
-  speech: ReturnType<typeof useSpeech>;
   onSendMessage: (content: string, inputMethod?: 'text' | 'voice' | 'photo') => void;
   onConfirmImage: (intent: string) => void;
   onCancelImage: () => void;
@@ -37,7 +33,6 @@ export function GuestChat({
   imagePreview,
   analysis,
   betaTesterName,
-  speech,
   onSendMessage,
   onConfirmImage,
   onCancelImage,
@@ -108,21 +103,6 @@ export function GuestChat({
             onSettings={onSettings}
           />
           
-          {/* Voice toggle - more prominent */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => speech.setVoiceEnabled(!speech.voiceEnabled)}
-            className={`w-10 h-10 rounded-full transition-all ${speech.voiceEnabled ? 'bg-primary/10 text-primary' : 'text-muted-foreground'}`}
-            title={speech.voiceEnabled ? 'Voice on - click to mute' : 'Voice off - click to enable'}
-          >
-            {speech.voiceEnabled ? (
-              <Volume2 className="h-5 w-5" />
-            ) : (
-              <VolumeX className="h-5 w-5" />
-            )}
-          </Button>
-          
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -179,11 +159,9 @@ export function GuestChat({
                   <img 
                     src={orbitIcon} 
                     alt="Orbit" 
-                    className={`w-6 h-6 rounded-full object-cover ${speech.speakingMessageId === message.id ? 'animate-pulse' : ''}`}
+                    className="w-6 h-6 rounded-full object-cover"
                   />
-                  <span className="text-xs text-muted-foreground">
-                    {speech.speakingMessageId === message.id ? 'Orbit is speaking...' : 'Orbit'}
-                  </span>
+                  <span className="text-xs text-muted-foreground">Orbit</span>
                 </div>
               )}
               {message.imageUrl && (
@@ -333,48 +311,52 @@ export function GuestChat({
               </button>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-3">
-              <button 
-                onClick={() => workingFileInputRef.current?.click()} 
-                disabled={sending} 
-                className="flex items-center gap-2 px-6 py-3 rounded-full disabled:opacity-50 transition-all duration-300"
-                style={{ 
-                  background: 'linear-gradient(135deg, #00FAD7 0%, #00C4AA 100%)', 
-                  boxShadow: '0 4px 20px rgba(0,250,215,0.3)' 
-                }}
-              >
-                {sending ? (
-                  <div className="h-5 w-5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <Camera className="h-5 w-5 text-background" />
-                    <span className="font-medium text-background">Add working</span>
-                  </>
-                )}
-              </button>
-              
-              <div className="flex items-center gap-6 text-sm">
+            <div className="flex flex-col items-center gap-4">
+              {/* Three clear action buttons */}
+              <div className="grid grid-cols-3 gap-3 w-full max-w-md">
+                {/* Add working - primary */}
+                <button 
+                  onClick={() => workingFileInputRef.current?.click()} 
+                  disabled={sending} 
+                  className="flex flex-col items-center gap-2 p-4 rounded-2xl disabled:opacity-50 transition-all active:scale-95"
+                  style={{ 
+                    background: 'linear-gradient(135deg, #00FAD7 0%, #00C4AA 100%)', 
+                    boxShadow: '0 4px 20px rgba(0,250,215,0.3)' 
+                  }}
+                >
+                  {sending ? (
+                    <div className="h-6 w-6 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Camera className="h-6 w-6 text-background" />
+                      <span className="text-sm font-medium text-background">Add working</span>
+                    </>
+                  )}
+                </button>
+                
+                {/* Voice mode */}
                 <button 
                   onClick={() => {
-                    // TODO: Switch to voice mode (OpenAI Realtime)
                     toast({
                       title: "Voice mode coming soon",
                       description: "Real-time voice conversations are in development.",
                     });
                   }}
                   disabled={sending}
-                  className="min-h-[44px] min-w-[44px] px-3 flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground active:scale-95 transition-all disabled:opacity-50"
+                  className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-muted/50 border border-border disabled:opacity-50 transition-all active:scale-95 hover:bg-muted"
                 >
-                  <Mic className="h-4 w-4" />
-                  Switch to voice
+                  <Mic className="h-6 w-6 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Voice mode</span>
                 </button>
-                <span className="text-muted-foreground/30">•</span>
+                
+                {/* Type a line */}
                 <button 
                   onClick={() => setShowInput(true)}
                   disabled={sending}
-                  className="min-h-[44px] min-w-[44px] px-3 flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-95 transition-all disabled:opacity-50"
+                  className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-muted/50 border border-border disabled:opacity-50 transition-all active:scale-95 hover:bg-muted"
                 >
-                  Type a line
+                  <Keyboard className="h-6 w-6 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Type a line</span>
                 </button>
               </div>
             </div>

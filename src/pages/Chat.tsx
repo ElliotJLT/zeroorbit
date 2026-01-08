@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, Mic, X, Volume2, VolumeX, Send } from 'lucide-react';
+import { ArrowLeft, Camera, Mic, X, Send } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -54,7 +54,6 @@ interface UserContext {
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
-const TTS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/text-to-speech`;
 
 export default function Chat() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -63,8 +62,6 @@ export default function Chat() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(true);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const [analysis, setAnalysis] = useState<QuestionAnalysis | null>(null);
   const [showInput, setShowInput] = useState(false);
   const [currentTopic, setCurrentTopic] = useState<string>('');
@@ -73,7 +70,6 @@ export default function Chat() {
   const [cameraMode, setCameraMode] = useState<CameraMode>('working');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const workingFileInputRef = useRef<HTMLInputElement>(null);
   const questionFileInputRef = useRef<HTMLInputElement>(null);
   const markSchemeFileInputRef = useRef<HTMLInputElement>(null);
@@ -128,50 +124,6 @@ export default function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const speakText = useCallback(async (text: string) => {
-    if (!voiceEnabled || !text || !text.trim()) return;
-    
-    try {
-      setIsSpeaking(true);
-      const response = await fetch(TTS_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({ text }),
-      });
-
-      if (!response.ok) {
-        console.error('TTS error:', response.status);
-        setIsSpeaking(false);
-        return;
-      }
-
-      const { audioContent } = await response.json();
-      
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-      
-      const audio = new Audio(`data:audio/mpeg;base64,${audioContent}`);
-      audioRef.current = audio;
-      audio.onended = () => setIsSpeaking(false);
-      audio.onerror = () => setIsSpeaking(false);
-      await audio.play();
-    } catch (error) {
-      console.error('Speech error:', error);
-      setIsSpeaking(false);
-    }
-  }, [voiceEnabled]);
-
-  const stopSpeaking = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    setIsSpeaking(false);
-  };
 
   const fetchSession = async () => {
     setLoading(true);
@@ -234,7 +186,6 @@ export default function Chat() {
 
       if (newMsg) {
         setMessages([newMsg]);
-        speakText(initialMessage);
       }
     }
 
@@ -282,7 +233,6 @@ export default function Chat() {
     if (!messageContent || !sessionId || sending) return;
 
     setSending(true);
-    stopSpeaking();
     setNewMessage('');
     setShowInput(false);
 
@@ -348,11 +298,6 @@ export default function Chat() {
           ? { ...(tutorMessage || { ...m, content: replyText }), method_cue: methodCue }
           : m
       ));
-      
-      // Speak the response (TTS errors are handled internally)
-      if (replyText) {
-        speakText(replyText);
-      }
     } catch (error) {
       console.error('Response error:', error);
       // Replace placeholder with error message instead of removing
@@ -479,10 +424,6 @@ export default function Chat() {
           ? { ...(tutorMessage || { ...m, content: replyText }), method_cue: methodCue }
           : m
       ));
-      
-      if (replyText) {
-        speakText(replyText);
-      }
     } catch (error) {
       console.error('Image upload error:', error);
       toast({
@@ -595,20 +536,14 @@ export default function Chat() {
           <Button variant="ghost" size="icon" onClick={() => navigate('/home')} className="rounded-full">
             <ArrowLeft className="h-5 w-5" />
           </Button>
+          {/* New Problem button */}
           <Button
             variant="ghost"
-            size="icon"
-            onClick={() => {
-              if (isSpeaking) stopSpeaking();
-              setVoiceEnabled(!voiceEnabled);
-            }}
-            className={`rounded-full ${isSpeaking ? 'text-primary' : ''}`}
+            onClick={() => navigate('/home')}
+            className="h-10 rounded-full text-muted-foreground hover:text-foreground gap-1.5 px-4"
           >
-            {voiceEnabled ? (
-              <Volume2 className={`h-5 w-5 ${isSpeaking ? 'animate-pulse' : ''}`} />
-            ) : (
-              <VolumeX className="h-5 w-5" />
-            )}
+            <Camera className="h-4 w-4" />
+            <span className="text-sm">New Problem</span>
           </Button>
         </div>
       </div>
