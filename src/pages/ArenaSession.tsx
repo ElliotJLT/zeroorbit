@@ -188,42 +188,52 @@ export default function ArenaSession() {
           <h1 className="text-lg font-semibold">Practice Arena</h1>
         </header>
         
-        {/* Starfield background */}
+        {/* Warp speed starfield - stars racing towards viewer */}
         <div className="flex-1 relative">
-          <div className="absolute inset-0 overflow-hidden">
-            {/* Rushing stars */}
-            {Array.from({ length: 60 }).map((_, i) => (
-              <div
-                key={i}
-                className="absolute rounded-full bg-white"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  width: `${Math.random() * 2 + 1}px`,
-                  height: `${Math.random() * 2 + 1}px`,
-                  opacity: Math.random() * 0.8 + 0.2,
-                  animation: `rushingStar ${Math.random() * 1.5 + 0.5}s linear infinite`,
-                  animationDelay: `${Math.random() * 2}s`,
-                }}
-              />
-            ))}
-            {/* Larger trailing stars */}
-            {Array.from({ length: 15 }).map((_, i) => (
-              <div
-                key={`trail-${i}`}
-                className="absolute bg-gradient-to-r from-primary/60 to-transparent"
-                style={{
-                  left: `${Math.random() * 80}%`,
-                  top: `${Math.random() * 100}%`,
-                  width: `${Math.random() * 40 + 20}px`,
-                  height: '2px',
-                  borderRadius: '1px',
-                  opacity: Math.random() * 0.6 + 0.2,
-                  animation: `rushingStar ${Math.random() * 1 + 0.3}s linear infinite`,
-                  animationDelay: `${Math.random() * 2}s`,
-                }}
-              />
-            ))}
+          <div className="absolute inset-0 overflow-hidden bg-background">
+            {/* Center point glow */}
+            <div 
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full"
+              style={{
+                background: 'radial-gradient(circle, hsl(172 100% 49% / 0.4) 0%, transparent 70%)',
+                filter: 'blur(8px)',
+              }}
+            />
+            
+            {/* Warp stars */}
+            {Array.from({ length: 80 }).map((_, i) => {
+              // Random angle from center
+              const angle = (i / 80) * 360 + Math.random() * 20;
+              const radians = (angle * Math.PI) / 180;
+              // Calculate end position (far outside viewport)
+              const distance = 150 + Math.random() * 100; // vw/vh units
+              const tx = `${Math.cos(radians) * distance}vw`;
+              const ty = `${Math.sin(radians) * distance}vh`;
+              // Mint or white
+              const isMint = Math.random() > 0.7;
+              const size = Math.random() * 2 + 1;
+              
+              return (
+                <div
+                  key={i}
+                  className="absolute left-1/2 top-1/2 rounded-full"
+                  style={{
+                    width: `${size}px`,
+                    height: `${size}px`,
+                    background: isMint 
+                      ? 'hsl(172 100% 60%)' 
+                      : `rgba(255, 255, 255, ${0.6 + Math.random() * 0.4})`,
+                    boxShadow: isMint 
+                      ? '0 0 4px hsl(172 100% 60% / 0.8)' 
+                      : 'none',
+                    '--tx': tx,
+                    '--ty': ty,
+                    animation: `warpStar ${1.5 + Math.random() * 1}s linear infinite`,
+                    animationDelay: `${Math.random() * 2}s`,
+                  } as React.CSSProperties}
+                />
+              );
+            })}
           </div>
           
           {/* Center content */}
