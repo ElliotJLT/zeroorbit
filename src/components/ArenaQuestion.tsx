@@ -4,6 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import MathText from '@/components/MathText';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+
+export type SkipReason = 'too_hard' | 'too_easy' | 'unclear' | 'not_interested';
 
 interface ArenaQuestionProps {
   question: {
@@ -13,13 +21,14 @@ interface ArenaQuestionProps {
     marking_points: string[];
     worked_solution: string;
   };
+  topicName?: string;
   isEvaluating: boolean;
   attemptCount: number;
   showSolution: boolean;
   onSubmitAnswer: (answer?: string, imageUrl?: string) => void;
   onShowSolution: () => void;
   onNext: () => void;
-  onSkip: () => void;
+  onSkip: (reason?: SkipReason) => void;
   feedback?: {
     status: 'correct' | 'partial' | 'incorrect';
     marks_estimate: string;
@@ -30,6 +39,7 @@ interface ArenaQuestionProps {
 
 export default function ArenaQuestion({
   question,
+  topicName,
   isEvaluating,
   attemptCount,
   showSolution,
@@ -41,6 +51,7 @@ export default function ArenaQuestion({
 }: ArenaQuestionProps) {
   const [answer, setAnswer] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [showSkipDialog, setShowSkipDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,15 +73,41 @@ export default function ArenaQuestion({
     setImagePreview(null);
   };
 
+  const handleSkipClick = () => {
+    setShowSkipDialog(true);
+  };
+
+  const handleSkipWithReason = (reason: SkipReason) => {
+    setShowSkipDialog(false);
+    onSkip(reason);
+  };
+
+  const handleSkipWithoutReason = () => {
+    setShowSkipDialog(false);
+    onSkip();
+  };
+
   const isCompleted = feedback?.status === 'correct' || showSolution;
 
-
+  const skipReasons: { id: SkipReason; label: string; emoji: string }[] = [
+    { id: 'too_hard', label: 'Too difficult', emoji: '😓' },
+    { id: 'too_easy', label: 'Too easy', emoji: '🥱' },
+    { id: 'unclear', label: "Doesn't make sense", emoji: '🤔' },
+    { id: 'not_interested', label: 'Not relevant to me', emoji: '🙅' },
+  ];
   return (
     <div className="flex flex-col h-full">
       {/* Question */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="bg-card rounded-xl p-4 border border-border">
-          <p className="text-sm font-medium text-muted-foreground mb-2">Question</p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-medium text-muted-foreground">Question</p>
+            {topicName && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                {topicName}
+              </span>
+            )}
+          </div>
           <div className="border-t border-border pt-3">
             <div className="prose prose-sm dark:prose-invert max-w-none">
               <div className="whitespace-pre-wrap leading-relaxed">
@@ -214,7 +251,7 @@ export default function ArenaQuestion({
               )}
               <Button
                 variant="ghost"
-                onClick={onSkip}
+                onClick={handleSkipClick}
                 className="flex-1 text-muted-foreground"
               >
                 Skip
@@ -223,6 +260,33 @@ export default function ArenaQuestion({
           </>
         )}
       </div>
+
+      {/* Skip reason dialog */}
+      <Dialog open={showSkipDialog} onOpenChange={setShowSkipDialog}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Why are you skipping?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            {skipReasons.map((reason) => (
+              <button
+                key={reason.id}
+                onClick={() => handleSkipWithReason(reason.id)}
+                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
+              >
+                <span className="text-xl">{reason.emoji}</span>
+                <span className="font-medium">{reason.label}</span>
+              </button>
+            ))}
+            <button
+              onClick={handleSkipWithoutReason}
+              className="w-full p-3 text-muted-foreground text-sm hover:text-foreground transition-colors"
+            >
+              Just skip
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
