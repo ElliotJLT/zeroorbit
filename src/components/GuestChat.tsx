@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Camera, X, Send, LogOut, Volume2, VolumeX } from 'lucide-react';
+import { Camera, X, Send, LogOut, Volume2, VolumeX, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import orbitIcon from '@/assets/orbit-icon.png';
@@ -355,11 +355,18 @@ export function GuestChat({
               
               <div className="flex items-center gap-6 text-sm">
                 <button 
-                  onClick={() => questionFileInputRef.current?.click()}
+                  onClick={() => {
+                    // TODO: Switch to voice mode (OpenAI Realtime)
+                    toast({
+                      title: "Voice mode coming soon",
+                      description: "Real-time voice conversations are in development.",
+                    });
+                  }}
                   disabled={sending}
-                  className="min-h-[44px] min-w-[44px] px-3 flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-95 transition-all disabled:opacity-50"
+                  className="min-h-[44px] min-w-[44px] px-3 flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground active:scale-95 transition-all disabled:opacity-50"
                 >
-                  New question
+                  <Mic className="h-4 w-4" />
+                  Switch to voice
                 </button>
                 <span className="text-muted-foreground/30">•</span>
                 <button 
