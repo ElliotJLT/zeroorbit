@@ -558,22 +558,11 @@ export default function Chat() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-4">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-3">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <Button variant="ghost" size="icon" onClick={() => navigate('/home')} className="rounded-full">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="flex flex-col items-center">
-            <div className="flex items-center gap-3">
-              <img src={orbitIcon} alt="Orbit" className="h-10 w-auto" />
-              <span className="font-semibold text-lg">Orbit</span>
-            </div>
-            {currentTopic && (
-              <span className="text-xs text-muted-foreground mt-0.5">
-                {currentTopic} {currentDifficulty && `• ${currentDifficulty}`}
-              </span>
-            )}
-          </div>
           <Button
             variant="ghost"
             size="icon"
@@ -743,7 +732,7 @@ export default function Chat() {
           </button>
 
           {/* Secondary actions */}
-          <div className="flex items-center justify-center gap-6 mt-4">
+          <div className="flex items-center justify-center gap-6 mt-3">
             <button
               onClick={() => questionFileInputRef.current?.click()}
               disabled={sending}
@@ -760,10 +749,6 @@ export default function Chat() {
               Type a line
             </button>
           </div>
-          
-          <p className="text-center text-xs text-muted-foreground mt-4">
-            Paper is your whiteboard — snap your work
-          </p>
         </div>
       </div>
     </div>
