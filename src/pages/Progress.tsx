@@ -158,19 +158,19 @@ export default function Progress() {
 
       <div className="px-4 py-6 max-w-lg mx-auto space-y-6">
         {!hasData ? (
-          // Empty state
+          // Empty state - encourage testing
           <div className="text-center py-12 space-y-4">
             <div className="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
               <Target className="h-10 w-10 text-primary" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold mb-2">Start building fluency</h2>
+              <h2 className="text-xl font-semibold mb-2">No progress yet</h2>
               <p className="text-muted-foreground max-w-xs mx-auto">
-                Practice in the Arena to track your speed and confidence over time.
+                Test yourself in the Practice Arena to start tracking your fluency and see your weak spots.
               </p>
             </div>
             <Button onClick={() => navigate('/practice-arena')} className="mt-4">
-              Start Practicing
+              Go to Practice Arena
             </Button>
           </div>
         ) : (

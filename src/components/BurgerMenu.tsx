@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, Swords, Settings, TrendingUp, FileText, Crown } from 'lucide-react';
+import { Menu, Swords, Settings, TrendingUp, FileText } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 interface BurgerMenuProps {
@@ -61,19 +61,19 @@ export default function BurgerMenu({ onSettings }: BurgerMenuProps) {
               </div>
             </button>
 
-            {/* My Progress - Locked until Arena */}
-            <div className="w-full flex items-center gap-3 p-4 rounded-xl bg-muted/30 opacity-60 cursor-not-allowed">
-              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center relative">
-                <TrendingUp className="h-5 w-5 text-muted-foreground" />
-                <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
-                  <Crown className="h-3 w-3 text-white" />
-                </div>
+            {/* My Progress - Always accessible */}
+            <button
+              onClick={() => handleAction(() => navigate('/progress'))}
+              className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-sidebar-accent transition-colors text-left"
+            >
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="font-medium text-muted-foreground">My Progress</p>
-                <p className="text-sm text-muted-foreground/70">Complete a Practice Arena to unlock</p>
+                <p className="font-medium">My Progress</p>
+                <p className="text-sm text-muted-foreground">Track your fluency</p>
               </div>
-            </div>
+            </button>
 
             {/* Settings */}
             <button
@@ -90,12 +90,6 @@ export default function BurgerMenu({ onSettings }: BurgerMenuProps) {
             </button>
           </nav>
 
-          {/* Footer */}
-          <div className="p-4 border-t border-border">
-            <p className="text-xs text-muted-foreground text-center">
-              Built with Zero Gravity mentors
-            </p>
-          </div>
         </div>
       </SheetContent>
     </Sheet>
