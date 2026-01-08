@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Camera, Send, Eye, ArrowRight, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -48,10 +48,12 @@ export default function ArenaQuestion({
   onNext,
   onSkip,
   feedback,
-}: ArenaQuestionProps) {
+  isFirstQuestion,
+}: ArenaQuestionProps & { isFirstQuestion?: boolean }) {
   const [answer, setAnswer] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [showSkipDialog, setShowSkipDialog] = useState(false);
+  const [showSwipeTutorial, setShowSwipeTutorial] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Swipe gesture state
@@ -60,9 +62,24 @@ export default function ArenaQuestion({
   const touchStartX = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Show swipe tutorial on first question (once per session)
+  useEffect(() => {
+    const hasSeenTutorial = sessionStorage.getItem('arenaSwipeTutorial');
+    if (isFirstQuestion && !hasSeenTutorial) {
+      const timer = setTimeout(() => {
+        setShowSwipeTutorial(true);
+        sessionStorage.setItem('arenaSwipeTutorial', 'true');
+        // Auto-hide after animation
+        setTimeout(() => setShowSwipeTutorial(false), 2500);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isFirstQuestion]);
+
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     setIsSwiping(true);
+    setShowSwipeTutorial(false);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -137,7 +154,19 @@ export default function ArenaQuestion({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Skip hint overlay */}
+      {/* Swipe tutorial animation (first question only) */}
+      {showSwipeTutorial && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+          <div className="flex items-center gap-3 animate-[slideLeft_1.5s_ease-in-out_infinite]">
+            <div className="bg-muted/95 backdrop-blur-sm rounded-xl px-4 py-3 flex items-center gap-2 shadow-lg">
+              <span className="text-muted-foreground font-medium">Swipe to skip</span>
+              <span className="text-xl">👈</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Skip hint overlay (during active swipe) */}
       {showSkipHint && (
         <div 
           className="absolute inset-0 z-10 flex items-center justify-end pr-8 pointer-events-none"
@@ -297,25 +326,16 @@ export default function ArenaQuestion({
               </Button>
             </div>
 
-            <div className="flex gap-2">
-              {attemptCount >= 2 && !showSolution && (
-                <Button
-                  variant="outline"
-                  onClick={onShowSolution}
-                  className="flex-1 gap-2"
-                >
-                  <Eye className="h-4 w-4" />
-                  Show solution
-                </Button>
-              )}
+            {attemptCount >= 2 && !showSolution && (
               <Button
-                variant="ghost"
-                onClick={handleSkipClick}
-                className="flex-1 text-muted-foreground"
+                variant="outline"
+                onClick={onShowSolution}
+                className="w-full gap-2"
               >
-                Skip
+                <Eye className="h-4 w-4" />
+                Show solution
               </Button>
-            </div>
+            )}
           </>
         )}
       </div>

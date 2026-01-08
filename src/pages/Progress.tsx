@@ -1,85 +1,102 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trophy, TrendingUp } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { ArrowLeft, Trophy, TrendingUp, Zap, Target, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import orbitLogo from '@/assets/orbit-logo.png';
 
-interface Topic {
-  id: string;
-  name: string;
-  slug: string;
+interface LocalStats {
+  questionsAttempted: number;
+  questionsCorrect: number;
+  sessionsCompleted: number;
+  currentStreak: number;
+  topicBreakdown: Record<string, { attempts: number; correct: number }>;
+  lastPracticeDate?: string;
 }
 
-interface PracticeStat {
-  topic_id: string;
-  attempts: number;
-  correct_attempts: number;
+const DEFAULT_STATS: LocalStats = {
+  questionsAttempted: 0,
+  questionsCorrect: 0,
+  sessionsCompleted: 0,
+  currentStreak: 0,
+  topicBreakdown: {},
+};
+
+function getLocalStats(): LocalStats {
+  const stored = localStorage.getItem('orbitProgress');
+  if (!stored) return DEFAULT_STATS;
+  try {
+    return { ...DEFAULT_STATS, ...JSON.parse(stored) };
+  } catch {
+    return DEFAULT_STATS;
+  }
 }
 
-type StrengthLevel = 'strong' | 'ok' | 'weak' | 'none';
+export function updateLocalStats(update: Partial<LocalStats>) {
+  const current = getLocalStats();
+  const updated = { ...current, ...update };
+  localStorage.setItem('orbitProgress', JSON.stringify(updated));
+}
 
-function getStrengthLevel(attempts: number, correctAttempts: number): StrengthLevel {
-  if (attempts === 0) return 'none';
-  const percentage = (correctAttempts / attempts) * 100;
-  if (percentage >= 70) return 'strong';
-  if (percentage >= 40) return 'ok';
-  return 'weak';
+export function recordAttempt(topicName: string, isCorrect: boolean) {
+  const stats = getLocalStats();
+  const today = new Date().toDateString();
+  
+  // Update totals
+  stats.questionsAttempted += 1;
+  if (isCorrect) stats.questionsCorrect += 1;
+  
+  // Update topic breakdown
+  if (!stats.topicBreakdown[topicName]) {
+    stats.topicBreakdown[topicName] = { attempts: 0, correct: 0 };
+  }
+  stats.topicBreakdown[topicName].attempts += 1;
+  if (isCorrect) stats.topicBreakdown[topicName].correct += 1;
+  
+  // Update streak
+  if (stats.lastPracticeDate !== today) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (stats.lastPracticeDate === yesterday.toDateString()) {
+      stats.currentStreak += 1;
+    } else if (stats.lastPracticeDate !== today) {
+      stats.currentStreak = 1;
+    }
+    stats.lastPracticeDate = today;
+  }
+  
+  localStorage.setItem('orbitProgress', JSON.stringify(stats));
+}
+
+export function recordSessionComplete() {
+  const stats = getLocalStats();
+  stats.sessionsCompleted += 1;
+  localStorage.setItem('orbitProgress', JSON.stringify(stats));
 }
 
 export default function Progress() {
-  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [topics, setTopics] = useState<Topic[]>([]);
-  const [stats, setStats] = useState<PracticeStat[]>([]);
+  const [stats, setStats] = useState<LocalStats>(DEFAULT_STATS);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-    }
-  }, [user, authLoading, navigate]);
+    setStats(getLocalStats());
+  }, []);
 
-  useEffect(() => {
-    if (user) {
-      fetchData();
-    }
-  }, [user]);
-
-  const fetchData = async () => {
-    const { data: topicsData } = await supabase
-      .from('topics')
-      .select('*')
-      .order('name');
-    
-    if (topicsData) setTopics(topicsData);
-
-    const { data: statsData } = await supabase
-      .from('practice_stats')
-      .select('*')
-      .eq('user_id', user!.id);
-    
-    if (statsData) setStats(statsData);
-  };
-
-  const getStatForTopic = (topicId: string) => {
-    return stats.find((s) => s.topic_id === topicId) || {
-      attempts: 0,
-      correct_attempts: 0,
-    };
-  };
-
-  const totalAttempts = stats.reduce((sum, s) => sum + s.attempts, 0);
-  const totalCorrect = stats.reduce((sum, s) => sum + s.correct_attempts, 0);
-  const overallPercentage = totalAttempts > 0 
-    ? Math.round((totalCorrect / totalAttempts) * 100) 
+  const accuracy = stats.questionsAttempted > 0 
+    ? Math.round((stats.questionsCorrect / stats.questionsAttempted) * 100) 
     : 0;
 
-  const strongCount = topics.filter(t => {
-    const stat = getStatForTopic(t.id);
-    return getStrengthLevel(stat.attempts, stat.correct_attempts) === 'strong';
-  }).length;
+  const topTopics = Object.entries(stats.topicBreakdown)
+    .map(([name, data]) => ({
+      name,
+      attempts: data.attempts,
+      correct: data.correct,
+      accuracy: data.attempts > 0 ? Math.round((data.correct / data.attempts) * 100) : 0,
+    }))
+    .sort((a, b) => b.attempts - a.attempts)
+    .slice(0, 5);
+
+  const hasData = stats.questionsAttempted > 0;
 
   return (
     <div className="min-h-screen pb-8 bg-background">
@@ -89,125 +106,133 @@ export default function Progress() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <img src={orbitLogo} alt="Orbit" className="h-6 w-auto" />
-        <h1 className="text-lg font-semibold">Progress</h1>
+        <h1 className="text-lg font-semibold">Your Progress</h1>
       </div>
 
       <div className="px-4 py-6 max-w-lg mx-auto space-y-6">
-        {/* Overall Stats */}
-        <div className="grid grid-cols-2 gap-3 animate-fade-in">
-          <div className="bg-muted rounded-2xl p-5 text-center border border-border">
-            <div 
-              className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-3"
-              style={{ background: 'rgba(0,250,215,0.15)' }}
-            >
-              <TrendingUp className="h-6 w-6 text-primary" />
+        {!hasData ? (
+          // Empty state
+          <div className="text-center py-12 space-y-4">
+            <div className="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+              <Target className="h-10 w-10 text-primary" />
             </div>
-            <p className="text-3xl font-bold">{overallPercentage}%</p>
-            <p className="text-sm text-muted-foreground">accuracy</p>
-          </div>
-          
-          <div className="bg-muted rounded-2xl p-5 text-center border border-border">
-            <div 
-              className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-3"
-              style={{ background: 'rgba(0,250,215,0.15)' }}
-            >
-              <Trophy className="h-6 w-6 text-primary" />
+            <div>
+              <h2 className="text-xl font-semibold mb-2">Start your journey</h2>
+              <p className="text-muted-foreground max-w-xs mx-auto">
+                Complete practice sessions in the Arena to track your progress here.
+              </p>
             </div>
-            <p className="text-3xl font-bold">{strongCount}</p>
-            <p className="text-sm text-muted-foreground">topics mastered</p>
+            <Button onClick={() => navigate('/practice-arena')} className="mt-4">
+              Start Practicing
+            </Button>
           </div>
-        </div>
+        ) : (
+          <>
+            {/* Stat Cards */}
+            <div className="grid grid-cols-2 gap-3 animate-fade-in">
+              <StatCard 
+                icon={<TrendingUp className="h-6 w-6 text-primary" />}
+                value={`${accuracy}%`}
+                label="accuracy"
+              />
+              <StatCard 
+                icon={<Zap className="h-6 w-6 text-primary" />}
+                value={stats.questionsAttempted}
+                label="questions"
+              />
+              <StatCard 
+                icon={<Trophy className="h-6 w-6 text-primary" />}
+                value={stats.sessionsCompleted}
+                label="sessions"
+              />
+              <StatCard 
+                icon={<Flame className="h-6 w-6 text-primary" />}
+                value={stats.currentStreak}
+                label="day streak"
+              />
+            </div>
 
-        {/* Topics Grid */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">By Topic</h2>
-          <div className="space-y-3">
-            {topics.map((topic, index) => {
-              const stat = getStatForTopic(topic.id);
-              const level = getStrengthLevel(stat.attempts, stat.correct_attempts);
-              const percentage = stat.attempts > 0
-                ? Math.round((stat.correct_attempts / stat.attempts) * 100)
-                : 0;
-
-              return (
-                <div
-                  key={topic.id}
-                  className="bg-muted rounded-2xl p-4 animate-fade-in border border-border"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "w-10 h-10 rounded-xl flex items-center justify-center text-lg",
-                        level === 'strong' && "bg-secondary/20",
-                        level === 'ok' && "bg-warning/20",
-                        level === 'weak' && "bg-destructive/20",
-                        level === 'none' && "bg-accent"
-                      )}>
-                        {level === 'strong' && '💪'}
-                        {level === 'ok' && '📈'}
-                        {level === 'weak' && '📚'}
-                        {level === 'none' && '🔒'}
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{topic.name}</h3>
-                        <p className="text-xs text-muted-foreground">
-                          {stat.attempts} attempt{stat.attempts !== 1 ? 's' : ''}
-                          {stat.attempts > 0 && ` · ${percentage}% correct`}
-                        </p>
-                      </div>
-                    </div>
-                    <span
-                      className={cn(
-                        "text-xs px-3 py-1.5 rounded-full font-medium",
-                        level === 'strong' && "bg-secondary/15 text-secondary",
-                        level === 'ok' && "bg-warning/15 text-warning",
-                        level === 'weak' && "bg-destructive/15 text-destructive",
-                        level === 'none' && "bg-accent text-muted-foreground"
-                      )}
+            {/* Top Topics */}
+            {topTopics.length > 0 && (
+              <div className="space-y-4 animate-fade-in" style={{ animationDelay: '100ms' }}>
+                <h2 className="text-lg font-semibold">Topics Practiced</h2>
+                <div className="space-y-3">
+                  {topTopics.map((topic, index) => (
+                    <div
+                      key={topic.name}
+                      className="bg-muted rounded-2xl p-4 border border-border animate-fade-in"
+                      style={{ animationDelay: `${(index + 1) * 50}ms` }}
                     >
-                      {level === 'strong' && 'Strong'}
-                      {level === 'ok' && 'Getting there'}
-                      {level === 'weak' && 'Needs work'}
-                      {level === 'none' && 'Not started'}
-                    </span>
-                  </div>
-                  
-                  {stat.attempts > 0 && (
-                    <div className="h-2 rounded-full bg-accent overflow-hidden">
-                      <div
-                        className={cn(
-                          "h-full rounded-full transition-all duration-500",
-                          level === 'strong' && "bg-secondary",
-                          level === 'ok' && "bg-warning",
-                          level === 'weak' && "bg-destructive"
-                        )}
-                        style={{ width: `${percentage}%` }}
-                      />
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-medium">{topic.name}</h3>
+                        <span className={cn(
+                          "text-xs px-2 py-1 rounded-full font-medium",
+                          topic.accuracy >= 70 ? "bg-secondary/15 text-secondary" :
+                          topic.accuracy >= 40 ? "bg-warning/15 text-warning" :
+                          "bg-destructive/15 text-destructive"
+                        )}>
+                          {topic.accuracy}%
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{topic.correct}/{topic.attempts} correct</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-accent overflow-hidden mt-2">
+                        <div
+                          className={cn(
+                            "h-full rounded-full transition-all duration-500",
+                            topic.accuracy >= 70 ? "bg-secondary" :
+                            topic.accuracy >= 40 ? "bg-warning" :
+                            "bg-destructive"
+                          )}
+                          style={{ width: `${topic.accuracy}%` }}
+                        />
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
-              );
-            })}
-          </div>
-        </div>
+              </div>
+            )}
 
-        {/* Encouragement */}
-        {totalAttempts > 0 && (
-          <div className="text-center p-6 bg-muted rounded-2xl animate-fade-in border border-border">
-            <p className="text-2xl mb-2">
-              {overallPercentage >= 70 ? '🌟' : overallPercentage >= 40 ? '💪' : '📚'}
-            </p>
-            <p className="text-muted-foreground">
-              {overallPercentage >= 70 
-                ? "Amazing progress! You're crushing it!"
-                : overallPercentage >= 40 
-                ? "Good work! Keep practicing to improve."
-                : "Every expert was once a beginner. Keep going!"}
-            </p>
-          </div>
+            {/* Motivation */}
+            <div className="text-center p-6 bg-muted rounded-2xl animate-fade-in border border-border" style={{ animationDelay: '200ms' }}>
+              <p className="text-2xl mb-2">
+                {accuracy >= 70 ? '🌟' : accuracy >= 40 ? '💪' : '📚'}
+              </p>
+              <p className="text-muted-foreground">
+                {accuracy >= 70 
+                  ? "You're doing amazing! Keep up the great work."
+                  : accuracy >= 40 
+                  ? "Good progress! Practice makes perfect."
+                  : "Every expert was once a beginner. Keep going!"}
+              </p>
+            </div>
+
+            {/* CTA */}
+            <Button 
+              onClick={() => navigate('/practice-arena')} 
+              className="w-full h-12 text-base font-medium"
+            >
+              Continue Practicing
+            </Button>
+          </>
         )}
       </div>
+    </div>
+  );
+}
+
+function StatCard({ icon, value, label }: { icon: React.ReactNode; value: string | number; label: string }) {
+  return (
+    <div className="bg-muted rounded-2xl p-5 text-center border border-border">
+      <div 
+        className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-3"
+        style={{ background: 'rgba(0,250,215,0.15)' }}
+      >
+        {icon}
+      </div>
+      <p className="text-3xl font-bold">{value}</p>
+      <p className="text-sm text-muted-foreground">{label}</p>
     </div>
   );
 }
