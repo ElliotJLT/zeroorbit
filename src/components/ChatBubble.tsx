@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import MathText from '@/components/MathText';
 
 interface ChatBubbleProps {
   sender: 'student' | 'tutor';
@@ -23,7 +24,9 @@ export function ChatBubble({ sender, content, timestamp }: ChatBubbleProps) {
             <span className="text-xs font-medium text-primary">Orbit</span>
           </div>
         )}
-        <p className="text-sm leading-relaxed whitespace-pre-wrap">{content}</p>
+        <div className="text-sm leading-relaxed whitespace-pre-wrap">
+          <MathText text={content} />
+        </div>
         {timestamp && (
           <p className={cn(
             "text-xs mt-2",

@@ -48,6 +48,7 @@ interface UserContext {
   board: string;
   tier?: string;
   targetGrade?: string;
+  studentName?: string;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
@@ -90,17 +91,19 @@ export default function Chat() {
       
       const { data: profile } = await supabase
         .from('profiles')
-        .select('year_group, exam_board, tier, target_grade')
+        .select('year_group, exam_board, tier, target_grade, full_name')
         .eq('user_id', user.id)
         .single();
 
       if (profile) {
         const isGCSE = profile.year_group === 'Y10' || profile.year_group === 'Y11';
+        const firstName = profile.full_name?.split(' ')[0] || undefined;
         setUserContext({
           level: isGCSE ? 'GCSE' : 'A-Level',
           board: profile.exam_board || 'Unknown',
           tier: isGCSE ? profile.tier || undefined : undefined,
           targetGrade: profile.target_grade || undefined,
+          studentName: firstName,
         });
       }
     };
