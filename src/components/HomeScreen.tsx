@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Camera, Shuffle, ChevronRight, Calculator, BarChart3, Compass, BookOpen, Info } from 'lucide-react';
+import { Camera, Swords, Calculator, BarChart3, Compass, BookOpen, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import orbitLogo from '@/assets/orbit-logo.png';
 import orbitIcon from '@/assets/orbit-icon.png';
@@ -41,7 +41,6 @@ export default function HomeScreen({
   onSignIn,
   onShowInfo,
 }: HomeScreenProps & { onShowInfo?: () => void }) {
-  const [activeSection, setActiveSection] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const groupedTopics = topics.reduce((acc, topic) => {
@@ -105,24 +104,34 @@ export default function HomeScreen({
             <div className="flex-1 h-px bg-border" />
           </div>
 
-          {/* Secondary - Browse Syllabus */}
-          <div className="space-y-3">
+          {/* Arena CTA */}
+          <Button
+            onClick={onTestMe}
+            variant="outline"
+            className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl border-primary/30 hover:bg-primary/5 font-medium text-base"
+          >
+            <Swords className="h-5 w-5 text-primary" />
+            <span>Test yourself in our Arena</span>
+            {!loadingTopics && (
+              <span className="text-muted-foreground text-sm">({topics.length} topics)</span>
+            )}
+          </Button>
 
+          {/* Topics Preview (non-interactive) */}
+          <div className="space-y-3 opacity-60">
+            <p className="text-xs text-muted-foreground text-center">Covering the full A-Level syllabus</p>
+            
             {loadingTopics ? (
-              <div className="text-center py-8 text-muted-foreground">Loading syllabus...</div>
+              <div className="text-center py-4 text-muted-foreground text-sm">Loading...</div>
             ) : (
               <div className="space-y-2">
                 {sections.map((section) => {
                   const Icon = sectionIcons[section as keyof typeof sectionIcons] || BookOpen;
-                  const isActive = activeSection === section;
                   const topicsInSection = groupedTopics[section] || [];
 
                   return (
                     <div key={section} className="rounded-xl border border-border overflow-hidden">
-                      <button
-                        onClick={() => setActiveSection(isActive ? null : section)}
-                        className="w-full p-4 flex items-center gap-3 bg-card hover:bg-muted/50 transition-colors"
-                      >
+                      <div className="p-4 flex items-center gap-3 bg-card">
                         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                           <Icon className="h-5 w-5 text-primary" />
                         </div>
@@ -130,23 +139,7 @@ export default function HomeScreen({
                           <p className="font-medium">{sectionLabels[section as keyof typeof sectionLabels]}</p>
                           <p className="text-sm text-muted-foreground">{topicsInSection.length} topics</p>
                         </div>
-                        <ChevronRight className={`h-5 w-5 text-muted-foreground transition-transform ${isActive ? 'rotate-90' : ''}`} />
-                      </button>
-
-                      {isActive && (
-                        <div className="border-t border-border bg-muted/20">
-                          {topicsInSection.map((topic) => (
-                            <button
-                              key={topic.id}
-                              onClick={() => onSelectTopic(topic)}
-                              className="w-full p-4 pl-16 flex items-center justify-between hover:bg-muted/50 transition-colors border-b border-border/50 last:border-b-0"
-                            >
-                              <span className="text-sm">{topic.name}</span>
-                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                      </div>
                     </div>
                   );
                 })}
