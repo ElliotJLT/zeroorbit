@@ -88,11 +88,33 @@ Return this exact JSON structure:
       throw new Error("No content in AI response");
     }
 
-    // Parse the JSON response (handle potential markdown code blocks)
+    // Parse the JSON response (handle potential markdown code blocks and multiple JSON objects)
     let parsed;
     try {
-      const cleanedContent = content.replace(/```json\n?|\n?```/g, '').trim();
-      parsed = JSON.parse(cleanedContent);
+      // Remove markdown code blocks
+      let cleanedContent = content.replace(/```json\n?/g, '').replace(/```/g, '').trim();
+      
+      // If there are multiple JSON objects, take the last complete one (often the corrected version)
+      const jsonMatches = cleanedContent.match(/\{[\s\S]*?\}(?=\s*\{|\s*$)/g);
+      if (jsonMatches && jsonMatches.length > 0) {
+        // Try each match from last to first until we find valid JSON
+        for (let i = jsonMatches.length - 1; i >= 0; i--) {
+          try {
+            const candidate = JSON.parse(jsonMatches[i]);
+            if (candidate.question_text && candidate.final_answer) {
+              parsed = candidate;
+              break;
+            }
+          } catch {
+            continue;
+          }
+        }
+      }
+      
+      // Fallback: try parsing the whole thing
+      if (!parsed) {
+        parsed = JSON.parse(cleanedContent);
+      }
     } catch (e) {
       console.error("Failed to parse AI response:", content);
       throw new Error("Invalid AI response format");
