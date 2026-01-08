@@ -186,11 +186,12 @@ Be encouraging and supportive when it IS maths. Never give the answer directly -
     // Check if the image was rejected as non-maths
     if (analysis.isMaths === false) {
       console.log("Image rejected - not a maths question:", analysis.rejectionReason);
+      // Return 200 with error in data so Supabase SDK properly populates response.data
       return new Response(JSON.stringify({ 
         error: "not_maths",
         rejectionReason: analysis.rejectionReason || "This doesn't appear to be a maths question"
       }), {
-        status: 400,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
