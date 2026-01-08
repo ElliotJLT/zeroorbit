@@ -19,12 +19,14 @@ export type Database = {
           created_at: string | null
           difficulty_tier: number
           feedback_summary: string | null
+          hints_used: number | null
           id: string
           marks_estimate: string | null
           question_id: string
           self_rating: string | null
           session_id: string
           status: string | null
+          time_spent_sec: number | null
           topic_id: string
           user_id: string | null
           working_image_urls: string[] | null
@@ -33,12 +35,14 @@ export type Database = {
           created_at?: string | null
           difficulty_tier: number
           feedback_summary?: string | null
+          hints_used?: number | null
           id?: string
           marks_estimate?: string | null
           question_id: string
           self_rating?: string | null
           session_id: string
           status?: string | null
+          time_spent_sec?: number | null
           topic_id: string
           user_id?: string | null
           working_image_urls?: string[] | null
@@ -47,12 +51,14 @@ export type Database = {
           created_at?: string | null
           difficulty_tier?: number
           feedback_summary?: string | null
+          hints_used?: number | null
           id?: string
           marks_estimate?: string | null
           question_id?: string
           self_rating?: string | null
           session_id?: string
           status?: string | null
+          time_spent_sec?: number | null
           topic_id?: string
           user_id?: string | null
           working_image_urls?: string[] | null

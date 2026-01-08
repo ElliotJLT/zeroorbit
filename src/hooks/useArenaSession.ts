@@ -53,6 +53,10 @@ export function useArenaSession() {
   
   const [attemptCount, setAttemptCount] = useState(0);
   const [showSolution, setShowSolution] = useState(false);
+  
+  // Fluency tracking
+  const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
+  const [hintsUsedThisQuestion, setHintsUsedThisQuestion] = useState(0);
 
   const currentQuestion = questions[currentQuestionIndex] || null;
   const currentAttempt = attempts.find(a => a.question_id === currentQuestion?.id) || null;
@@ -91,6 +95,8 @@ export function useArenaSession() {
     setAttemptCount(0);
     setShowSolution(false);
     setIsGenerating(true);
+    setQuestionStartTime(Date.now());
+    setHintsUsedThisQuestion(0);
 
     try {
       // Generate first question
@@ -137,11 +143,20 @@ export function useArenaSession() {
 
       const result = response.data as EvaluationResult;
       
-      // Record to localStorage for progress tracking
+      // Calculate time spent on this question
+      const timeSpentSec = Math.round((Date.now() - questionStartTime) / 1000);
+      
+      // Count hints (each attempt after the first is considered getting help)
+      const hintsThisAttempt = attemptCount > 0 ? 1 : 0;
+      setHintsUsedThisQuestion(prev => prev + hintsThisAttempt);
+      const totalHints = hintsUsedThisQuestion + hintsThisAttempt;
+      
+      // Record to localStorage for progress tracking (include fluency data)
       const topic = selectedTopics.find(t => t.id === currentQuestion.topic_id);
-      if (topic) {
-        recordAttempt(topic.name, result.status === 'correct');
+      if (topic && (result.status === 'correct' || result.next_action === 'show_model_solution')) {
+        recordAttempt(topic.name, result.status === 'correct', totalHints, timeSpentSec);
       }
+      
       const attemptData = {
         session_id: sessionId,
         question_id: currentQuestion.id,
@@ -151,6 +166,8 @@ export function useArenaSession() {
         marks_estimate: result.marks_estimate,
         feedback_summary: result.feedback_summary,
         working_image_urls: imageUrl ? [imageUrl] : null,
+        hints_used: totalHints,
+        time_spent_sec: timeSpentSec,
       };
 
       const { data: savedAttempt, error: saveError } = await supabase
@@ -209,6 +226,8 @@ export function useArenaSession() {
     setIsGenerating(true);
     setAttemptCount(0);
     setShowSolution(false);
+    setQuestionStartTime(Date.now());
+    setHintsUsedThisQuestion(0);
 
     try {
       // Pick a random topic for next question
