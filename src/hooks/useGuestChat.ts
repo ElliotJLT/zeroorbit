@@ -108,6 +108,7 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
         messages: allMessages.map((m) => ({
           role: m.sender,
           content: m.content,
+          image_url: m.imageUrl, // Include image URL for vision
         })),
         questionContext: `A-Level student (${examBoard || 'Unknown board'}), current grade: ${currentGrade || 'Unknown'}, target: ${targetGrade || 'Unknown'}. Struggles with: ${struggles || 'Not specified'}. Question: ${questionText || 'See attached image'}`,
       }),
@@ -201,10 +202,10 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
           messages: allMessages.map((m) => ({
             role: m.sender,
             content: m.content,
+            image_url: m.imageUrl, // Include image URL for vision
           })),
           questionContext: `A-Level student (${examBoard || 'Unknown board'}), current grade: ${currentGrade || 'Unknown'}, target: ${targetGrade || 'Unknown'}. Struggles with: ${struggles || 'Not specified'}. Question: ${questionText || 'See attached image'}`,
           image_type: imageMode,
-          latest_image_url: imageMessage.imageUrl,
         }),
       });
 
