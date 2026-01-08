@@ -27,6 +27,13 @@ const difficultyLabels = [
   { level: 5, label: 'Extension', description: 'A* territory' },
 ];
 
+const questionLabels: Record<number, string> = {
+  5: 'Quick burst',
+  10: 'Solid session',
+  15: 'Deep focus',
+  20: 'Full workout',
+};
+
 export default function PracticeArena() {
   const navigate = useNavigate();
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -180,6 +187,9 @@ export default function PracticeArena() {
                 step={5}
                 className="w-full"
               />
+              <p className="text-xs text-muted-foreground text-center">
+                {questionLabels[questionCount]}
+              </p>
             </div>
           </div>
         </div>
