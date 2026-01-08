@@ -193,25 +193,22 @@ export default function ArenaSession() {
           <div className="absolute inset-0 overflow-hidden bg-background">
             {/* Center point glow */}
             <div 
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full"
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full"
               style={{
-                background: 'radial-gradient(circle, hsl(172 100% 49% / 0.4) 0%, transparent 70%)',
-                filter: 'blur(8px)',
+                background: 'radial-gradient(circle, hsl(172 100% 49% / 0.5) 0%, transparent 70%)',
+                filter: 'blur(12px)',
               }}
             />
             
-            {/* Warp stars */}
-            {Array.from({ length: 80 }).map((_, i) => {
-              // Random angle from center
-              const angle = (i / 80) * 360 + Math.random() * 20;
+            {/* Warp stars - more visible */}
+            {Array.from({ length: 120 }).map((_, i) => {
+              const angle = (i / 120) * 360 + Math.random() * 15;
               const radians = (angle * Math.PI) / 180;
-              // Calculate end position (far outside viewport)
-              const distance = 150 + Math.random() * 100; // vw/vh units
+              const distance = 120 + Math.random() * 80;
               const tx = `${Math.cos(radians) * distance}vw`;
               const ty = `${Math.sin(radians) * distance}vh`;
-              // Mint or white
-              const isMint = Math.random() > 0.7;
-              const size = Math.random() * 2 + 1;
+              const isMint = Math.random() > 0.6;
+              const size = Math.random() * 3 + 1.5;
               
               return (
                 <div
@@ -221,28 +218,31 @@ export default function ArenaSession() {
                     width: `${size}px`,
                     height: `${size}px`,
                     background: isMint 
-                      ? 'hsl(172 100% 60%)' 
-                      : `rgba(255, 255, 255, ${0.6 + Math.random() * 0.4})`,
+                      ? 'hsl(172 100% 65%)' 
+                      : `rgba(255, 255, 255, ${0.7 + Math.random() * 0.3})`,
                     boxShadow: isMint 
-                      ? '0 0 4px hsl(172 100% 60% / 0.8)' 
-                      : 'none',
+                      ? `0 0 ${size * 3}px hsl(172 100% 60% / 0.9)` 
+                      : `0 0 ${size * 2}px rgba(255, 255, 255, 0.5)`,
                     '--tx': tx,
                     '--ty': ty,
-                    animation: `warpStar ${1.5 + Math.random() * 1}s linear infinite`,
-                    animationDelay: `${Math.random() * 2}s`,
+                    animation: `warpStar ${2 + Math.random() * 1.5}s linear infinite`,
+                    animationDelay: `${Math.random() * 3}s`,
                   } as React.CSSProperties}
                 />
               );
             })}
           </div>
           
-          {/* Center content */}
+          {/* Center content - styled to match stars */}
           <div className="absolute inset-0 flex items-center justify-center z-10">
-            <div className="text-center space-y-4">
-              <div className="w-20 h-20 mx-auto rounded-2xl bg-primary/20 backdrop-blur-sm flex items-center justify-center border border-primary/30">
+            <div className="text-center space-y-6">
+              <div className="w-20 h-20 mx-auto rounded-2xl bg-background/80 backdrop-blur-sm flex items-center justify-center border border-primary/40 shadow-[0_0_30px_hsl(172_100%_49%/0.3)]">
                 <Swords className="h-10 w-10 text-primary animate-pulse" />
               </div>
-              <p className="text-foreground font-medium text-lg">{loadingMessage}</p>
+              <p className="text-lg font-medium tracking-wide">
+                <span className="text-primary">{loadingMessage.split(' ')[0]}</span>
+                <span className="text-foreground/90"> {loadingMessage.split(' ').slice(1).join(' ')}</span>
+              </p>
             </div>
           </div>
         </div>
