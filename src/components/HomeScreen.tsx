@@ -72,11 +72,8 @@ export default function HomeScreen({
         <div className="max-w-lg mx-auto p-4 space-y-6">
           {/* Hero Section */}
           <div className="text-center py-6">
-            <div className="relative inline-block mb-4">
-              <div 
-                className="absolute w-32 h-32 blur-2xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                style={{ background: 'radial-gradient(circle, rgba(0,250,215,0.3) 0%, transparent 70%)' }}
-              />
+            <div className="relative inline-block mb-4 grain-overlay">
+              <div className="absolute w-40 h-40 logo-glow top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
               <img src={orbitLogo} alt="Orbit" className="relative h-24 w-auto mx-auto" />
             </div>
             <h1 className="text-2xl font-semibold mb-2">A-Level Maths Tutor</h1>
