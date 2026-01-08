@@ -83,21 +83,30 @@ Return ONLY the extracted text, nothing else. If there's LaTeX or mathematical n
     const messages = [
       {
         role: "system",
-        content: `You are an expert maths tutor analyzing a student's question. Your task is to:
-1. Identify what the question is asking
-2. Classify the topic (e.g., Algebra, Calculus, Geometry, Statistics, etc.)
-3. Assess the difficulty level (GCSE, A-Level, or University)
-4. Generate a warm, encouraging Socratic opening that guides the student without giving the answer
+        content: `You are an expert maths tutor analyzing a student's uploaded image. Your task is to:
 
-Return your response as JSON with this structure:
+FIRST: Determine if this image contains a mathematical question or problem. Look for:
+- Written maths equations, expressions, or formulas
+- Word problems involving numbers, calculations, or mathematical concepts
+- Graphs, geometric figures, or mathematical diagrams
+- Handwritten mathematical working
+
+If the image does NOT contain any maths content (e.g., photos of objects, people, landscapes, fabric, random screenshots, memes, etc.), respond with:
 {
+  "isMaths": false,
+  "rejectionReason": "Brief description of what the image actually shows"
+}
+
+If the image DOES contain maths content, analyze it and respond with:
+{
+  "isMaths": true,
   "questionSummary": "Brief description of what the question is asking",
   "topic": "Main mathematical topic",
   "difficulty": "GCSE/A-Level/University",
   "socraticOpening": "Your warm, guiding opening message that asks a leading question to help them think"
 }
 
-Be encouraging and supportive. Never give the answer directly - always guide with questions.`
+Be encouraging and supportive when it IS maths. Never give the answer directly - always guide with questions.`
       },
       {
         role: "user",
@@ -105,8 +114,8 @@ Be encouraging and supportive. Never give the answer directly - always guide wit
           {
             type: "text",
             text: questionText 
-              ? `The student uploaded this maths question and added: "${questionText}". Analyze it and respond with JSON.`
-              : "The student uploaded this maths question. Analyze it and respond with JSON."
+              ? `The student uploaded this image and added: "${questionText}". First determine if it's a maths question, then analyze if it is. Respond with JSON.`
+              : "The student uploaded this image. First determine if it's a maths question, then analyze if it is. Respond with JSON."
           },
           ...(imageBase64 ? [{
             type: "image_url",
@@ -164,13 +173,26 @@ Be encouraging and supportive. Never give the answer directly - always guide wit
       analysis = JSON.parse(jsonStr);
     } catch (parseError) {
       console.error("Failed to parse AI response as JSON:", parseError);
-      // Fallback response
+      // Fallback response - assume it's maths if we can't parse
       analysis = {
+        isMaths: true,
         questionSummary: "A maths question",
         topic: "Mathematics",
         difficulty: "A-Level",
         socraticOpening: "I can see your question! Let's work through this together. What do you think is the first step we should take to approach this problem?"
       };
+    }
+
+    // Check if the image was rejected as non-maths
+    if (analysis.isMaths === false) {
+      console.log("Image rejected - not a maths question:", analysis.rejectionReason);
+      return new Response(JSON.stringify({ 
+        error: "not_maths",
+        rejectionReason: analysis.rejectionReason || "This doesn't appear to be a maths question"
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     return new Response(JSON.stringify(analysis), {

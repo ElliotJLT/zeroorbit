@@ -95,6 +95,7 @@ export default function Index() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [showNewProblemModal, setShowNewProblemModal] = useState(false);
   const [modalAnalyzing, setModalAnalyzing] = useState(false);
+  const [notMathsError, setNotMathsError] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const workingFileInputRef = useRef<HTMLInputElement>(null);
@@ -469,6 +470,7 @@ export default function Index() {
     if (!imagePreview) return;
     
     setIsAnalyzing(true);
+    setNotMathsError(null);
     
     try {
       const controller = new AbortController();
@@ -482,6 +484,13 @@ export default function Index() {
       });
       
       clearTimeout(timeoutId);
+
+      // Check for not_maths error
+      if (response.data?.error === 'not_maths') {
+        setNotMathsError(response.data.rejectionReason || "This doesn't appear to be a maths question");
+        setIsAnalyzing(false);
+        return;
+      }
 
       if (response.error) throw new Error(response.error.message);
 
@@ -526,6 +535,14 @@ export default function Index() {
         },
       });
 
+      // Check for not_maths error
+      if (response.data?.error === 'not_maths') {
+        setNotMathsError(response.data.rejectionReason || "This doesn't appear to be a maths question");
+        setShowNewProblemModal(false);
+        setModalAnalyzing(false);
+        return;
+      }
+
       let analysisData: QuestionAnalysis;
       
       if (response.error) {
@@ -539,6 +556,7 @@ export default function Index() {
         analysisData = response.data as QuestionAnalysis;
       }
       
+      setNotMathsError(null);
       setAnalysis(analysisData);
       
       // Start text chat directly with the new question
@@ -992,59 +1010,121 @@ export default function Index() {
           </div>
 
           <div className="flex-1 flex flex-col space-y-6 animate-fade-in">
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-semibold tracking-tight">
-                {isAnalyzing ? 'Analysing...' : 'Review your question'}
-              </h2>
-              <p className="text-muted-foreground">
-                {isAnalyzing ? 'Orbit is figuring out how to help' : 'Add details to get better help'}
-              </p>
-            </div>
+            {/* Houston Error State */}
+            {notMathsError ? (
+              <>
+                <div className="text-center space-y-3">
+                  <div className="text-5xl mb-4">🚀</div>
+                  <h2 className="text-2xl font-semibold tracking-tight text-destructive">
+                    Houston, we have a problem
+                  </h2>
+                  <p className="text-muted-foreground">
+                    That doesn't look like a maths question
+                  </p>
+                  <p className="text-sm text-muted-foreground/70 italic">
+                    "{notMathsError}"
+                  </p>
+                </div>
 
-            <div className="relative overflow-hidden rounded-xl">
-              <img
-                src={imagePreview!}
-                alt="Question"
-                className={`w-full border border-border rounded-xl transition-all duration-300 ${isAnalyzing ? 'opacity-70' : ''}`}
-              />
-              {isAnalyzing && (
-                <div className="absolute inset-0 overflow-hidden rounded-xl">
-                  <div 
-                    className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite]"
-                    style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(0,250,215,0.15) 50%, transparent 100%)' }}
+                <div className="relative overflow-hidden rounded-xl opacity-50">
+                  <img
+                    src={imagePreview!}
+                    alt="Uploaded image"
+                    className="w-full border border-destructive/30 rounded-xl"
+                  />
+                  <div className="absolute inset-0 bg-destructive/5 rounded-xl" />
+                </div>
+
+                <div className="bg-muted/50 rounded-xl p-4 text-center space-y-2">
+                  <p className="text-sm font-medium">Please upload:</p>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>📝 A maths equation or problem</li>
+                    <li>📄 An exam question from a past paper</li>
+                    <li>✍️ Your handwritten working</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <Button 
+                    onClick={() => {
+                      setNotMathsError(null);
+                      setImagePreview(null);
+                      setStep('upload');
+                    }} 
+                    className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    Try Again
+                  </Button>
+                  <button 
+                    onClick={() => {
+                      setNotMathsError(null);
+                      setImagePreview(null);
+                      setStep('home');
+                    }}
+                    className="w-full h-11 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Back to Home
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-center space-y-2">
+                  <h2 className="text-2xl font-semibold tracking-tight">
+                    {isAnalyzing ? 'Analysing...' : 'Review your question'}
+                  </h2>
+                  <p className="text-muted-foreground">
+                    {isAnalyzing ? 'Orbit is figuring out how to help' : 'Add details to get better help'}
+                  </p>
+                </div>
+
+                <div className="relative overflow-hidden rounded-xl">
+                  <img
+                    src={imagePreview!}
+                    alt="Question"
+                    className={`w-full border border-border rounded-xl transition-all duration-300 ${isAnalyzing ? 'opacity-70' : ''}`}
+                  />
+                  {isAnalyzing && (
+                    <div className="absolute inset-0 overflow-hidden rounded-xl">
+                      <div 
+                        className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite]"
+                        style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(0,250,215,0.15) 50%, transparent 100%)' }}
+                      />
+                    </div>
+                  )}
+                  {!isAnalyzing && (
+                    <button onClick={clearImage} className="absolute top-3 right-3 w-9 h-9 rounded-full bg-background/90 backdrop-blur-sm hover:bg-muted active:scale-95 transition-all flex items-center justify-center">
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+
+                <div className={`transition-opacity duration-300 ${isAnalyzing ? 'opacity-30 pointer-events-none' : ''}`}>
+                  <Textarea
+                    placeholder="Add context or specify what you need help with (optional)"
+                    value={questionText}
+                    onChange={(e) => setQuestionText(e.target.value)}
+                    className="min-h-[100px] rounded-xl bg-muted border-0 resize-none focus-visible:ring-1 focus-visible:ring-primary"
+                    disabled={isAnalyzing}
                   />
                 </div>
-              )}
-              {!isAnalyzing && (
-                <button onClick={clearImage} className="absolute top-3 right-3 p-2 rounded-full bg-background/90 backdrop-blur-sm hover:bg-muted transition-colors">
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
 
-            <div className={`transition-opacity duration-300 ${isAnalyzing ? 'opacity-30 pointer-events-none' : ''}`}>
-              <Textarea
-                placeholder="Add context or specify what you need help with (optional)"
-                value={questionText}
-                onChange={(e) => setQuestionText(e.target.value)}
-                className="min-h-[100px] rounded-xl bg-muted border-0 resize-none focus-visible:ring-1 focus-visible:ring-primary"
-                disabled={isAnalyzing}
-              />
-            </div>
-
-            <div className="space-y-3 pt-2">
-              <Button onClick={analyzeAndStartChat} disabled={isAnalyzing} className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-70">
-                {isAnalyzing ? (
-                  <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />
-                    Thinking...
-                  </span>
-                ) : (
-                  <>Get Help<ArrowRight className="h-4 w-4 ml-2" /></>
-                )}
-              </Button>
-              <p className="text-center text-xs text-muted-foreground">No sign-up required</p>
-            </div>
+                <div className="space-y-3 pt-2">
+                  <Button onClick={analyzeAndStartChat} disabled={isAnalyzing} className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 active:scale-[0.98] disabled:opacity-70 transition-all">
+                    {isAnalyzing ? (
+                      <span className="flex items-center gap-2">
+                        <span className="h-4 w-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+                        Thinking...
+                      </span>
+                    ) : (
+                      <>Get Help<ArrowRight className="h-4 w-4 ml-2" /></>
+                    )}
+                  </Button>
+                  <p className="text-center text-xs text-muted-foreground">No sign-up required</p>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
