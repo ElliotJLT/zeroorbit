@@ -751,11 +751,9 @@ export default function Index() {
     setStep('upload');
   };
 
-  // Handle test me - random topic
+  // Handle test me - navigate to arena setup
   const handleTestMe = () => {
-    if (topics.length === 0) return;
-    const randomTopic = topics[Math.floor(Math.random() * topics.length)];
-    handleSelectSyllabusTopic(randomTopic);
+    navigate('/practice-arena');
   };
 
   // Home screen with new design
