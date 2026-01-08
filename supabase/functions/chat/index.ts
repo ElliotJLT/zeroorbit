@@ -7,24 +7,34 @@ const corsHeaders = {
 
 const buildSystemPrompt = (
   userContext?: { level: string; board: string; tier?: string; targetGrade?: string; studentName?: string },
-  imageType?: 'working' | 'question'
+  imageType?: 'working' | 'question' | 'mark_scheme'
 ) => {
   const studentName = userContext?.studentName || 'there';
   const contextLine = userContext 
     ? `\n\nStudent: ${studentName}, ${userContext.level}, ${userContext.board || 'Unknown'} board, target ${userContext.targetGrade || 'unknown'}.`
     : '';
 
-  const imageHandling = imageType === 'working'
-    ? `\n\n## Working Image Context
+  let imageHandling = '';
+  if (imageType === 'working') {
+    imageHandling = `\n\n## Working Image Context
 The student has uploaded their working. Your job is:
 1. Check their work for errors
 2. If correct, guide to next step with "${studentName}, good - now..."
 3. If wrong, point out the error directly: "${studentName}, check your step where..."
-4. Do NOT re-explain the question`
-    : imageType === 'question'
-    ? `\n\n## New Question Context
-The student uploaded a new question. Start with: "${studentName}, for this one..." then ask what they've tried or suggest first step.`
-    : '';
+4. Do NOT re-explain the question`;
+  } else if (imageType === 'question') {
+    imageHandling = `\n\n## New Question Context
+The student uploaded a new question. Start with: "${studentName}, for this one..." then ask what they've tried or suggest first step.`;
+  } else if (imageType === 'mark_scheme') {
+    imageHandling = `\n\n## Mark Scheme / Model Answer Context
+The student has uploaded a mark scheme or model answer. They don't understand part of it.
+Your job is:
+1. Do NOT re-solve the problem from scratch
+2. Ask which specific step or line they don't understand: "${studentName}, which part of this solution isn't clicking?"
+3. Once they point to a step, explain ONLY that step clearly
+4. Then ask them to apply it: "Now try using that idea on a similar step"
+5. Keep focus on the mark scheme's method, not your own approach`;
+  }
 
   const studentNameForPrompt = userContext?.studentName || '';
   const nameInstruction = studentNameForPrompt 

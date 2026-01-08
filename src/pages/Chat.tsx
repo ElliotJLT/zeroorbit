@@ -25,7 +25,7 @@ interface Message {
   image_url?: string | null;
 }
 
-type CameraMode = 'working' | 'question';
+type CameraMode = 'working' | 'question' | 'mark_scheme';
 
 interface QuestionAnalysis {
   questionSummary: string;
@@ -74,6 +74,7 @@ export default function Chat() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const workingFileInputRef = useRef<HTMLInputElement>(null);
   const questionFileInputRef = useRef<HTMLInputElement>(null);
+  const markSchemeFileInputRef = useRef<HTMLInputElement>(null);
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -398,6 +399,8 @@ export default function Chat() {
 
       const messageContent = mode === 'working' 
         ? "Here's my working." 
+        : mode === 'mark_scheme'
+        ? "Here's the mark scheme / model answer."
         : "New question.";
 
       // Create student message with image
@@ -734,6 +737,14 @@ export default function Chat() {
             className="hidden"
             onChange={(e) => handleImageUpload(e, 'question')}
           />
+          <input
+            ref={markSchemeFileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => handleImageUpload(e, 'mark_scheme')}
+          />
 
           {/* Primary CTA: Add working */}
           <button
@@ -764,6 +775,14 @@ export default function Chat() {
               className="text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
             >
               New question
+            </button>
+            <span className="text-muted-foreground/50">•</span>
+            <button
+              onClick={() => markSchemeFileInputRef.current?.click()}
+              disabled={sending}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+            >
+              Mark scheme
             </button>
             <span className="text-muted-foreground/50">•</span>
             <button
