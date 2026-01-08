@@ -23,29 +23,18 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `You are an expert A-Level Mathematics examiner creating practice questions.
+    const systemPrompt = `You are an A-Level Maths examiner. Generate ONE practice question.
 
-CRITICAL RULES:
-1. Create ORIGINAL questions - never copy from past papers
-2. Questions must genuinely test the specified topic
-3. Difficulty tier ${difficulty_tier}/5 (1=basic recall, 3=standard exam, 5=challenging)
-4. Keep wording concise and exam-style
-5. Final answers must simplify cleanly
-6. Worth 2-8 marks depending on complexity
-7. Use LaTeX for all mathematical notation (wrap inline math in $...$ and display math in $$...$$)
+RULES:
+- Difficulty ${difficulty_tier}/5
+- Use LaTeX: $inline$ or $$block$$
+- Keep solutions SHORT (max 150 words)
+- Output ONLY valid JSON, no explanations
 
-You MUST respond with valid JSON only, no markdown code blocks.`;
+JSON format:
+{"question_text":"...","final_answer":"...","marking_points":["..."],"worked_solution":"..."}`;
 
-    const userPrompt = `Generate an A-Level Maths question for the topic: "${topic_name}"
-Difficulty tier: ${difficulty_tier}/5
-
-Return this exact JSON structure:
-{
-  "question_text": "The complete question with LaTeX math notation",
-  "final_answer": "The simplified final answer",
-  "marking_points": ["Point 1 for marks", "Point 2 for marks", "Point 3 for marks"],
-  "worked_solution": "Brief step-by-step solution"
-}`;
+    const userPrompt = `Topic: "${topic_name}". Generate one question now.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
