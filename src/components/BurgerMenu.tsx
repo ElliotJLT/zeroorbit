@@ -61,7 +61,7 @@ export default function BurgerMenu({ onSettings }: BurgerMenuProps) {
               </div>
             </button>
 
-            {/* My Progress - Pro */}
+            {/* My Progress - Locked until Arena */}
             <div className="w-full flex items-center gap-3 p-4 rounded-xl bg-muted/30 opacity-60 cursor-not-allowed">
               <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center relative">
                 <TrendingUp className="h-5 w-5 text-muted-foreground" />
@@ -71,7 +71,7 @@ export default function BurgerMenu({ onSettings }: BurgerMenuProps) {
               </div>
               <div>
                 <p className="font-medium text-muted-foreground">My Progress</p>
-                <p className="text-sm text-muted-foreground/70">Sign up to access Pro</p>
+                <p className="text-sm text-muted-foreground/70">Complete a Practice Arena to unlock</p>
               </div>
             </div>
 
