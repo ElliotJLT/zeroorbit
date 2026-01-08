@@ -1067,12 +1067,7 @@ export default function Index() {
             }}
             onSettings={() => setStep('setup')}
           />
-          <div className="flex items-center gap-2">
-            <img src={orbitIcon} alt="Orbit" className="h-8 w-auto" />
-            {analysis?.topic && (
-              <span className="text-sm text-muted-foreground">{analysis.topic}</span>
-            )}
-          </div>
+          <div className="w-8" /> {/* Spacer for symmetry */}
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -1373,10 +1368,6 @@ export default function Index() {
                     Type a line
                   </button>
                 </div>
-                
-                <p className="text-center text-xs text-muted-foreground mt-1">
-                  Paper is your whiteboard — snap your work
-                </p>
               </div>
             )}
           </div>
