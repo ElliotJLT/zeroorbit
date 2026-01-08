@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, X, Swords } from 'lucide-react';
 import { useArenaSession } from '@/hooks/useArenaSession';
@@ -26,10 +26,41 @@ interface Topic {
   section: string | null;
 }
 
+const loadingMessages = [
+  "Entering the arena",
+  "Warming up the challenge",
+  "Selecting your question",
+  "Calibrating difficulty",
+  "Almost ready",
+];
+
+function useLoadingMessage() {
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [dots, setDots] = useState("");
+
+  useEffect(() => {
+    const dotsInterval = setInterval(() => {
+      setDots(prev => prev.length >= 3 ? "" : prev + ".");
+    }, 400);
+
+    const messageInterval = setInterval(() => {
+      setMessageIndex(prev => (prev + 1) % loadingMessages.length);
+    }, 2500);
+
+    return () => {
+      clearInterval(dotsInterval);
+      clearInterval(messageInterval);
+    };
+  }, []);
+
+  return `${loadingMessages[messageIndex]}${dots}`;
+}
+
 export default function ArenaSession() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const loadingMessage = useLoadingMessage();
   
   const [topics, setTopics] = useState<Topic[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -161,7 +192,7 @@ export default function ArenaSession() {
             <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center animate-pulse">
               <Swords className="h-8 w-8 text-primary" />
             </div>
-            <p className="text-muted-foreground">Generating your question...</p>
+            <p className="text-muted-foreground font-medium">{loadingMessage}</p>
           </div>
         </div>
       </div>
