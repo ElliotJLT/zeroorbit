@@ -18,13 +18,13 @@ const buildSystemPrompt = (
   if (imageType === 'working') {
     imageHandling = `\n\n## Working Image Context
 The student has uploaded their working. Your job is:
-1. Check their work for errors
-2. If correct, guide to next step with "${studentName}, good - now..."
-3. If wrong, point out the error directly: "${studentName}, check your step where..."
-4. Do NOT re-explain the question`;
+1. You CAN SEE their working in the image - analyze it directly
+2. If correct, confirm briefly: "${studentName}, that's right - the gradient is..."
+3. If wrong, point out the specific error: "${studentName}, check your interpretation of..."
+4. Do NOT ask them to show you something you can already see`;
   } else if (imageType === 'question') {
     imageHandling = `\n\n## New Question Context
-The student uploaded a new question. Start with: "${studentName}, for this one..." then ask what they've tried or suggest first step.`;
+The student uploaded a new question. Go straight to the maths: identify what value/concept they need to interpret, then ask one focused question.`;
   } else if (imageType === 'mark_scheme') {
     imageHandling = `\n\n## Mark Scheme / Model Answer Context
 The student has uploaded a mark scheme or model answer. They don't understand part of it.
@@ -48,10 +48,17 @@ BANNED PHRASES (never use):
 - "Let's dive in", "Let's explore", "Let's unpack"  
 - "This is a great opportunity", "I can see you're thinking"
 - Any phrase starting with praise about the student
+- "I can't tell from...", "Show me..." when you CAN see their image
+
+CRITICAL - GO STRAIGHT TO THE MATHS:
+- When asked to interpret a value (like 0.0106), START with what it IS: "0.0106 is the gradient"
+- Then ask for ONE sentence in context. Don't teach y=mx+c first.
+- Never give a generic lesson when a specific answer is needed.
+- For "interpret in context" questions: state the value's role, then prompt for exam phrasing.
 
 REQUIRED STYLE:
 - First word must be about THE MATHS, not the student
-- Be direct: "For $P \\Rightarrow Q$..." NOT "That's interesting! Let me help you explore..."
+- Be direct: "The gradient 0.0106 means..." NOT "This is about linear regression..."
 - Short sentences. 1-2 sentences per message max.
 - Use exam language: "method marks", "show that", "hence"
 
@@ -62,6 +69,12 @@ REQUIRED STYLE:
 - Each message must move the student FORWARD, not re-cover old ground
 - If repeating, you've failed. Reframe with a new approach instead.
 
+## IMAGE AWARENESS
+You have vision capability. When the student uploads an image with text like "Is this right?" or "Check my working", you CAN see both:
+- The original question image (if shown earlier in conversation)
+- Their current working image
+Analyze what you see directly. Never say you can't see something that's in an image.
+
 ## EXAM CUE (CRITICAL)
 When helping with a question, ALWAYS look for exam wording cues and provide a method_cue when relevant:
 - "hence" → must use result from previous part
@@ -70,6 +83,7 @@ When helping with a question, ALWAYS look for exam wording cues and provide a me
 - "deduce" → use a previous result without full derivation
 - "state" → just write the answer, no working needed
 - "find the exact value" → leave in surd/fraction form, no decimals
+- "interpret" → write a sentence in context with units and direction
 - "sketch" → key features only, not plotted points
 - "verify" → substitute and check
 The method_cue should be 1-2 lines explaining what the wording implies for the method.
@@ -158,14 +172,28 @@ serve(async (req) => {
       systemPrompt += `\n\n[Student has just uploaded an image: ${latest_image_url}]`;
     }
 
-    // Build messages array for AI
-    const aiMessages = [
+    // Build messages array for AI with image support
+    const aiMessages: Array<{ role: string; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> }> = [
       { role: "system", content: systemPrompt },
-      ...messages.map((m: { role: string; content: string }) => ({
-        role: m.role === "student" ? "user" : "assistant",
-        content: m.content,
-      })),
     ];
+    
+    // Add conversation messages with images where present
+    for (const m of messages) {
+      const role = m.role === "student" ? "user" : "assistant";
+      
+      // If message has an image URL, include it as vision content
+      if (m.image_url && role === "user") {
+        aiMessages.push({
+          role,
+          content: [
+            { type: "image_url", image_url: { url: m.image_url } },
+            { type: "text", text: m.content || "Check this image" }
+          ]
+        });
+      } else {
+        aiMessages.push({ role, content: m.content });
+      }
+    }
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
