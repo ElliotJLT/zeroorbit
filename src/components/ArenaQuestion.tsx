@@ -3,6 +3,7 @@ import { Camera, Send, Eye, ArrowRight, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import MathText from '@/components/MathText';
 
 interface ArenaQuestionProps {
   question: {
@@ -63,12 +64,6 @@ export default function ArenaQuestion({
 
   const isCompleted = feedback?.status === 'correct' || showSolution;
 
-  // Render LaTeX-aware content
-  const renderMathContent = (text: string) => {
-    // Split by LaTeX delimiters and render
-    // For now, just display the text - the app likely has a global math renderer
-    return text;
-  };
 
   return (
     <div className="flex flex-col h-full">
@@ -77,7 +72,9 @@ export default function ArenaQuestion({
         <div className="bg-card rounded-xl p-4 border border-border">
           <p className="text-sm font-medium text-muted-foreground mb-2">Question</p>
           <div className="prose prose-sm dark:prose-invert max-w-none">
-            <p className="whitespace-pre-wrap">{renderMathContent(question.question_text)}</p>
+            <div className="whitespace-pre-wrap leading-relaxed">
+              <MathText text={question.question_text} />
+            </div>
           </div>
         </div>
 
@@ -118,11 +115,15 @@ export default function ArenaQuestion({
             <div className="space-y-3">
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Final Answer</p>
-                <p className="font-mono text-sm">{question.final_answer}</p>
+                <div className="font-mono text-sm">
+                  <MathText text={question.final_answer} />
+                </div>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Working</p>
-                <p className="text-sm whitespace-pre-wrap">{question.worked_solution}</p>
+                <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                  <MathText text={question.worked_solution} />
+                </div>
               </div>
             </div>
           </div>
