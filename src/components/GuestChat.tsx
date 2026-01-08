@@ -311,52 +311,34 @@ export function GuestChat({
               </button>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-4">
-              {/* Three clear action buttons */}
-              <div className="grid grid-cols-3 gap-3 w-full max-w-md">
-                {/* Add working - primary */}
+            <div className="flex flex-col items-center gap-3">
+              {/* Three equally weighted action buttons for beta testing */}
+              <div className="grid grid-cols-3 gap-3 w-full max-w-sm">
                 <button 
                   onClick={() => workingFileInputRef.current?.click()} 
                   disabled={sending} 
-                  className="flex flex-col items-center gap-2 p-4 rounded-2xl disabled:opacity-50 transition-all active:scale-95"
-                  style={{ 
-                    background: 'linear-gradient(135deg, #00FAD7 0%, #00C4AA 100%)', 
-                    boxShadow: '0 4px 20px rgba(0,250,215,0.3)' 
-                  }}
+                  className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-card border-2 border-primary/30 disabled:opacity-50 transition-all active:scale-95 hover:border-primary/60"
                 >
-                  {sending ? (
-                    <div className="h-6 w-6 border-2 border-background/30 border-t-background rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <Camera className="h-6 w-6 text-background" />
-                      <span className="text-sm font-medium text-background">Add working</span>
-                    </>
-                  )}
+                  <Camera className="h-6 w-6 text-primary" />
+                  <span className="text-sm font-medium text-foreground">Add working</span>
                 </button>
                 
-                {/* Voice mode */}
                 <button 
-                  onClick={() => {
-                    toast({
-                      title: "Voice mode coming soon",
-                      description: "Real-time voice conversations are in development.",
-                    });
-                  }}
+                  onClick={() => onSendMessage('[VOICE_MODE]', 'voice')}
                   disabled={sending}
-                  className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-muted/50 border border-border disabled:opacity-50 transition-all active:scale-95 hover:bg-muted"
+                  className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-card border-2 border-primary/30 disabled:opacity-50 transition-all active:scale-95 hover:border-primary/60"
                 >
-                  <Mic className="h-6 w-6 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Voice mode</span>
+                  <Mic className="h-6 w-6 text-primary" />
+                  <span className="text-sm font-medium text-foreground">Voice mode</span>
                 </button>
                 
-                {/* Type a line */}
                 <button 
                   onClick={() => setShowInput(true)}
                   disabled={sending}
-                  className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-muted/50 border border-border disabled:opacity-50 transition-all active:scale-95 hover:bg-muted"
+                  className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-card border-2 border-primary/30 disabled:opacity-50 transition-all active:scale-95 hover:border-primary/60"
                 >
-                  <Keyboard className="h-6 w-6 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Type a line</span>
+                  <Keyboard className="h-6 w-6 text-primary" />
+                  <span className="text-sm font-medium text-foreground">Type a line</span>
                 </button>
               </div>
             </div>
