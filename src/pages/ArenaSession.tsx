@@ -177,8 +177,8 @@ export default function ArenaSession() {
 
   if (isLoading || (isGenerating && !currentQuestion)) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <header className="flex items-center gap-3 p-4 border-b border-border">
+      <div className="min-h-screen flex flex-col bg-background overflow-hidden">
+        <header className="flex items-center gap-3 p-4 border-b border-border relative z-10">
           <button
             onClick={() => navigate(-1)}
             className="p-2 rounded-full hover:bg-muted transition-colors"
@@ -187,12 +187,53 @@ export default function ArenaSession() {
           </button>
           <h1 className="text-lg font-semibold">Practice Arena</h1>
         </header>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center space-y-4">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center animate-pulse">
-              <Swords className="h-8 w-8 text-primary" />
+        
+        {/* Starfield background */}
+        <div className="flex-1 relative">
+          <div className="absolute inset-0 overflow-hidden">
+            {/* Rushing stars */}
+            {Array.from({ length: 60 }).map((_, i) => (
+              <div
+                key={i}
+                className="absolute rounded-full bg-white"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  width: `${Math.random() * 2 + 1}px`,
+                  height: `${Math.random() * 2 + 1}px`,
+                  opacity: Math.random() * 0.8 + 0.2,
+                  animation: `rushingStar ${Math.random() * 1.5 + 0.5}s linear infinite`,
+                  animationDelay: `${Math.random() * 2}s`,
+                }}
+              />
+            ))}
+            {/* Larger trailing stars */}
+            {Array.from({ length: 15 }).map((_, i) => (
+              <div
+                key={`trail-${i}`}
+                className="absolute bg-gradient-to-r from-primary/60 to-transparent"
+                style={{
+                  left: `${Math.random() * 80}%`,
+                  top: `${Math.random() * 100}%`,
+                  width: `${Math.random() * 40 + 20}px`,
+                  height: '2px',
+                  borderRadius: '1px',
+                  opacity: Math.random() * 0.6 + 0.2,
+                  animation: `rushingStar ${Math.random() * 1 + 0.3}s linear infinite`,
+                  animationDelay: `${Math.random() * 2}s`,
+                }}
+              />
+            ))}
+          </div>
+          
+          {/* Center content */}
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <div className="text-center space-y-4">
+              <div className="w-20 h-20 mx-auto rounded-2xl bg-primary/20 backdrop-blur-sm flex items-center justify-center border border-primary/30">
+                <Swords className="h-10 w-10 text-primary animate-pulse" />
+              </div>
+              <p className="text-foreground font-medium text-lg">{loadingMessage}</p>
             </div>
-            <p className="text-muted-foreground font-medium">{loadingMessage}</p>
           </div>
         </div>
       </div>
@@ -318,6 +359,7 @@ export default function ArenaSession() {
             onNext={handleNext}
             onSkip={skipQuestion}
             feedback={feedback}
+            isFirstQuestion={currentQuestionIndex === 0}
           />
         )}
 

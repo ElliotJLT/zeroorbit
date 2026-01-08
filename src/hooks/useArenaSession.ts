@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { recordAttempt, recordSessionComplete } from '@/pages/Progress';
 
 interface Topic {
   id: string;
@@ -135,8 +136,12 @@ export function useArenaSession() {
       }
 
       const result = response.data as EvaluationResult;
-
-      // Create/update attempt record
+      
+      // Record to localStorage for progress tracking
+      const topic = selectedTopics.find(t => t.id === currentQuestion.topic_id);
+      if (topic) {
+        recordAttempt(topic.name, result.status === 'correct');
+      }
       const attemptData = {
         session_id: sessionId,
         question_id: currentQuestion.id,
@@ -197,6 +202,7 @@ export function useArenaSession() {
     
     if (nextIndex >= questionCount) {
       setCurrentQuestionIndex(nextIndex);
+      recordSessionComplete(); // Track completed session
       return;
     }
 
