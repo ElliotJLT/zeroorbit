@@ -56,33 +56,58 @@ export default function ArenaQuestion({
   const [showSwipeTutorial, setShowSwipeTutorial] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Swipe gesture state
+  // Swipe/drag gesture state
   const [swipeX, setSwipeX] = useState(0);
-  const [isSwiping, setIsSwiping] = useState(false);
-  const touchStartX = useRef(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const startX = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Show swipe tutorial on first question (once per session)
+  // Show swipe tutorial on first question (once per session) - animates the card itself
   useEffect(() => {
     const hasSeenTutorial = sessionStorage.getItem('arenaSwipeTutorial');
     if (isFirstQuestion && !hasSeenTutorial) {
       setShowSwipeTutorial(true);
       sessionStorage.setItem('arenaSwipeTutorial', 'true');
-      const timer = setTimeout(() => setShowSwipeTutorial(false), 2800);
+      
+      // Animate the card moving left to demonstrate swipe
+      let frame = 0;
+      const totalFrames = 60;
+      const animateSwipe = () => {
+        frame++;
+        // Ease out cubic for smooth motion
+        const progress = frame / totalFrames;
+        const eased = 1 - Math.pow(1 - progress, 3);
+        
+        if (progress < 0.5) {
+          // Move left
+          setSwipeX(-60 * (eased * 2));
+        } else {
+          // Return to center
+          setSwipeX(-60 * (1 - (eased - 0.5) * 2));
+        }
+        
+        if (frame < totalFrames) {
+          requestAnimationFrame(animateSwipe);
+        } else {
+          setSwipeX(0);
+          setShowSwipeTutorial(false);
+        }
+      };
+      
+      const timer = setTimeout(animateSwipe, 500);
       return () => clearTimeout(timer);
     }
   }, [isFirstQuestion]);
 
+  // Touch handlers (mobile)
   const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    setIsSwiping(true);
-    setShowSwipeTutorial(false);
+    startX.current = e.touches[0].clientX;
+    setIsDragging(true);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isSwiping) return;
-    const deltaX = e.touches[0].clientX - touchStartX.current;
-    // Only allow left swipe (negative)
+    if (!isDragging) return;
+    const deltaX = e.touches[0].clientX - startX.current;
     if (deltaX < 0) {
       setSwipeX(Math.max(deltaX, -150));
     }
@@ -90,11 +115,39 @@ export default function ArenaQuestion({
 
   const handleTouchEnd = () => {
     if (swipeX < -80) {
-      // Trigger skip
       setShowSkipDialog(true);
     }
     setSwipeX(0);
-    setIsSwiping(false);
+    setIsDragging(false);
+  };
+
+  // Mouse handlers (desktop)
+  const handleMouseDown = (e: React.MouseEvent) => {
+    startX.current = e.clientX;
+    setIsDragging(true);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    const deltaX = e.clientX - startX.current;
+    if (deltaX < 0) {
+      setSwipeX(Math.max(deltaX, -150));
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (swipeX < -80) {
+      setShowSkipDialog(true);
+    }
+    setSwipeX(0);
+    setIsDragging(false);
+  };
+
+  const handleMouseLeave = () => {
+    if (isDragging) {
+      setSwipeX(0);
+      setIsDragging(false);
+    }
   };
 
   const handleImageCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,22 +199,16 @@ export default function ArenaQuestion({
   return (
     <div 
       ref={containerRef}
-      className="flex flex-col h-full relative"
+      className="flex flex-col h-full relative select-none"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
     >
-      {/* Swipe tutorial animation (first question only) */}
-      {showSwipeTutorial && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
-          <div className="flex items-center gap-3 animate-[slideLeft_1.5s_ease-in-out_infinite]">
-            <div className="bg-muted/95 backdrop-blur-sm rounded-xl px-4 py-3 flex items-center gap-3 shadow-lg border border-border">
-              <span className="text-muted-foreground font-medium">Swipe left to skip</span>
-              <span className="text-xl">←</span>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Skip hint overlay (during active swipe) */}
       {showSkipHint && (
@@ -178,10 +225,10 @@ export default function ArenaQuestion({
 
       {/* Question - with swipe transform */}
       <div 
-        className="flex-1 overflow-y-auto p-4 space-y-4 transition-transform"
+        className="flex-1 overflow-y-auto p-4 space-y-4"
         style={{ 
           transform: `translateX(${swipeX}px) rotate(${cardRotation}deg)`,
-          transition: isSwiping ? 'none' : 'transform 0.3s ease-out'
+          transition: isDragging || showSwipeTutorial ? 'none' : 'transform 0.3s ease-out'
         }}
       >
         <div className="bg-card rounded-xl p-4 border border-border">
