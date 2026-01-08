@@ -22,10 +22,10 @@ export default function BurgerMenu({ onBrowseSyllabus, onSettings }: BurgerMenuP
           <Menu className="h-5 w-5" />
         </button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-72 bg-sidebar-background border-sidebar-border p-0">
-        <div className="flex flex-col h-full">
+      <SheetContent side="left" className="w-full sm:w-80 bg-background border-border p-0">
+        <div className="flex flex-col h-full bg-background">
           {/* Header */}
-          <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
+          <div className="p-4 border-b border-border flex items-center justify-between">
             <span className="font-semibold text-lg">Menu</span>
           </div>
 
@@ -100,7 +100,7 @@ export default function BurgerMenu({ onBrowseSyllabus, onSettings }: BurgerMenuP
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-sidebar-border">
+          <div className="p-4 border-t border-border">
             <p className="text-xs text-muted-foreground text-center">
               Built with Zero Gravity mentors
             </p>

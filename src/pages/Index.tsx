@@ -14,6 +14,7 @@ import PostSessionSurvey from '@/components/PostSessionSurvey';
 import VoiceSession from '@/components/VoiceSession';
 import HomeScreen from '@/components/HomeScreen';
 import BurgerMenu from '@/components/BurgerMenu';
+import NewProblemModal from '@/components/NewProblemModal';
 import {
   Select,
   SelectContent,
@@ -92,6 +93,8 @@ export default function Index() {
   const [showSurvey, setShowSurvey] = useState(false);
   const [firstInputMethod, setFirstInputMethod] = useState<'text' | 'voice' | 'photo' | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [showNewProblemModal, setShowNewProblemModal] = useState(false);
+  const [modalAnalyzing, setModalAnalyzing] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const workingFileInputRef = useRef<HTMLInputElement>(null);
@@ -500,6 +503,83 @@ export default function Index() {
       setStep('mode-select');
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  // Handler for NewProblemModal submission
+  const handleNewProblemSubmit = async (newImageUrl: string | null, newQuestionText: string) => {
+    setModalAnalyzing(true);
+    
+    // Reset current session state
+    setMessages([]);
+    setAnalysis(null);
+    setImagePreview(newImageUrl);
+    setQuestionText(newQuestionText);
+    
+    try {
+      // Analyze and start new chat
+      const response = await supabase.functions.invoke('analyze-question', {
+        body: { 
+          imageBase64: newImageUrl,
+          questionText: newQuestionText 
+        },
+      });
+
+      let analysisData: QuestionAnalysis;
+      
+      if (response.error) {
+        analysisData = {
+          questionSummary: newQuestionText || 'Question from image',
+          topic: 'Unknown',
+          difficulty: 'Unknown',
+          socraticOpening: "I can see your question. Let's work through it step by step. What have you tried so far?",
+        };
+      } else {
+        analysisData = response.data as QuestionAnalysis;
+      }
+      
+      setAnalysis(analysisData);
+      
+      // Start text chat directly with the new question
+      const initialMessage: Message = {
+        id: `msg-${Date.now()}`,
+        sender: 'tutor',
+        content: analysisData.socraticOpening,
+      };
+      
+      setMessages([initialMessage]);
+      setShowNewProblemModal(false);
+      setStep('chat');
+      
+      // Reset beta tracking for new session
+      setFirstInputMethod(null);
+      setSessionId(null);
+      
+      if (voiceEnabled) speakText(analysisData.socraticOpening, initialMessage.id);
+      
+    } catch (error) {
+      console.error('Analysis error:', error);
+      // Fallback - still start chat
+      const fallbackAnalysis = {
+        questionSummary: newQuestionText || 'Question from image',
+        topic: 'Unknown',
+        difficulty: 'Unknown',
+        socraticOpening: "I can see your question. Let's work through it step by step. What have you tried so far?",
+      };
+      
+      setAnalysis(fallbackAnalysis);
+      
+      const initialMessage: Message = {
+        id: `msg-${Date.now()}`,
+        sender: 'tutor',
+        content: fallbackAnalysis.socraticOpening,
+      };
+      
+      setMessages([initialMessage]);
+      setShowNewProblemModal(false);
+      setStep('chat');
+    } finally {
+      setModalAnalyzing(false);
     }
   };
 
@@ -1099,13 +1179,7 @@ export default function Index() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                setStep('home');
-                setMessages([]);
-                setImagePreview(null);
-                setAnalysis(null);
-                setQuestionText('');
-              }}
+              onClick={() => setShowNewProblemModal(true)}
               className="rounded-full text-muted-foreground hover:text-foreground gap-1.5 px-3"
             >
               <Camera className="h-4 w-4" />
@@ -1421,6 +1495,14 @@ export default function Index() {
       <PostSessionSurvey 
         open={showSurvey} 
         onComplete={handleSurveyComplete} 
+      />
+      
+      {/* New Problem Modal */}
+      <NewProblemModal
+        open={showNewProblemModal}
+        onOpenChange={setShowNewProblemModal}
+        onSubmit={handleNewProblemSubmit}
+        isAnalyzing={modalAnalyzing}
       />
     </div>
   );
