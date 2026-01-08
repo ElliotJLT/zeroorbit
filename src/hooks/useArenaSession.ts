@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { recordAttempt, recordSessionComplete } from '@/pages/Progress';
+import { recordAttempt, recordSessionComplete } from '@/hooks/useLocalProgress';
 
 interface Topic {
   id: string;
