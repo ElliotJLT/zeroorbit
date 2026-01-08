@@ -12,6 +12,9 @@ import AskQuestion from "./pages/AskQuestion";
 import Chat from "./pages/Chat";
 import Progress from "./pages/Progress";
 import Admin from "./pages/Admin";
+import Settings from "./pages/Settings";
+import PracticeArena from "./pages/PracticeArena";
+import PastPapers from "./pages/PastPapers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +35,9 @@ const App = () => (
             <Route path="/chat/:sessionId" element={<Chat />} />
             <Route path="/progress" element={<Progress />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/practice-arena" element={<PracticeArena />} />
+            <Route path="/past-papers" element={<PastPapers />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
