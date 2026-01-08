@@ -62,39 +62,52 @@ export default function ArenaQuestion({
   const startX = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Show swipe tutorial on first question (once per session) - animates the card itself
+  // Show swipe tutorial on first question (once per session) - animates the card itself twice
   useEffect(() => {
     const hasSeenTutorial = sessionStorage.getItem('arenaSwipeTutorial');
     if (isFirstQuestion && !hasSeenTutorial) {
       setShowSwipeTutorial(true);
       sessionStorage.setItem('arenaSwipeTutorial', 'true');
       
-      // Animate the card moving left to demonstrate swipe
-      let frame = 0;
-      const totalFrames = 60;
-      const animateSwipe = () => {
-        frame++;
-        // Ease out cubic for smooth motion
-        const progress = frame / totalFrames;
-        const eased = 1 - Math.pow(1 - progress, 3);
+      let repeatCount = 0;
+      const maxRepeats = 2;
+      
+      const runAnimation = () => {
+        let frame = 0;
+        const totalFrames = 90; // Slower animation
         
-        if (progress < 0.5) {
-          // Move left
-          setSwipeX(-60 * (eased * 2));
-        } else {
-          // Return to center
-          setSwipeX(-60 * (1 - (eased - 0.5) * 2));
-        }
+        const animateSwipe = () => {
+          frame++;
+          const progress = frame / totalFrames;
+          // Smoother ease in-out
+          const eased = progress < 0.5 
+            ? 4 * progress * progress * progress 
+            : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+          
+          if (progress < 0.5) {
+            setSwipeX(-80 * (eased * 2));
+          } else {
+            setSwipeX(-80 * (1 - (eased - 0.5) * 2));
+          }
+          
+          if (frame < totalFrames) {
+            requestAnimationFrame(animateSwipe);
+          } else {
+            setSwipeX(0);
+            repeatCount++;
+            if (repeatCount < maxRepeats) {
+              // Pause between repeats
+              setTimeout(runAnimation, 600);
+            } else {
+              setShowSwipeTutorial(false);
+            }
+          }
+        };
         
-        if (frame < totalFrames) {
-          requestAnimationFrame(animateSwipe);
-        } else {
-          setSwipeX(0);
-          setShowSwipeTutorial(false);
-        }
+        requestAnimationFrame(animateSwipe);
       };
       
-      const timer = setTimeout(animateSwipe, 500);
+      const timer = setTimeout(runAnimation, 800);
       return () => clearTimeout(timer);
     }
   }, [isFirstQuestion]);
