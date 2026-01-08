@@ -23,18 +23,7 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `You are an A-Level Maths examiner. Generate ONE practice question.
-
-RULES:
-- Difficulty ${difficulty_tier}/5
-- Use LaTeX: $inline$ or $$block$$
-- Keep solutions SHORT (max 150 words)
-- Output ONLY valid JSON, no explanations
-
-JSON format:
-{"question_text":"...","final_answer":"...","marking_points":["..."],"worked_solution":"..."}`;
-
-    const userPrompt = `Topic: "${topic_name}". Generate one question now.`;
+    const systemPrompt = `You are an A-Level Maths examiner. Generate ONE practice question for the given topic. Difficulty ${difficulty_tier}/5. Use LaTeX: $inline$ or $$block$$. Keep solutions concise.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -46,8 +35,42 @@ JSON format:
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
+          { role: "user", content: `Generate a question for topic: "${topic_name}"` },
         ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "create_question",
+              description: "Create an A-Level maths practice question",
+              parameters: {
+                type: "object",
+                properties: {
+                  question_text: { 
+                    type: "string", 
+                    description: "The question with LaTeX math notation" 
+                  },
+                  final_answer: { 
+                    type: "string", 
+                    description: "The simplified final answer" 
+                  },
+                  marking_points: { 
+                    type: "array", 
+                    items: { type: "string" },
+                    description: "3-5 key marking points"
+                  },
+                  worked_solution: { 
+                    type: "string", 
+                    description: "Brief step-by-step solution (max 100 words)" 
+                  }
+                },
+                required: ["question_text", "final_answer", "marking_points", "worked_solution"],
+                additionalProperties: false
+              }
+            }
+          }
+        ],
+        tool_choice: { type: "function", function: { name: "create_question" } }
       }),
     });
 
@@ -71,46 +94,25 @@ JSON format:
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
     
-    if (!content) {
-      throw new Error("No content in AI response");
+    // Extract from tool call
+    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall || toolCall.function.name !== "create_question") {
+      console.error("No tool call in response:", JSON.stringify(data));
+      throw new Error("AI did not return structured output");
     }
 
-    // Parse the JSON response (handle potential markdown code blocks and multiple JSON objects)
     let parsed;
     try {
-      // Remove markdown code blocks
-      let cleanedContent = content.replace(/```json\n?/g, '').replace(/```/g, '').trim();
-      
-      // If there are multiple JSON objects, take the last complete one (often the corrected version)
-      const jsonMatches = cleanedContent.match(/\{[\s\S]*?\}(?=\s*\{|\s*$)/g);
-      if (jsonMatches && jsonMatches.length > 0) {
-        // Try each match from last to first until we find valid JSON
-        for (let i = jsonMatches.length - 1; i >= 0; i--) {
-          try {
-            const candidate = JSON.parse(jsonMatches[i]);
-            if (candidate.question_text && candidate.final_answer) {
-              parsed = candidate;
-              break;
-            }
-          } catch {
-            continue;
-          }
-        }
-      }
-      
-      // Fallback: try parsing the whole thing
-      if (!parsed) {
-        parsed = JSON.parse(cleanedContent);
-      }
+      parsed = JSON.parse(toolCall.function.arguments);
     } catch (e) {
-      console.error("Failed to parse AI response:", content);
-      throw new Error("Invalid AI response format");
+      console.error("Failed to parse tool arguments:", toolCall.function.arguments);
+      throw new Error("Invalid tool call arguments");
     }
 
     // Validate required fields
     if (!parsed.question_text || !parsed.final_answer || !parsed.marking_points || !parsed.worked_solution) {
+      console.error("Missing fields in parsed:", parsed);
       throw new Error("Missing required fields in AI response");
     }
 
