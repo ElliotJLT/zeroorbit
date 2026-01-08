@@ -4,24 +4,12 @@ import { ArrowLeft, Target, Flame, Clock, HelpCircle, TrendingDown, Zap } from '
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import orbitLogo from '@/assets/orbit-logo.png';
-
-interface TopicStats {
-  attempts: number;
-  correct: number;
-  totalHints: number;
-  totalTimeSec: number;
-}
-
-interface LocalStats {
-  questionsAttempted: number;
-  questionsCorrect: number;
-  sessionsCompleted: number;
-  currentStreak: number;
-  topicBreakdown: Record<string, TopicStats>;
-  lastPracticeDate?: string;
-  totalHintsUsed: number;
-  totalTimeSec: number;
-}
+import { StatCard } from '@/components/StatCard';
+import { 
+  getLocalStats, 
+  formatTime,
+  type LocalStats 
+} from '@/hooks/useLocalProgress';
 
 const DEFAULT_STATS: LocalStats = {
   questionsAttempted: 0,
@@ -32,74 +20,6 @@ const DEFAULT_STATS: LocalStats = {
   totalHintsUsed: 0,
   totalTimeSec: 0,
 };
-
-function getLocalStats(): LocalStats {
-  const stored = localStorage.getItem('orbitProgress');
-  if (!stored) return DEFAULT_STATS;
-  try {
-    return { ...DEFAULT_STATS, ...JSON.parse(stored) };
-  } catch {
-    return DEFAULT_STATS;
-  }
-}
-
-export function updateLocalStats(update: Partial<LocalStats>) {
-  const current = getLocalStats();
-  const updated = { ...current, ...update };
-  localStorage.setItem('orbitProgress', JSON.stringify(updated));
-}
-
-export function recordAttempt(
-  topicName: string, 
-  isCorrect: boolean, 
-  hintsUsed: number = 0, 
-  timeSec: number = 0
-) {
-  const stats = getLocalStats();
-  const today = new Date().toDateString();
-  
-  // Update totals
-  stats.questionsAttempted += 1;
-  if (isCorrect) stats.questionsCorrect += 1;
-  stats.totalHintsUsed += hintsUsed;
-  stats.totalTimeSec += timeSec;
-  
-  // Update topic breakdown
-  if (!stats.topicBreakdown[topicName]) {
-    stats.topicBreakdown[topicName] = { attempts: 0, correct: 0, totalHints: 0, totalTimeSec: 0 };
-  }
-  stats.topicBreakdown[topicName].attempts += 1;
-  if (isCorrect) stats.topicBreakdown[topicName].correct += 1;
-  stats.topicBreakdown[topicName].totalHints += hintsUsed;
-  stats.topicBreakdown[topicName].totalTimeSec += timeSec;
-  
-  // Update streak
-  if (stats.lastPracticeDate !== today) {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    if (stats.lastPracticeDate === yesterday.toDateString()) {
-      stats.currentStreak += 1;
-    } else if (stats.lastPracticeDate !== today) {
-      stats.currentStreak = 1;
-    }
-    stats.lastPracticeDate = today;
-  }
-  
-  localStorage.setItem('orbitProgress', JSON.stringify(stats));
-}
-
-export function recordSessionComplete() {
-  const stats = getLocalStats();
-  stats.sessionsCompleted += 1;
-  localStorage.setItem('orbitProgress', JSON.stringify(stats));
-}
-
-function formatTime(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`;
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
-}
 
 export default function Progress() {
   const navigate = useNavigate();
@@ -306,21 +226,6 @@ export default function Progress() {
           </>
         )}
       </div>
-    </div>
-  );
-}
-
-function StatCard({ icon, value, label }: { icon: React.ReactNode; value: string | number; label: string }) {
-  return (
-    <div className="bg-muted rounded-xl p-4 text-center border border-border">
-      <div 
-        className="inline-flex items-center justify-center w-10 h-10 rounded-full mb-2"
-        style={{ background: 'hsl(var(--primary) / 0.15)' }}
-      >
-        {icon}
-      </div>
-      <p className="text-2xl font-bold">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   );
 }
