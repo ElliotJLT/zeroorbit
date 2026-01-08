@@ -309,6 +309,7 @@ export default function ArenaSession() {
         {currentQuestion && (
           <ArenaQuestion
             question={currentQuestion}
+            topicName={topics.find(t => t.id === currentQuestion.topic_id)?.name}
             isEvaluating={isEvaluating}
             attemptCount={attemptCount}
             showSolution={showSolution}

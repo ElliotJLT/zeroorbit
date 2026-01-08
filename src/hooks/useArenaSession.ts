@@ -223,8 +223,8 @@ export function useArenaSession() {
     }
   }, [currentQuestionIndex, questionCount, selectedTopics, generateQuestion]);
 
-  const skipQuestion = useCallback(() => {
-    // Record as skipped (incorrect) - fire and forget for speed
+  const skipQuestion = useCallback((reason?: 'too_hard' | 'too_easy' | 'unclear' | 'not_interested') => {
+    // Record as skipped - fire and forget for speed
     if (currentQuestion) {
       const attemptData = {
         session_id: sessionId,
@@ -233,7 +233,7 @@ export function useArenaSession() {
         difficulty_tier: currentQuestion.difficulty_tier,
         status: 'incorrect' as const,
         marks_estimate: '0/5',
-        feedback_summary: 'Skipped',
+        feedback_summary: reason ? `Skipped: ${reason}` : 'Skipped',
       };
       
       // Don't await - let it run in background
