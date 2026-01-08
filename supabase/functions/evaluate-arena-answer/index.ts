@@ -38,9 +38,12 @@ CRITICAL RULES:
 4. If work is unclear from image, ask for the specific missing step
 5. Be encouraging but direct
 
-Based on attempt number ${attempt_number}:
-- Attempt 1-2: Guide with hints, don't give answer
-- Attempt 3+: Can be more direct, offer to show solution if stuck
+ADAPTIVE COACHING based on attempt #${attempt_number}:
+- Attempt 1: Just evaluate. If wrong, hint at where to look.
+- Attempt 2: Give a more specific hint about the method.
+- Attempt 3: Give a strong nudge - almost telling them the approach.
+- Attempt 4+: Offer to show the solution ("Would you like to see the worked solution?")
+- If correct at any point: next_action = "complete"
 
 You MUST respond with valid JSON only, no markdown code blocks.`;
 
@@ -54,6 +57,8 @@ CORRECT FINAL ANSWER: ${final_answer}
 
 MARKING POINTS: ${marking_points?.join(", ") || "Standard marks"}
 
+ATTEMPT NUMBER: ${attempt_number}
+
 STUDENT SUBMISSION:
 ${studentWork}
 
@@ -61,7 +66,7 @@ Evaluate and return this exact JSON:
 {
   "status": "correct" | "partial" | "incorrect",
   "marks_estimate": "X/Y (e.g., 2/5)",
-  "feedback_summary": "1-2 sentence feedback",
+  "feedback_summary": "1-2 sentence feedback - adapt depth based on attempt number",
   "next_action": "ask_for_working" | "ask_for_final_answer" | "give_next_step_hint" | "show_model_solution" | "complete",
   "next_prompt": "What to say to student next (if not complete)"
 }`;

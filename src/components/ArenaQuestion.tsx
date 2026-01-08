@@ -53,6 +53,35 @@ export default function ArenaQuestion({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [showSkipDialog, setShowSkipDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Swipe gesture state
+  const [swipeX, setSwipeX] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
+  const touchStartX = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    setIsSwiping(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isSwiping) return;
+    const deltaX = e.touches[0].clientX - touchStartX.current;
+    // Only allow left swipe (negative)
+    if (deltaX < 0) {
+      setSwipeX(Math.max(deltaX, -150));
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (swipeX < -80) {
+      // Trigger skip
+      setShowSkipDialog(true);
+    }
+    setSwipeX(0);
+    setIsSwiping(false);
+  };
 
   const handleImageCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -95,10 +124,40 @@ export default function ArenaQuestion({
     { id: 'unclear', label: "Doesn't make sense", emoji: '🤔' },
     { id: 'not_interested', label: 'Not relevant to me', emoji: '🙅' },
   ];
+
+  // Calculate visual feedback for swipe
+  const swipeProgress = Math.abs(swipeX) / 80; // 0 to 1+
+  const cardRotation = swipeX / 20; // subtle rotation
+  const showSkipHint = swipeProgress > 0.3;
   return (
-    <div className="flex flex-col h-full">
-      {/* Question */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div 
+      ref={containerRef}
+      className="flex flex-col h-full relative"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Skip hint overlay */}
+      {showSkipHint && (
+        <div 
+          className="absolute inset-0 z-10 flex items-center justify-end pr-8 pointer-events-none"
+          style={{ opacity: Math.min(swipeProgress, 1) }}
+        >
+          <div className="bg-muted/90 backdrop-blur rounded-xl px-4 py-2 flex items-center gap-2">
+            <span className="text-muted-foreground font-medium">Skip</span>
+            <span className="text-xl">→</span>
+          </div>
+        </div>
+      )}
+
+      {/* Question - with swipe transform */}
+      <div 
+        className="flex-1 overflow-y-auto p-4 space-y-4 transition-transform"
+        style={{ 
+          transform: `translateX(${swipeX}px) rotate(${cardRotation}deg)`,
+          transition: isSwiping ? 'none' : 'transform 0.3s ease-out'
+        }}
+      >
         <div className="bg-card rounded-xl p-4 border border-border">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-medium text-muted-foreground">Question</p>
