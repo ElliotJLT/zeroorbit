@@ -23,6 +23,7 @@ interface Message {
   content: string;
   created_at: string;
   image_url?: string | null;
+  method_cue?: string;
 }
 
 type CameraMode = 'working' | 'question' | 'mark_scheme';
@@ -36,6 +37,7 @@ interface QuestionAnalysis {
 
 interface TutorResponse {
   reply_text: string;
+  method_cue?: string;
   short_title?: string;
   topic: string;
   difficulty: string;
@@ -324,6 +326,7 @@ export default function Chat() {
       if (tutorResponse.difficulty) setCurrentDifficulty(tutorResponse.difficulty);
 
       const replyText = tutorResponse?.reply_text?.trim() || "I'm having trouble responding. Could you try again?";
+      const methodCue = tutorResponse?.method_cue?.trim() || '';
       
       const { data: tutorMessage, error: msgError } = await supabase
         .from('messages')
@@ -339,10 +342,10 @@ export default function Chat() {
         console.error('Message save error:', msgError);
       }
 
-      // Always replace placeholder with actual message or fallback
+      // Always replace placeholder with actual message or fallback (include method_cue for display)
       setMessages(prev => prev.map(m => 
         m.id === placeholderId 
-          ? (tutorMessage || { ...m, content: replyText }) 
+          ? { ...(tutorMessage || { ...m, content: replyText }), method_cue: methodCue }
           : m
       ));
       
@@ -455,6 +458,7 @@ export default function Chat() {
       if (tutorResponse.difficulty) setCurrentDifficulty(tutorResponse.difficulty);
 
       const replyText = tutorResponse?.reply_text?.trim() || "I'm having trouble responding. Could you try again?";
+      const methodCue = tutorResponse?.method_cue?.trim() || '';
       
       const { data: tutorMessage, error: msgError } = await supabase
         .from('messages')
@@ -472,7 +476,7 @@ export default function Chat() {
 
       setMessages(prev => prev.map(m => 
         m.id === placeholderId 
-          ? (tutorMessage || { ...m, content: replyText }) 
+          ? { ...(tutorMessage || { ...m, content: replyText }), method_cue: methodCue }
           : m
       ));
       
@@ -661,6 +665,14 @@ export default function Chat() {
                   alt="Student working"
                   className="w-full max-h-48 object-contain rounded-xl mb-2 bg-muted/30"
                 />
+              )}
+
+              {/* Show exam cue if present */}
+              {message.sender === 'tutor' && message.method_cue && (
+                <div className="mb-3 px-3 py-2 rounded-lg bg-primary/10 border-l-2 border-primary">
+                  <p className="text-xs font-medium text-primary mb-0.5">Exam cue</p>
+                  <p className="text-sm text-foreground/90">{message.method_cue}</p>
+                </div>
               )}
               
               <p className={`text-sm leading-relaxed ${message.sender === 'student' ? 'text-right' : ''}`}>
