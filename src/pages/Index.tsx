@@ -679,7 +679,6 @@ export default function Index() {
         imagePreview={imagePreview}
         analysis={analysis}
         betaTesterName={betaTesterName}
-        speech={guestChat.speech}
         onSendMessage={guestChat.sendMessage}
         onConfirmImage={guestChat.confirmImageUpload}
         onCancelImage={() => guestChat.setPendingImage(null)}

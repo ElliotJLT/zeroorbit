@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { useSpeech } from './useSpeech';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
@@ -38,8 +37,6 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
   const [sending, setSending] = useState(false);
   const [pendingImage, setPendingImage] = useState<{ url: string; mode: 'working' | 'question' } | null>(null);
   const [firstInputTracked, setFirstInputTracked] = useState(false);
-  
-  const speech = useSpeech();
 
   const trackFirstInput = useCallback((method: 'text' | 'voice' | 'photo') => {
     if (!firstInputTracked && onFirstInput) {
@@ -86,13 +83,7 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
       setMessages(prev => [...prev, { id: newMsgId, sender: 'tutor', content: '' }]);
       await typeMessage(newMsgId, replyMessages[i]);
     }
-    
-    // Speak the last message
-    if (speech.voiceEnabled && replyMessages.length > 0) {
-      const lastMsg = replyMessages[replyMessages.length - 1];
-      speech.speakText(lastMsg, `msg-${Date.now()}`);
-    }
-  }, [typeMessage, speech]);
+  }, [typeMessage]);
 
   const streamChat = useCallback(async (
     allMessages: Message[]
@@ -133,7 +124,6 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
 
     trackFirstInput(inputMethod);
     setSending(true);
-    speech.stopSpeaking();
 
     const studentMessage: Message = {
       id: `msg-${Date.now()}`,
@@ -159,7 +149,7 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
     } finally {
       setSending(false);
     }
-  }, [sending, messages, streamChat, displayMessagesSequentially, trackFirstInput, speech]);
+  }, [sending, messages, streamChat, displayMessagesSequentially, trackFirstInput]);
 
   const handleImageUpload = useCallback((imageUrl: string, mode: 'working' | 'question') => {
     trackFirstInput('photo');
@@ -233,10 +223,7 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
   const initializeWithOpening = useCallback((opening: string) => {
     const messageId = `msg-${Date.now()}`;
     setMessages([{ id: messageId, sender: 'tutor', content: opening }]);
-    if (speech.voiceEnabled) {
-      speech.speakText(opening, messageId);
-    }
-  }, [speech]);
+  }, []);
 
   const resetChat = useCallback(() => {
     setMessages([]);
@@ -255,6 +242,5 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
     confirmImageUpload,
     initializeWithOpening,
     resetChat,
-    speech,
   };
 }
