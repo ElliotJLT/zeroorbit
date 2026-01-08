@@ -555,10 +555,35 @@ export default function Chat() {
     );
   }
 
+  // Generate random stars for the background
+  const stars = Array.from({ length: 50 }, (_, i) => ({
+    id: i,
+    left: `${Math.random() * 100}%`,
+    top: `${Math.random() * 100}%`,
+    delay: `${Math.random() * 3}s`,
+    bright: Math.random() > 0.85,
+    twinkle: Math.random() > 0.6,
+  }));
+
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col space-bg relative overflow-hidden">
+      {/* Starfield */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        {stars.map((star) => (
+          <div
+            key={star.id}
+            className={`star ${star.bright ? 'star-bright' : ''} ${star.twinkle ? 'star-twinkle' : ''}`}
+            style={{
+              left: star.left,
+              top: star.top,
+              animationDelay: star.delay,
+            }}
+          />
+        ))}
+      </div>
+
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-3">
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border/50 p-3">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <Button variant="ghost" size="icon" onClick={() => navigate('/home')} className="rounded-full">
             <ArrowLeft className="h-5 w-5" />
