@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Swords, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Swords, Sparkles, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -118,16 +118,18 @@ export default function PracticeArena() {
           </p>
         </div>
 
-        {/* Quick Mix Option */}
+        {/* Quick Start Option - Pro Feature */}
         <div className="px-4 mb-6">
-          <Button
-            variant="outline"
-            onClick={selectMixWeakAreas}
-            className="w-full h-12 gap-2 border-primary/30 hover:bg-primary/5"
+          <div
+            className="w-full h-12 gap-2 border border-border rounded-md flex items-center justify-center bg-muted/50 opacity-60 cursor-not-allowed relative"
           >
-            <Zap className="h-5 w-5 text-primary" />
-            Quick Mix (random topics)
-          </Button>
+            <Sparkles className="h-5 w-5 text-muted-foreground" />
+            <span className="text-muted-foreground font-medium">Quick Start</span>
+            <span className="ml-2 px-2 py-0.5 text-xs font-semibold bg-foreground text-background rounded-full flex items-center gap-1">
+              <Lock className="h-3 w-3" />
+              PRO
+            </span>
+          </div>
         </div>
 
         {/* Settings with Sliders */}
