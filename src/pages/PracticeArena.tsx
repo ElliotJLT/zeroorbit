@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Swords, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 
 interface Topic {
@@ -104,77 +105,82 @@ export default function PracticeArena() {
         <h1 className="text-lg font-semibold">Practice Arena</h1>
       </header>
 
-      {/* Hero */}
-      <div className="p-6 text-center space-y-2">
-        <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-          <Swords className="h-8 w-8 text-primary" />
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Hero */}
+        <div className="p-6 pb-4 text-center space-y-2">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            <Swords className="h-8 w-8 text-primary" />
+          </div>
+          <h2 className="text-2xl font-semibold">Test your skills</h2>
+          <p className="text-muted-foreground text-sm">
+            AI-generated exam questions with instant feedback
+          </p>
         </div>
-        <h2 className="text-2xl font-semibold">Test your skills</h2>
-        <p className="text-muted-foreground">
-          AI-generated exam questions with instant feedback
-        </p>
-      </div>
 
-      {/* Quick Mix Option */}
-      <div className="px-4 mb-4">
-        <Button
-          variant="outline"
-          onClick={selectMixWeakAreas}
-          className="w-full h-12 gap-2 border-primary/30 hover:bg-primary/5"
-        >
-          <Zap className="h-5 w-5 text-primary" />
-          Quick Mix (random topics)
-        </Button>
-      </div>
+        {/* Quick Mix Option */}
+        <div className="px-4 mb-6">
+          <Button
+            variant="outline"
+            onClick={selectMixWeakAreas}
+            className="w-full h-12 gap-2 border-primary/30 hover:bg-primary/5"
+          >
+            <Zap className="h-5 w-5 text-primary" />
+            Quick Mix (random topics)
+          </Button>
+        </div>
 
-      {/* Settings */}
-      <div className="px-4 mb-4 space-y-4">
-        {/* Difficulty */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Difficulty</label>
-          <div className="flex gap-2">
-            {difficultyLabels.map(({ level, label }) => (
-              <button
-                key={level}
-                onClick={() => setDifficulty(level)}
-                className={cn(
-                  "flex-1 py-2 px-1 rounded-lg text-xs font-medium transition-colors",
-                  difficulty === level
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted hover:bg-muted/80"
-                )}
-              >
-                {label}
-              </button>
-            ))}
+        {/* Settings with Sliders */}
+        <div className="px-4 mb-6 space-y-6">
+          {/* Difficulty Slider */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium">Difficulty</label>
+              <span className="text-sm font-medium text-primary">
+                {difficultyLabels[difficulty - 1].label}
+              </span>
+            </div>
+            <Slider
+              value={[difficulty]}
+              onValueChange={(value) => setDifficulty(value[0])}
+              min={1}
+              max={5}
+              step={1}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground text-center">
+              {difficultyLabels[difficulty - 1].description}
+            </p>
+          </div>
+
+          {/* Question Count Slider */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium">Questions</label>
+              <span className="text-sm font-medium text-primary">{questionCount}</span>
+            </div>
+            <Slider
+              value={[questionCount]}
+              onValueChange={(value) => setQuestionCount(value[0])}
+              min={5}
+              max={20}
+              step={5}
+              className="w-full"
+            />
           </div>
         </div>
 
-        {/* Question Count */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Questions</label>
-          <div className="flex gap-2">
-            {[5, 10, 15].map(count => (
-              <button
-                key={count}
-                onClick={() => setQuestionCount(count)}
-                className={cn(
-                  "flex-1 py-2 rounded-lg text-sm font-medium transition-colors",
-                  questionCount === count
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted hover:bg-muted/80"
-                )}
-              >
-                {count}
-              </button>
-            ))}
+        {/* Divider */}
+        <div className="px-4 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs text-muted-foreground">or select topics</span>
+            <div className="flex-1 h-px bg-border" />
           </div>
         </div>
-      </div>
 
-      {/* Topics */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        <p className="text-sm text-muted-foreground">Or select specific topics:</p>
+        {/* Topics */}
+        <div className="px-4 pb-4 space-y-5">
         
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -217,7 +223,7 @@ export default function PracticeArena() {
                       key={topic.id}
                       onClick={() => toggleTopic(topic.id)}
                       className={cn(
-                        "flex items-center gap-3 p-4 rounded-xl transition-all text-left",
+                        "flex items-center gap-3 p-3 rounded-xl transition-all text-left",
                         selectedTopics.includes(topic.id)
                           ? "bg-primary/10 border-2 border-primary"
                           : "bg-muted border-2 border-transparent hover:border-border"
@@ -243,10 +249,11 @@ export default function PracticeArena() {
             );
           })
         )}
+        </div>
       </div>
 
       {/* CTA */}
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border shrink-0">
         <Button
           onClick={handleStart}
           disabled={selectedTopics.length === 0}
