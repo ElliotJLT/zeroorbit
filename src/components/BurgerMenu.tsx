@@ -1,14 +1,13 @@
 import { useState } from 'react';
-import { Menu, Camera, BookOpen, Settings, TrendingUp, Lock } from 'lucide-react';
+import { Menu, BookOpen, Settings, TrendingUp, Lock, FileText, HelpCircle } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 interface BurgerMenuProps {
-  onNewProblem: () => void;
   onBrowseSyllabus: () => void;
   onSettings?: () => void;
 }
 
-export default function BurgerMenu({ onNewProblem, onBrowseSyllabus, onSettings }: BurgerMenuProps) {
+export default function BurgerMenu({ onBrowseSyllabus, onSettings }: BurgerMenuProps) {
   const [open, setOpen] = useState(false);
 
   const handleAction = (action: () => void) => {
@@ -33,19 +32,6 @@ export default function BurgerMenu({ onNewProblem, onBrowseSyllabus, onSettings 
           {/* Menu Items */}
           <nav className="flex-1 p-2">
             <button
-              onClick={() => handleAction(onNewProblem)}
-              className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-sidebar-accent transition-colors text-left"
-            >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Camera className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-medium">New Problem</p>
-                <p className="text-sm text-muted-foreground">Snap or type a question</p>
-              </div>
-            </button>
-
-            <button
               onClick={() => handleAction(onBrowseSyllabus)}
               className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-sidebar-accent transition-colors text-left"
             >
@@ -57,6 +43,20 @@ export default function BurgerMenu({ onNewProblem, onBrowseSyllabus, onSettings 
                 <p className="text-sm text-muted-foreground">Pick a topic to practice</p>
               </div>
             </button>
+
+            {/* Past Papers - Locked */}
+            <div className="w-full flex items-center gap-3 p-4 rounded-xl bg-muted/30 opacity-60 cursor-not-allowed">
+              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center relative">
+                <FileText className="h-5 w-5 text-muted-foreground" />
+                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-muted-foreground flex items-center justify-center">
+                  <Lock className="h-2.5 w-2.5 text-background" />
+                </div>
+              </div>
+              <div>
+                <p className="font-medium text-muted-foreground">Past Papers</p>
+                <p className="text-sm text-muted-foreground/70">Coming soon</p>
+              </div>
+            </div>
 
             {/* My Progress - Locked */}
             <div className="w-full flex items-center gap-3 p-4 rounded-xl bg-muted/30 opacity-60 cursor-not-allowed">
@@ -86,6 +86,17 @@ export default function BurgerMenu({ onNewProblem, onBrowseSyllabus, onSettings 
                 </div>
               </button>
             )}
+
+            {/* Help */}
+            <div className="w-full flex items-center gap-3 p-4 rounded-xl bg-muted/30 opacity-60 cursor-not-allowed">
+              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                <HelpCircle className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="font-medium text-muted-foreground">Help</p>
+                <p className="text-sm text-muted-foreground/70">Coming soon</p>
+              </div>
+            </div>
           </nav>
 
           {/* Footer */}
