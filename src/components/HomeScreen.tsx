@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react';
-import { Camera, Swords, Calculator, BarChart3, Compass, BookOpen, Info } from 'lucide-react';
+import { useRef } from 'react';
+import { Camera, Swords, Calculator, BarChart3, Compass, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import BurgerMenu from '@/components/BurgerMenu';
 import orbitLogo from '@/assets/orbit-logo.png';
 import orbitIcon from '@/assets/orbit-icon.png';
 
@@ -39,8 +40,7 @@ export default function HomeScreen({
   onSelectTopic,
   onTestMe,
   onSignIn,
-  onShowInfo,
-}: HomeScreenProps & { onShowInfo?: () => void }) {
+}: HomeScreenProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const groupedTopics = topics.reduce((acc, topic) => {
@@ -56,12 +56,7 @@ export default function HomeScreen({
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header - 44pt touch targets per Apple HIG */}
       <header className="p-4 flex items-center justify-between border-b border-border">
-        <button 
-          onClick={onShowInfo}
-          className="w-11 h-11 -ml-1 rounded-full flex items-center justify-center hover:bg-muted active:scale-95 transition-all"
-        >
-          <Info className="h-5 w-5 text-muted-foreground" />
-        </button>
+        <BurgerMenu />
         <button 
           onClick={onSignIn} 
           className="h-11 px-4 rounded-full text-sm text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition-all"
