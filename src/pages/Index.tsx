@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, ArrowRight, X, Mic, MicOff, Send, Upload, LogOut, Phone, MessageSquare, Plus } from 'lucide-react';
+import { Camera, ArrowRight, X, Mic, MicOff, Send, Upload, LogOut, Phone, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -1108,8 +1108,8 @@ export default function Index() {
               }}
               className="rounded-full text-muted-foreground hover:text-foreground gap-1.5 px-3"
             >
-              <Plus className="h-4 w-4" />
-              <span className="text-sm">New</span>
+              <Camera className="h-4 w-4" />
+              <span className="text-sm">New Problem</span>
             </Button>
             {BETA_MODE && messages.length > 2 && (
               <Button
