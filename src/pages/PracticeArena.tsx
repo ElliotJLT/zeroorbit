@@ -118,67 +118,75 @@ export default function PracticeArena() {
           </p>
         </div>
 
-        {/* Quick Start Option - Pro Feature */}
-        <div className="px-4 mb-6">
+        {/* For You Option - Pro Feature */}
+        <div className="px-4 mb-8">
           <div
-            className="w-full h-12 gap-2 border border-border rounded-md flex items-center justify-center bg-muted/50 opacity-60 cursor-not-allowed relative"
+            className="w-full h-14 gap-2 border-2 border-dashed border-muted-foreground/30 rounded-2xl flex items-center justify-center bg-muted/30 opacity-70 cursor-not-allowed relative"
           >
             <Sparkles className="h-5 w-5 text-muted-foreground" />
-            <span className="text-muted-foreground font-medium">Quick Start</span>
+            <span className="text-muted-foreground font-medium">For You</span>
             <span className="ml-2 px-2 py-0.5 text-xs font-semibold bg-foreground text-background rounded-full flex items-center gap-1">
               <Lock className="h-3 w-3" />
               PRO
             </span>
           </div>
-        </div>
-
-        {/* Settings with Sliders */}
-        <div className="px-4 mb-6 space-y-6">
-          {/* Difficulty Slider */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">Difficulty</label>
-              <span className="text-sm font-medium text-primary">
-                {difficultyLabels[difficulty - 1].label}
-              </span>
-            </div>
-            <Slider
-              value={[difficulty]}
-              onValueChange={(value) => setDifficulty(value[0])}
-              min={1}
-              max={5}
-              step={1}
-              className="w-full"
-            />
-            <p className="text-xs text-muted-foreground text-center">
-              {difficultyLabels[difficulty - 1].description}
-            </p>
-          </div>
-
-          {/* Question Count Slider */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">Questions</label>
-              <span className="text-sm font-medium text-primary">{questionCount}</span>
-            </div>
-            <Slider
-              value={[questionCount]}
-              onValueChange={(value) => setQuestionCount(value[0])}
-              min={5}
-              max={20}
-              step={5}
-              className="w-full"
-            />
-          </div>
+          <p className="text-xs text-muted-foreground text-center mt-2">Personalised practice based on your progress</p>
         </div>
 
         {/* Divider */}
-        <div className="px-4 mb-4">
+        <div className="px-4 mb-6">
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground">or select topics</span>
+            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Custom Session</span>
             <div className="flex-1 h-px bg-border" />
           </div>
+        </div>
+
+        {/* Settings Card */}
+        <div className="px-4 mb-6">
+          <div className="bg-muted/50 rounded-2xl p-5 space-y-6">
+            {/* Difficulty Slider */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Difficulty</label>
+                <span className="text-sm font-medium text-primary">
+                  {difficultyLabels[difficulty - 1].label}
+                </span>
+              </div>
+              <Slider
+                value={[difficulty]}
+                onValueChange={(value) => setDifficulty(value[0])}
+                min={1}
+                max={5}
+                step={1}
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground text-center">
+                {difficultyLabels[difficulty - 1].description}
+              </p>
+            </div>
+
+            {/* Question Count Slider */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Questions</label>
+                <span className="text-sm font-medium text-primary">{questionCount}</span>
+              </div>
+              <Slider
+                value={[questionCount]}
+                onValueChange={(value) => setQuestionCount(value[0])}
+                min={5}
+                max={20}
+                step={5}
+                className="w-full"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Topics Section Header */}
+        <div className="px-4 mb-4">
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Select Topics</h3>
         </div>
 
         {/* Topics */}
