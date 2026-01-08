@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Swords } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Swords, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -18,10 +18,20 @@ const sectionLabels: Record<string, string> = {
   mechanics: 'Mechanics',
 };
 
+const difficultyLabels = [
+  { level: 1, label: 'Foundation', description: 'Basic recall' },
+  { level: 2, label: 'Standard', description: 'Core concepts' },
+  { level: 3, label: 'Exam Ready', description: 'Typical exam questions' },
+  { level: 4, label: 'Challenging', description: 'Harder problems' },
+  { level: 5, label: 'Extension', description: 'A* territory' },
+];
+
 export default function PracticeArena() {
   const navigate = useNavigate();
   const [topics, setTopics] = useState<Topic[]>([]);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [difficulty, setDifficulty] = useState(3);
+  const [questionCount, setQuestionCount] = useState(5);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -62,6 +72,13 @@ export default function PracticeArena() {
     }
   };
 
+  const selectMixWeakAreas = () => {
+    // For MVP, select a random mix of 3-5 topics
+    const shuffled = [...topics].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, Math.min(5, shuffled.length)).map(t => t.id);
+    setSelectedTopics(selected);
+  };
+
   const groupedTopics = topics.reduce((acc, topic) => {
     const section = topic.section || 'other';
     if (!acc[section]) acc[section] = [];
@@ -70,9 +87,8 @@ export default function PracticeArena() {
   }, {} as Record<string, Topic[]>);
 
   const handleStart = () => {
-    // Store selected topics and navigate to test
-    sessionStorage.setItem('practiceTopics', JSON.stringify(selectedTopics));
-    navigate('/');
+    sessionStorage.setItem('arenaTopics', JSON.stringify(selectedTopics));
+    navigate(`/arena-session?difficulty=${difficulty}&count=${questionCount}`);
   };
 
   return (
@@ -95,12 +111,71 @@ export default function PracticeArena() {
         </div>
         <h2 className="text-2xl font-semibold">Test your skills</h2>
         <p className="text-muted-foreground">
-          Select the topics you want to practice. We'll generate questions to challenge you.
+          AI-generated exam questions with instant feedback
         </p>
+      </div>
+
+      {/* Quick Mix Option */}
+      <div className="px-4 mb-4">
+        <Button
+          variant="outline"
+          onClick={selectMixWeakAreas}
+          className="w-full h-12 gap-2 border-primary/30 hover:bg-primary/5"
+        >
+          <Zap className="h-5 w-5 text-primary" />
+          Quick Mix (random topics)
+        </Button>
+      </div>
+
+      {/* Settings */}
+      <div className="px-4 mb-4 space-y-4">
+        {/* Difficulty */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Difficulty</label>
+          <div className="flex gap-2">
+            {difficultyLabels.map(({ level, label }) => (
+              <button
+                key={level}
+                onClick={() => setDifficulty(level)}
+                className={cn(
+                  "flex-1 py-2 px-1 rounded-lg text-xs font-medium transition-colors",
+                  difficulty === level
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted hover:bg-muted/80"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Question Count */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Questions</label>
+          <div className="flex gap-2">
+            {[5, 10, 15].map(count => (
+              <button
+                key={count}
+                onClick={() => setQuestionCount(count)}
+                className={cn(
+                  "flex-1 py-2 rounded-lg text-sm font-medium transition-colors",
+                  questionCount === count
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted hover:bg-muted/80"
+                )}
+              >
+                {count}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Topics */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        <p className="text-sm text-muted-foreground">Or select specific topics:</p>
+        
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -175,15 +250,11 @@ export default function PracticeArena() {
         <Button
           onClick={handleStart}
           disabled={selectedTopics.length === 0}
-          className="w-full h-14 text-lg rounded-2xl font-medium transition-all text-white"
-          style={{ 
-            background: selectedTopics.length > 0 ? '#111416' : undefined,
-            border: selectedTopics.length > 0 ? '1px solid #00FAD7' : undefined,
-          }}
+          className="w-full h-14 text-lg rounded-2xl font-medium transition-all"
         >
           {selectedTopics.length === 0 ? 'Select topics to continue' : (
             <>
-              Start Practice
+              Start Arena ({questionCount} questions)
               <ArrowRight className="h-5 w-5 ml-2" />
             </>
           )}
