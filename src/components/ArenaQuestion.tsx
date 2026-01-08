@@ -66,12 +66,9 @@ export default function ArenaQuestion({
   useEffect(() => {
     const hasSeenTutorial = sessionStorage.getItem('arenaSwipeTutorial');
     if (isFirstQuestion && !hasSeenTutorial) {
-      const timer = setTimeout(() => {
-        setShowSwipeTutorial(true);
-        sessionStorage.setItem('arenaSwipeTutorial', 'true');
-        // Auto-hide after animation
-        setTimeout(() => setShowSwipeTutorial(false), 2500);
-      }, 1000);
+      setShowSwipeTutorial(true);
+      sessionStorage.setItem('arenaSwipeTutorial', 'true');
+      const timer = setTimeout(() => setShowSwipeTutorial(false), 2800);
       return () => clearTimeout(timer);
     }
   }, [isFirstQuestion]);
@@ -158,9 +155,9 @@ export default function ArenaQuestion({
       {showSwipeTutorial && (
         <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
           <div className="flex items-center gap-3 animate-[slideLeft_1.5s_ease-in-out_infinite]">
-            <div className="bg-muted/95 backdrop-blur-sm rounded-xl px-4 py-3 flex items-center gap-2 shadow-lg">
-              <span className="text-muted-foreground font-medium">Swipe to skip</span>
-              <span className="text-xl">👈</span>
+            <div className="bg-muted/95 backdrop-blur-sm rounded-xl px-4 py-3 flex items-center gap-3 shadow-lg border border-border">
+              <span className="text-muted-foreground font-medium">Swipe left to skip</span>
+              <span className="text-xl">←</span>
             </div>
           </div>
         </div>
