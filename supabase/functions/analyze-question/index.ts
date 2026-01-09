@@ -110,6 +110,15 @@ EXAM CUE DETECTION:
 Look for keywords: "interpret", "hence", "show that", "verify", "explain", "justify", "state"
 If found, your methodCue should explain the implied method.
 
+OPENING MESSAGE RULES:
+- Identify the question type/method needed
+- Ask student to name or select the approach
+- Do NOT set up the problem for them
+- Do NOT assign variables (u, v, etc.) — let them do it
+
+Bad opening: "This is product rule. Take u = x², v = sin x — what are du/dx and dv/dx?"
+Good opening: "This involves the product of two functions. Which rule applies, and how would you set it up?"
+
 EXAMPLES:
 Question: "Interpret 0.0106 in context"
 BAD: "Do you remember what each part of y = mx + c represents?"
@@ -118,6 +127,10 @@ GOOD: "0.0106 is the gradient. Write me one sentence: what happens to winning ti
 Question: "Show that x = 3"
 BAD: "Let's think about how to approach this..."
 GOOD: "Because it says 'show that', you need to work towards x = 3 from the equation. Start by expanding."
+
+Question: "Differentiate x² sin x"
+BAD: "This is product rule. Take u = x², v = sin x — what are du/dx and dv/dx?"
+GOOD: "This involves the product of two functions. Which rule applies, and how would you set it up?"
 
 Response format:
 {

@@ -45,6 +45,15 @@ ADAPTIVE COACHING based on attempt #${attempt_number}:
 - Attempt 4+: Offer to show the solution ("Would you like to see the worked solution?")
 - If correct at any point: next_action = "complete"
 
+ERROR CLASSIFICATION IN FEEDBACK:
+- If MECHANICAL error (sign slip, arithmetic, copying): "Small slip in [location]" — don't reveal fix
+- If CONCEPTUAL error (wrong method, misunderstood structure): "Check your method — this question needs [hint]"
+- Match feedback specificity to attempt number:
+  - Attempt 1: Point to area ("check your sign")
+  - Attempt 2: Point to specific step ("line 2, the derivative")
+  - Attempt 3: Name the issue ("sin differentiates to cos, not -cos")
+  - Attempt 4+: Show solution
+
 You MUST respond with valid JSON only, no markdown code blocks.`;
 
     const studentWork = student_image_url 
