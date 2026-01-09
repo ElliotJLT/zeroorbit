@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, Swords, Settings, TrendingUp, FileText } from 'lucide-react';
+import { Menu, Swords, Settings, TrendingUp, FileText, Calculator } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 interface BurgerMenuProps {
@@ -72,6 +72,20 @@ export default function BurgerMenu({ onSettings }: BurgerMenuProps) {
               <div>
                 <p className="font-medium">My Progress</p>
                 <p className="text-sm text-muted-foreground">Track your fluency</p>
+              </div>
+            </button>
+
+            {/* Calculator */}
+            <button
+              onClick={() => handleAction(() => navigate('/calculator'))}
+              className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-sidebar-accent transition-colors text-left"
+            >
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Calculator className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium">Calculator</p>
+                <p className="text-sm text-muted-foreground">Scientific calculator for A-Level</p>
               </div>
             </button>
 

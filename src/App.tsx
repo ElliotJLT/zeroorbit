@@ -16,6 +16,7 @@ import Settings from "./pages/Settings";
 import PracticeArena from "./pages/PracticeArena";
 import ArenaSession from "./pages/ArenaSession";
 import PastPapers from "./pages/PastPapers";
+import CalculatorPage from "./pages/CalculatorPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/practice-arena" element={<PracticeArena />} />
             <Route path="/arena-session" element={<ArenaSession />} />
             <Route path="/past-papers" element={<PastPapers />} />
+            <Route path="/calculator" element={<CalculatorPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
