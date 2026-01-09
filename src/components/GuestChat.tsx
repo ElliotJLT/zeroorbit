@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Camera, X, Send, LogOut, Mic, Keyboard } from 'lucide-react';
+import { Camera, X, Send, LogOut, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import orbitIcon from '@/assets/orbit-icon.png';
@@ -46,7 +46,6 @@ export function GuestChat({
 }: GuestChatProps) {
   const { toast } = useToast();
   const [newMessage, setNewMessage] = useState('');
-  const [showInput, setShowInput] = useState(false);
   const [showNewProblemModal, setShowNewProblemModal] = useState(false);
   const [modalAnalyzing, setModalAnalyzing] = useState(false);
   
@@ -129,7 +128,7 @@ export function GuestChat({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 pb-[180px]">
+      <div className="flex-1 overflow-y-auto p-4 pb-[140px]">
         <div className="max-w-2xl mx-auto space-y-4">
           {/* Question Card */}
           {imagePreview && (
@@ -186,13 +185,8 @@ export function GuestChat({
         </div>
       </div>
 
-      {/* Click outside to close input */}
-      {showInput && (
-        <div className="fixed inset-0 z-10" onClick={() => setShowInput(false)} />
-      )}
-
-      {/* Bottom action bar - fixed at bottom for mobile */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))] z-20">
+      {/* Bottom input bar - native chat style */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-20">
         <div className="max-w-2xl mx-auto">
           {/* Hidden file inputs */}
           <input 
@@ -254,77 +248,71 @@ export function GuestChat({
                 </button>
               </div>
             </div>
-          ) : showInput ? (
+          ) : (
+            /* Native chat input with integrated icons */
             <div className="flex items-center gap-2">
-              <Input
-                placeholder="Type your message..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
+              {/* Photo button */}
+              <button 
+                onClick={() => workingFileInputRef.current?.click()} 
+                disabled={sending}
+                className="w-11 h-11 rounded-full bg-muted flex items-center justify-center disabled:opacity-50 active:scale-95 transition-all hover:bg-muted/80"
+                title="Add photo"
+              >
+                <Camera className="h-5 w-5 text-muted-foreground" />
+              </button>
+              
+              {/* Text input */}
+              <div className="flex-1 relative">
+                <Input
+                  placeholder="Message Orbit..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (newMessage.trim()) {
+                        onSendMessage(newMessage, 'text');
+                        setNewMessage('');
+                      }
+                    }
+                  }}
+                  disabled={sending}
+                  className="w-full rounded-full bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary h-11 pr-12"
+                />
+                
+                {/* Mic button inside input */}
+                {!newMessage.trim() && (
+                  <button 
+                    onClick={() => {
+                      toast({
+                        title: "Voice mode coming soon",
+                        description: "OpenAI Realtime voice is in development.",
+                      });
+                    }}
+                    disabled={sending}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-50 active:scale-95 transition-all hover:bg-background/50"
+                    title="Voice input"
+                  >
+                    <Mic className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                )}
+              </div>
+              
+              {/* Send button - only shows when there's text */}
+              {newMessage.trim() && (
+                <button 
+                  onClick={() => {
                     if (newMessage.trim()) {
                       onSendMessage(newMessage, 'text');
                       setNewMessage('');
-                      setShowInput(false);
                     }
-                  }
-                }}
-                disabled={sending}
-                autoFocus
-                className="flex-1 rounded-2xl bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary h-12"
-              />
-              <button 
-                onClick={() => {
-                  if (newMessage.trim()) {
-                    onSendMessage(newMessage, 'text');
-                    setNewMessage('');
-                    setShowInput(false);
-                  }
-                }}
-                disabled={sending || !newMessage.trim()}
-                className="w-12 h-12 rounded-full bg-primary flex items-center justify-center disabled:opacity-50"
-              >
-                <Send className="h-5 w-5 text-primary-foreground" />
-              </button>
-              <button 
-                onClick={() => setShowInput(false)}
-                className="w-11 h-11 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-all"
-              >
-                <X className="h-5 w-5 text-muted-foreground" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-3">
-              {/* Three equally weighted action buttons for beta testing */}
-              <div className="grid grid-cols-3 gap-3 w-full max-w-sm">
-                <button 
-                  onClick={() => workingFileInputRef.current?.click()} 
-                  disabled={sending} 
-                  className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-card border-2 border-primary/30 disabled:opacity-50 transition-all active:scale-95 hover:border-primary/60"
-                >
-                  <Camera className="h-6 w-6 text-primary" />
-                  <span className="text-sm font-medium text-foreground">Add working</span>
-                </button>
-                
-                <button 
-                  onClick={() => onSendMessage('[VOICE_MODE]', 'voice')}
+                  }}
                   disabled={sending}
-                  className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-card border-2 border-primary/30 disabled:opacity-50 transition-all active:scale-95 hover:border-primary/60"
+                  className="w-11 h-11 rounded-full bg-primary flex items-center justify-center disabled:opacity-50 active:scale-95 transition-all"
                 >
-                  <Mic className="h-6 w-6 text-primary" />
-                  <span className="text-sm font-medium text-foreground">Voice mode</span>
+                  <Send className="h-5 w-5 text-primary-foreground" />
                 </button>
-                
-                <button 
-                  onClick={() => setShowInput(true)}
-                  disabled={sending}
-                  className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-card border-2 border-primary/30 disabled:opacity-50 transition-all active:scale-95 hover:border-primary/60"
-                >
-                  <Keyboard className="h-6 w-6 text-primary" />
-                  <span className="text-sm font-medium text-foreground">Type a line</span>
-                </button>
-              </div>
+              )}
             </div>
           )}
         </div>
