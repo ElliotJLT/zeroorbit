@@ -71,9 +71,9 @@ export function GuestChat({
     setModalAnalyzing(true);
     try {
       await onNewProblem(imageUrl, questionText);
-      setShowNewProblemModal(false);
     } finally {
       setModalAnalyzing(false);
+      setShowNewProblemModal(false); // Always close modal after submit
     }
   };
 
@@ -179,19 +179,23 @@ export function GuestChat({
                     )}
                   </div>
                   
-                  {/* Marks Analysis Card (for check mode) */}
-                  {message.marksAnalysis && message.content && (
+                  {/* Marks Analysis Card (for check mode) - only show if actual marks exist */}
+                  {message.marksAnalysis && message.content && 
+                   message.marksAnalysis.estimated_marks && 
+                   !message.marksAnalysis.estimated_marks.toLowerCase().includes('n/a') && (
                     <div className="mt-3 pt-3 border-t border-border">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-lg font-bold text-primary">{message.marksAnalysis.estimated_marks}</span>
                         <span className="text-xs text-muted-foreground">estimated marks</span>
                       </div>
-                      {message.marksAnalysis.method_marks && (
+                      {message.marksAnalysis.method_marks && 
+                       !message.marksAnalysis.method_marks.toLowerCase().includes('n/a') && (
                         <div className="text-xs space-y-1">
                           <p className="text-muted-foreground">{message.marksAnalysis.method_marks}</p>
                         </div>
                       )}
-                      {message.marksAnalysis.accuracy_marks && (
+                      {message.marksAnalysis.accuracy_marks && 
+                       !message.marksAnalysis.accuracy_marks.toLowerCase().includes('n/a') && (
                         <div className="text-xs mt-1">
                           <p className="text-muted-foreground">{message.marksAnalysis.accuracy_marks}</p>
                         </div>
