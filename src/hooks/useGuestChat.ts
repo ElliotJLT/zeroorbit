@@ -9,6 +9,24 @@ export interface Message {
   imageUrl?: string;
   inputMethod?: 'text' | 'voice' | 'photo';
   studentBehavior?: string;
+  nextAction?: string;
+  errorAnalysis?: {
+    type: 'mechanical' | 'conceptual' | 'none';
+    severity?: 'minor' | 'major';
+    location?: string;
+    fix_hint?: string;
+    needs_reteach?: boolean;
+  };
+  marksAnalysis?: {
+    estimated_marks?: string;
+    method_marks?: string;
+    accuracy_marks?: string;
+    errors?: Array<{ line: string; type: string; description: string }>;
+  };
+  alternativeMethod?: {
+    method_name: string;
+    brief_explanation: string;
+  };
 }
 
 export interface QuestionAnalysis {
@@ -49,7 +67,13 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
   const typeMessage = useCallback(async (
     messageId: string, 
     fullText: string, 
-    studentBehavior?: string
+    metadata?: {
+      studentBehavior?: string;
+      nextAction?: string;
+      errorAnalysis?: Message['errorAnalysis'];
+      marksAnalysis?: Message['marksAnalysis'];
+      alternativeMethod?: Message['alternativeMethod'];
+    }
   ) => {
     const words = fullText.split(' ');
     let currentText = '';
@@ -57,10 +81,21 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
     for (let i = 0; i < words.length; i++) {
       currentText += (i === 0 ? '' : ' ') + words[i];
       const textToShow = currentText;
+      const isLastWord = i === words.length - 1;
       setMessages(prev =>
         prev.map(m =>
           m.id === messageId
-            ? { ...m, content: textToShow, studentBehavior: i === words.length - 1 ? studentBehavior : undefined }
+            ? { 
+                ...m, 
+                content: textToShow,
+                ...(isLastWord ? {
+                  studentBehavior: metadata?.studentBehavior,
+                  nextAction: metadata?.nextAction,
+                  errorAnalysis: metadata?.errorAnalysis,
+                  marksAnalysis: metadata?.marksAnalysis,
+                  alternativeMethod: metadata?.alternativeMethod,
+                } : {})
+              }
             : m
         )
       );
@@ -71,24 +106,40 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
   const displayMessagesSequentially = useCallback(async (
     replyMessages: string[], 
     placeholderId: string, 
-    studentBehavior?: string
+    metadata?: {
+      studentBehavior?: string;
+      nextAction?: string;
+      errorAnalysis?: Message['errorAnalysis'];
+      marksAnalysis?: Message['marksAnalysis'];
+      alternativeMethod?: Message['alternativeMethod'];
+    }
   ) => {
     // First message replaces placeholder with typing effect
     const firstReply = replyMessages[0];
-    await typeMessage(placeholderId, firstReply, studentBehavior);
+    // Pass metadata only to the last message in the sequence
+    const isOnlyMessage = replyMessages.length === 1;
+    await typeMessage(placeholderId, firstReply, isOnlyMessage ? metadata : undefined);
     
     // Additional messages appear after delay with typing effect
     for (let i = 1; i < replyMessages.length; i++) {
       await new Promise(resolve => setTimeout(resolve, 400));
       const newMsgId = `msg-${Date.now()}-${i}`;
       setMessages(prev => [...prev, { id: newMsgId, sender: 'tutor', content: '' }]);
-      await typeMessage(newMsgId, replyMessages[i]);
+      const isLast = i === replyMessages.length - 1;
+      await typeMessage(newMsgId, replyMessages[i], isLast ? metadata : undefined);
     }
   }, [typeMessage]);
 
   const streamChat = useCallback(async (
     allMessages: Message[]
-  ): Promise<{ reply_messages: string[]; student_behavior?: string }> => {
+  ): Promise<{ 
+    reply_messages: string[]; 
+    student_behavior?: string;
+    next_action?: string;
+    error_analysis?: Message['errorAnalysis'];
+    marks_analysis?: Message['marksAnalysis'];
+    alternative_method?: Message['alternativeMethod'];
+  }> => {
     const { currentGrade, targetGrade, examBoard, struggles, questionText, tutorMode } = userContext;
     
     const response = await fetch(CHAT_URL, {
@@ -120,6 +171,10 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
     return {
       reply_messages: msgs,
       student_behavior: data.student_behavior,
+      next_action: data.next_action,
+      error_analysis: data.error_analysis,
+      marks_analysis: data.marks_analysis,
+      alternative_method: data.alternative_method,
     };
   }, [userContext]);
 
@@ -148,8 +203,14 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
 
     try {
       const allMessages = [...messages, studentMessage];
-      const { reply_messages, student_behavior } = await streamChat(allMessages);
-      await displayMessagesSequentially(reply_messages, placeholderId, student_behavior);
+      const { reply_messages, student_behavior, next_action, error_analysis, marks_analysis, alternative_method } = await streamChat(allMessages);
+      await displayMessagesSequentially(reply_messages, placeholderId, {
+        studentBehavior: student_behavior,
+        nextAction: next_action,
+        errorAnalysis: error_analysis,
+        marksAnalysis: marks_analysis,
+        alternativeMethod: alternative_method,
+      });
     } catch (error) {
       console.error('Chat error:', error);
       setMessages((prev) => prev.filter((m) => m.id !== placeholderId));
@@ -218,7 +279,13 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
       const data = await response.json();
       const replyMessages = data.reply_messages || [data.reply_text || data.content || "I'm having trouble responding. Try again?"];
       
-      await displayMessagesSequentially(replyMessages, placeholderId, data.student_behavior);
+      await displayMessagesSequentially(replyMessages, placeholderId, {
+        studentBehavior: data.student_behavior,
+        nextAction: data.next_action,
+        errorAnalysis: data.error_analysis,
+        marksAnalysis: data.marks_analysis,
+        alternativeMethod: data.alternative_method,
+      });
     } catch (error) {
       console.error('Chat error:', error);
       setMessages((prev) =>

@@ -59,24 +59,45 @@ Your job is:
 5. Keep focus on the mark scheme's method, not your own approach`;
   }
 
-  // Mode-specific behavior
+  // Mode-specific behavior with enhanced error handling
   let modeInstructions = '';
   if (tutorMode === 'check') {
     modeInstructions = `\n\n## CHECK WORKING MODE (ACTIVE)
 You are in CHECK MODE - NOT Socratic coaching mode. Your job is:
 1. Directly validate what's correct in their working
-2. Identify specific errors with clear explanations
-3. Give a marks estimate (e.g., "This would likely score 3/5 marks")
-4. Suggest the fix needed
-5. Do NOT ask Socratic questions - give direct feedback
-6. Keep it fast and efficient`;
+2. CLASSIFY each error as MECHANICAL or CONCEPTUAL:
+   - MECHANICAL: "Small slip in line 3 — you wrote $2x$ instead of $2x^2$"
+   - CONCEPTUAL: "You've used the wrong method here — this needs integration by parts, not substitution"
+3. Populate marks_analysis with structured breakdown:
+   - estimated_marks: "3/5"
+   - method_marks: list M marks earned/lost with reasons
+   - accuracy_marks: list A marks earned/lost
+   - errors: array of {line, type, description}
+4. For MECHANICAL errors: quick fix, move on
+5. For CONCEPTUAL errors: set needs_reteach=true, offer deeper explanation
+6. Do NOT ask Socratic questions - give direct feedback
+7. After checking, set next_action to "offer_alternative" if they got it right`;
   } else {
-    modeInstructions = `\n\n## COACH MODE (ACTIVE)
-You are in COACHING mode - use Socratic method:
-1. Ask targeted questions to lead them to the answer
-2. Give one hint at a time
-3. Wait for their working before the next step
-4. Only give the answer if they're stuck twice`;
+    modeInstructions = `\n\n## COACH MODE (ACTIVE) - PROGRESSIVE HINT ESCALATION
+You are in COACHING mode with progressive scaffolding based on stuck_count:
+
+STUCK COUNT 0 (first attempt):
+- Ask a classification hint: "What type of problem is this?" or "What's the first thing you notice?"
+
+STUCK COUNT 1 (still struggling):
+- Give a method hint: "For this type, we typically use..." or "The key formula here is..."
+
+STUCK COUNT 2+ (really stuck):
+- Provide the first worked step: "Here's step 1: ... Now try step 2"
+- Or show a parallel worked example if conceptual confusion
+
+ERROR HANDLING:
+- MECHANICAL errors: Point out quickly, ask them to fix: "Check line 3 - should that be $+$ or $-$?"
+- CONCEPTUAL errors: Reframe with a different angle, use a simpler example, then ask them to apply it
+
+POST-CORRECT:
+- When student_behavior is "correct_answer", set next_action to "offer_alternative"
+- Suggest: "Want to see a different approach?" with alternative_method populated`;
   }
 
   const studentNameForPrompt = userContext?.studentName || '';
@@ -178,13 +199,90 @@ const tutorResponseTool = {
         },
         next_action: {
           type: "string",
-          enum: ["ask_student", "wait_for_working", "give_hint", "move_on"],
-          description: "What should happen next in the conversation"
+          enum: ["ask_student", "wait_for_working", "give_hint", "move_on", "offer_alternative"],
+          description: "What should happen next: ask_student, wait_for_working, give_hint, move_on, or offer_alternative (after correct answer to suggest different method)"
         },
         student_behavior: {
           type: "string",
-          enum: ["attempted_step", "asked_for_answer", "expressed_confusion", "asked_clarification", "other"],
-          description: "Classify what the student just did in their last message. Use 'other' for the first message or greetings."
+          enum: ["attempted_step", "asked_for_answer", "expressed_confusion", "asked_clarification", "correct_answer", "other"],
+          description: "Classify what the student just did. Use 'correct_answer' when they've solved correctly."
+        },
+        error_analysis: {
+          type: "object",
+          description: "When student has made an error, classify and describe it. Only include when an error is detected.",
+          properties: {
+            type: {
+              type: "string",
+              enum: ["mechanical", "conceptual", "none"],
+              description: "mechanical = small slip (wrong sign, arithmetic). conceptual = wrong method/approach"
+            },
+            severity: {
+              type: "string",
+              enum: ["minor", "major"],
+              description: "minor = 1 accuracy mark lost. major = method marks at risk"
+            },
+            location: {
+              type: "string",
+              description: "Specific line/step where error occurred, e.g. 'line 3', 'when differentiating'"
+            },
+            fix_hint: {
+              type: "string",
+              description: "Brief hint to fix: 'Check the sign' or 'This needs integration by parts'"
+            },
+            needs_reteach: {
+              type: "boolean",
+              description: "true if conceptual error needs deeper explanation with worked example"
+            }
+          },
+          required: ["type"]
+        },
+        marks_analysis: {
+          type: "object",
+          description: "In CHECK mode only: structured marks breakdown. Include when validating student working.",
+          properties: {
+            estimated_marks: {
+              type: "string",
+              description: "e.g. '3/5', '2/4'"
+            },
+            method_marks: {
+              type: "string",
+              description: "e.g. 'M1 ✓ for correct setup, M1 ✗ for integration method'"
+            },
+            accuracy_marks: {
+              type: "string",
+              description: "e.g. 'A1 ✓ for correct coefficient, A1 ✗ arithmetic slip'"
+            },
+            errors: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  line: { type: "string" },
+                  type: { type: "string", enum: ["mechanical", "conceptual"] },
+                  description: { type: "string" }
+                }
+              },
+              description: "List of specific errors found in their working"
+            }
+          }
+        },
+        alternative_method: {
+          type: "object",
+          description: "When offering an alternative approach after correct answer",
+          properties: {
+            method_name: {
+              type: "string",
+              description: "e.g. 'Completing the square', 'Graphical approach'"
+            },
+            brief_explanation: {
+              type: "string",
+              description: "1-2 sentence preview of the alternative"
+            }
+          }
+        },
+        stuck_count: {
+          type: "number",
+          description: "Track how many times student has been stuck on this step (0, 1, 2, 3+). Use for progressive hint escalation."
         }
       },
       required: ["method_cue", "reply_messages", "topic", "difficulty", "mode", "next_action", "student_behavior"],
