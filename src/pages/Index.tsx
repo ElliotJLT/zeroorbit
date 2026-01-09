@@ -492,19 +492,6 @@ export default function Index() {
               <span className="text-white/60">Upload from gallery</span>
             </button>
 
-            {/* Or divider */}
-            <div className="flex items-center gap-4 pt-4">
-              <div className="flex-1 h-px bg-white/20" />
-              <span className="text-sm text-white/40">or</span>
-              <div className="flex-1 h-px bg-white/20" />
-            </div>
-
-            <button
-              onClick={() => navigate('/past-papers')}
-              className="w-full p-4 rounded-xl border border-white/20 bg-white/5 flex items-center justify-center gap-2 transition-all hover:bg-white/10"
-            >
-              <span className="text-white/60">Select from past papers</span>
-            </button>
           </div>
         </div>
       </div>
