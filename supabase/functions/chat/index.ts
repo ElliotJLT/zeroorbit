@@ -307,6 +307,10 @@ const tutorResponseTool = {
         stuck_count: {
           type: "number",
           description: "Track how many times student has been stuck on this step (0, 1, 2, 3+). Use for progressive hint escalation."
+        },
+        offer_voice_response: {
+          type: "boolean",
+          description: "Set to true ONLY when the student just sent a voice message (indicated by input_method='voice' in the last message). This prompts them to enable audio responses."
         }
       },
       required: ["method_cue", "reply_messages", "topic", "difficulty", "mode", "next_action", "student_behavior"],
@@ -321,14 +325,14 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, questionContext, userContext, image_type, latest_image_url, tutor_mode } = await req.json();
+    const { messages, questionContext, userContext, image_type, latest_image_url, tutor_mode, input_method } = await req.json();
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
     if (!OPENAI_API_KEY) {
       throw new Error("OPENAI_API_KEY is not configured");
     }
 
-    console.log("Chat request with", messages.length, "messages, user context:", userContext, "image_type:", image_type, "tutor_mode:", tutor_mode);
+    console.log("Chat request with", messages.length, "messages, user context:", userContext, "image_type:", image_type, "tutor_mode:", tutor_mode, "input_method:", input_method);
 
     // Build context-aware system prompt with image type and tutor mode
     let systemPrompt = buildSystemPrompt(userContext, image_type, tutor_mode);
@@ -337,6 +341,9 @@ serve(async (req) => {
     }
     if (latest_image_url) {
       systemPrompt += `\n\n[Student has just uploaded an image: ${latest_image_url}]`;
+    }
+    if (input_method === 'voice') {
+      systemPrompt += `\n\n[Student just sent a VOICE message. Set offer_voice_response=true in your response to ask if they want audio responses.]`;
     }
 
     // Build messages array for AI with image support

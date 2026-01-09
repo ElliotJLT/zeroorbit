@@ -11,6 +11,7 @@ export interface Message {
   studentBehavior?: string;
   nextAction?: string;
   stuckCount?: number;
+  offerVoiceResponse?: boolean;
   errorAnalysis?: {
     type: 'mechanical' | 'conceptual' | 'none';
     severity?: 'minor' | 'major';
@@ -72,6 +73,7 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
       studentBehavior?: string;
       nextAction?: string;
       stuckCount?: number;
+      offerVoiceResponse?: boolean;
       errorAnalysis?: Message['errorAnalysis'];
       marksAnalysis?: Message['marksAnalysis'];
       alternativeMethod?: Message['alternativeMethod'];
@@ -94,6 +96,7 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
                   studentBehavior: metadata?.studentBehavior,
                   nextAction: metadata?.nextAction,
                   stuckCount: metadata?.stuckCount,
+                  offerVoiceResponse: metadata?.offerVoiceResponse,
                   errorAnalysis: metadata?.errorAnalysis,
                   marksAnalysis: metadata?.marksAnalysis,
                   alternativeMethod: metadata?.alternativeMethod,
@@ -113,6 +116,7 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
       studentBehavior?: string;
       nextAction?: string;
       stuckCount?: number;
+      offerVoiceResponse?: boolean;
       errorAnalysis?: Message['errorAnalysis'];
       marksAnalysis?: Message['marksAnalysis'];
       alternativeMethod?: Message['alternativeMethod'];
@@ -135,12 +139,14 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
   }, [typeMessage]);
 
   const streamChat = useCallback(async (
-    allMessages: Message[]
+    allMessages: Message[],
+    inputMethod?: 'text' | 'voice' | 'photo'
   ): Promise<{ 
     reply_messages: string[]; 
     student_behavior?: string;
     next_action?: string;
     stuck_count?: number;
+    offer_voice_response?: boolean;
     error_analysis?: Message['errorAnalysis'];
     marks_analysis?: Message['marksAnalysis'];
     alternative_method?: Message['alternativeMethod'];
@@ -166,6 +172,7 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
           targetGrade: targetGrade || 'Unknown',
         },
         tutor_mode: tutorMode || 'coach',
+        input_method: inputMethod,
       }),
     });
 
@@ -178,6 +185,7 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
       student_behavior: data.student_behavior,
       next_action: data.next_action,
       stuck_count: data.stuck_count,
+      offer_voice_response: data.offer_voice_response,
       error_analysis: data.error_analysis,
       marks_analysis: data.marks_analysis,
       alternative_method: data.alternative_method,
@@ -209,11 +217,12 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
 
     try {
       const allMessages = [...messages, studentMessage];
-      const { reply_messages, student_behavior, next_action, stuck_count, error_analysis, marks_analysis, alternative_method } = await streamChat(allMessages);
+      const { reply_messages, student_behavior, next_action, stuck_count, offer_voice_response, error_analysis, marks_analysis, alternative_method } = await streamChat(allMessages, inputMethod);
       await displayMessagesSequentially(reply_messages, placeholderId, {
         studentBehavior: student_behavior,
         nextAction: next_action,
         stuckCount: stuck_count,
+        offerVoiceResponse: offer_voice_response,
         errorAnalysis: error_analysis,
         marksAnalysis: marks_analysis,
         alternativeMethod: alternative_method,
