@@ -10,6 +10,7 @@ export interface Message {
   inputMethod?: 'text' | 'voice' | 'photo';
   studentBehavior?: string;
   nextAction?: string;
+  stuckCount?: number;
   errorAnalysis?: {
     type: 'mechanical' | 'conceptual' | 'none';
     severity?: 'minor' | 'major';
@@ -70,6 +71,7 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
     metadata?: {
       studentBehavior?: string;
       nextAction?: string;
+      stuckCount?: number;
       errorAnalysis?: Message['errorAnalysis'];
       marksAnalysis?: Message['marksAnalysis'];
       alternativeMethod?: Message['alternativeMethod'];
@@ -91,6 +93,7 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
                 ...(isLastWord ? {
                   studentBehavior: metadata?.studentBehavior,
                   nextAction: metadata?.nextAction,
+                  stuckCount: metadata?.stuckCount,
                   errorAnalysis: metadata?.errorAnalysis,
                   marksAnalysis: metadata?.marksAnalysis,
                   alternativeMethod: metadata?.alternativeMethod,
@@ -109,6 +112,7 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
     metadata?: {
       studentBehavior?: string;
       nextAction?: string;
+      stuckCount?: number;
       errorAnalysis?: Message['errorAnalysis'];
       marksAnalysis?: Message['marksAnalysis'];
       alternativeMethod?: Message['alternativeMethod'];
@@ -136,6 +140,7 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
     reply_messages: string[]; 
     student_behavior?: string;
     next_action?: string;
+    stuck_count?: number;
     error_analysis?: Message['errorAnalysis'];
     marks_analysis?: Message['marksAnalysis'];
     alternative_method?: Message['alternativeMethod'];
@@ -172,6 +177,7 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
       reply_messages: msgs,
       student_behavior: data.student_behavior,
       next_action: data.next_action,
+      stuck_count: data.stuck_count,
       error_analysis: data.error_analysis,
       marks_analysis: data.marks_analysis,
       alternative_method: data.alternative_method,
@@ -203,10 +209,11 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
 
     try {
       const allMessages = [...messages, studentMessage];
-      const { reply_messages, student_behavior, next_action, error_analysis, marks_analysis, alternative_method } = await streamChat(allMessages);
+      const { reply_messages, student_behavior, next_action, stuck_count, error_analysis, marks_analysis, alternative_method } = await streamChat(allMessages);
       await displayMessagesSequentially(reply_messages, placeholderId, {
         studentBehavior: student_behavior,
         nextAction: next_action,
+        stuckCount: stuck_count,
         errorAnalysis: error_analysis,
         marksAnalysis: marks_analysis,
         alternativeMethod: alternative_method,
@@ -282,6 +289,7 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
       await displayMessagesSequentially(replyMessages, placeholderId, {
         studentBehavior: data.student_behavior,
         nextAction: data.next_action,
+        stuckCount: data.stuck_count,
         errorAnalysis: data.error_analysis,
         marksAnalysis: data.marks_analysis,
         alternativeMethod: data.alternative_method,

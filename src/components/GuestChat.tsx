@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Camera, X, Send, Mic, Lightbulb, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
+import { Camera, X, Send, Mic, Lightbulb, RefreshCw, CheckCircle, XCircle, Eye, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import orbitIcon from '@/assets/orbit-icon.png';
@@ -138,13 +138,15 @@ export function GuestChat({
           {/* Message bubbles */}
           {messages.map((message, index) => {
             const isLastTutorMessage = message.sender === 'tutor' && index === messages.length - 1;
+            const isCorrectAnswer = message.studentBehavior === 'correct_answer';
             const showAlternativeButton = isLastTutorMessage && message.nextAction === 'offer_alternative' && message.alternativeMethod;
             const showStillStuckButton = isLastTutorMessage && message.errorAnalysis?.needs_reteach;
+            const showJustShowAnswerButton = isLastTutorMessage && (message.stuckCount ?? 0) >= 2 && !isCorrectAnswer;
             
             return (
               <div key={message.id} className="space-y-2">
                 <div 
-                  className={`rounded-2xl p-4 ${message.sender === 'tutor' ? 'bg-card border border-border' : 'bg-primary/10 ml-8'}`}
+                  className={`rounded-2xl p-4 ${message.sender === 'tutor' ? 'bg-card border border-border' : 'bg-primary/10 ml-8'} ${isCorrectAnswer && message.sender === 'tutor' ? 'ring-2 ring-green-500/30 bg-green-50/50 dark:bg-green-950/20' : ''}`}
                 >
                   {message.sender === 'tutor' && (
                     <div className="flex items-center gap-2 mb-2">
@@ -154,6 +156,12 @@ export function GuestChat({
                         className="w-6 h-6 rounded-full object-cover"
                       />
                       <span className="text-xs text-muted-foreground">Orbit</span>
+                      {isCorrectAnswer && message.content && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/20 text-green-700 dark:text-green-400 text-xs font-medium">
+                          <CheckCircle className="w-3 h-3" />
+                          Correct!
+                        </span>
+                      )}
                     </div>
                   )}
                   {message.imageUrl && (
@@ -217,7 +225,7 @@ export function GuestChat({
                 </div>
                 
                 {/* Post-message action buttons */}
-                {message.content && (showAlternativeButton || showStillStuckButton) && (
+                {message.content && (showAlternativeButton || showStillStuckButton || showJustShowAnswerButton) && (
                   <div className="flex flex-wrap gap-2 pl-2">
                     {showAlternativeButton && message.alternativeMethod && (
                       <button
@@ -229,6 +237,17 @@ export function GuestChat({
                         See another approach
                       </button>
                     )}
+                    {/* Post-correct: Try similar problem */}
+                    {isCorrectAnswer && (
+                      <button
+                        onClick={() => onSendMessage("Give me a similar problem to try", 'text')}
+                        disabled={sending}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 text-green-700 dark:text-green-400 text-xs font-medium hover:bg-green-500/20 active:scale-95 transition-all disabled:opacity-50"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        Try a similar problem
+                      </button>
+                    )}
                     {showStillStuckButton && (
                       <button
                         onClick={() => onSendMessage("I'm still confused, can you explain it differently?", 'text')}
@@ -237,6 +256,16 @@ export function GuestChat({
                       >
                         <Lightbulb className="w-3 h-3" />
                         Still stuck?
+                      </button>
+                    )}
+                    {showJustShowAnswerButton && (
+                      <button
+                        onClick={() => onSendMessage("Just show me the answer", 'text')}
+                        disabled={sending}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-medium hover:bg-amber-500/20 active:scale-95 transition-all disabled:opacity-50"
+                      >
+                        <Eye className="w-3 h-3" />
+                        Just show me the answer
                       </button>
                     )}
                   </div>
