@@ -43,6 +43,7 @@ export default function Index() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<QuestionAnalysis | null>(null);
+  const [selectedMode, setSelectedMode] = useState<'coach' | 'check'>('coach');
   
   // Student context
   const [currentGrade, setCurrentGrade] = useState('');
@@ -607,45 +608,73 @@ export default function Index() {
                   )}
                 </div>
 
-                {/* Mode selection buttons - shown when analysis is complete */}
+                {/* Mode selection - shown when analysis is complete */}
                 {!isAnalyzing && (
-                  <div className="space-y-3 animate-fade-in">
+                  <div className="space-y-4 animate-fade-in">
+                    {/* Selectable mode options */}
+                    <div className="space-y-3">
+                      <button 
+                        onClick={() => setSelectedMode('coach')}
+                        className={`w-full h-14 rounded-2xl border-2 transition-all flex items-center justify-between px-5 ${
+                          selectedMode === 'coach' 
+                            ? 'border-primary bg-primary/10' 
+                            : 'border-border bg-card hover:bg-muted'
+                        }`}
+                      >
+                        <div className="text-left">
+                          <p className="font-medium">Coach me through it</p>
+                          <p className="text-xs text-muted-foreground">Step-by-step guidance</p>
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          selectedMode === 'coach' ? 'border-primary bg-primary' : 'border-muted-foreground'
+                        }`}>
+                          {selectedMode === 'coach' && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
+                        </div>
+                      </button>
+                      
+                      <button 
+                        onClick={() => setSelectedMode('check')}
+                        className={`w-full h-14 rounded-2xl border-2 transition-all flex items-center justify-between px-5 ${
+                          selectedMode === 'check' 
+                            ? 'border-primary bg-primary/10' 
+                            : 'border-border bg-card hover:bg-muted'
+                        }`}
+                      >
+                        <div className="text-left">
+                          <p className="font-medium">Check my working</p>
+                          <p className="text-xs text-muted-foreground">Quick validation & marks</p>
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          selectedMode === 'check' ? 'border-primary bg-primary' : 'border-muted-foreground'
+                        }`}>
+                          {selectedMode === 'check' && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
+                        </div>
+                      </button>
+                    </div>
+                    
+                    {/* Start Learning CTA */}
                     <Button 
                       onClick={() => {
-                        if (analysis) {
-                          startTextChatWithAnalysis(analysis);
+                        if (selectedMode === 'check') {
+                          const checkWorkingAnalysis: QuestionAnalysis = {
+                            questionSummary: questionText || 'Check my working',
+                            topic: analysis?.topic || 'Unknown',
+                            difficulty: analysis?.difficulty || 'Unknown',
+                            socraticOpening: "I can see your working. Let me check it step by step and give you feedback on what's correct and where any errors are.",
+                          };
+                          setAnalysis(checkWorkingAnalysis);
+                          startTextChatWithAnalysis(checkWorkingAnalysis);
                         } else {
-                          analyzeAndStartChat();
+                          if (analysis) {
+                            startTextChatWithAnalysis(analysis);
+                          } else {
+                            analyzeAndStartChat();
+                          }
                         }
                       }} 
-                      className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all flex items-center justify-between px-5"
+                      className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                     >
-                      <div className="text-left">
-                        <p className="font-medium">Coach me through it</p>
-                        <p className="text-xs text-primary-foreground/70">Step-by-step guidance</p>
-                      </div>
-                      <ArrowRight className="h-5 w-5" />
-                    </Button>
-                    
-                    <Button 
-                      onClick={() => {
-                        // Set a flag for check working mode
-                        const checkWorkingAnalysis: QuestionAnalysis = {
-                          questionSummary: questionText || 'Check my working',
-                          topic: analysis?.topic || 'Unknown',
-                          difficulty: analysis?.difficulty || 'Unknown',
-                          socraticOpening: "I can see your working. Let me check it step by step and give you feedback on what's correct and where any errors are.",
-                        };
-                        setAnalysis(checkWorkingAnalysis);
-                        startTextChatWithAnalysis(checkWorkingAnalysis);
-                      }} 
-                      variant="outline"
-                      className="w-full h-14 rounded-2xl border-2 border-border hover:bg-muted active:scale-[0.98] transition-all flex items-center justify-between px-5"
-                    >
-                      <div className="text-left">
-                        <p className="font-medium">Check my working</p>
-                        <p className="text-xs text-muted-foreground">Quick validation & marks</p>
-                      </div>
+                      <span className="font-medium">Start Learning</span>
                       <ArrowRight className="h-5 w-5" />
                     </Button>
                   </div>
