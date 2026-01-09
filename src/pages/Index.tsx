@@ -834,7 +834,6 @@ export default function Index() {
         onCancelImage={() => guestChat.setPendingImage(null)}
         onImageUpload={guestChat.handleImageUpload}
         onNewProblem={handleNewProblemSubmit}
-        onEndSession={handleEndSession}
         onBrowseSyllabus={() => {
           setStep('home');
           guestChat.resetChat();

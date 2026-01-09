@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Camera, X, Send, LogOut, Mic, Lightbulb, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
+import { Camera, X, Send, Mic, Lightbulb, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import orbitIcon from '@/assets/orbit-icon.png';
@@ -21,7 +21,6 @@ interface GuestChatProps {
   onCancelImage: () => void;
   onImageUpload: (imageUrl: string, mode: 'working' | 'question') => void;
   onNewProblem: (imageUrl: string | null, questionText: string) => Promise<void>;
-  onEndSession: () => void;
   onBrowseSyllabus: () => void;
   onSettings: () => void;
   betaMode?: boolean;
@@ -39,7 +38,6 @@ export function GuestChat({
   onCancelImage,
   onImageUpload,
   onNewProblem,
-  onEndSession,
   onBrowseSyllabus,
   onSettings,
   betaMode = true,
@@ -112,17 +110,6 @@ export function GuestChat({
               <Camera className="h-4 w-4" />
               <span className="text-sm">New Problem</span>
             </Button>
-            {betaMode && messages.length > 2 && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onEndSession}
-                className="w-11 h-11 rounded-full text-muted-foreground hover:text-foreground active:scale-95 transition-all"
-                title="End Session"
-              >
-                <LogOut className="h-5 w-5" />
-              </Button>
-            )}
           </div>
         </div>
       </div>
