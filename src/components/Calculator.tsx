@@ -1,17 +1,51 @@
 import { useState } from 'react';
-import { ArrowLeft, Delete } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Delete, Copy, Check } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 type Mode = 'scientific' | 'converter';
 
 export default function Calculator() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { toast } = useToast();
   const [display, setDisplay] = useState('0');
   const [memory, setMemory] = useState<string | null>(null);
   const [operator, setOperator] = useState<string | null>(null);
   const [waitingForOperand, setWaitingForOperand] = useState(false);
   const [mode, setMode] = useState<Mode>('scientific');
   const [isRadians, setIsRadians] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  // Get chat session from location state if navigating from chat
+  const chatSessionId = (location.state as { chatSessionId?: string })?.chatSessionId;
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(display);
+      setCopied(true);
+      toast({
+        title: "Copied!",
+        description: display === '0' ? "0 copied to clipboard" : `${display} copied to clipboard`,
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Copy failed",
+        description: "Could not copy to clipboard",
+      });
+    }
+  };
+
+  const copyAndReturn = async () => {
+    await navigator.clipboard.writeText(display);
+    toast({
+      title: "Copied!",
+      description: "Result copied - paste it in your message",
+    });
+    navigate(-1);
+  };
 
   const inputDigit = (digit: string) => {
     if (waitingForOperand) {
@@ -278,9 +312,26 @@ export default function Calculator() {
             {pendingCombination.n} {pendingCombination.type === 'nCr' ? 'C' : 'P'} r
           </div>
         )}
-        <div className="text-right text-5xl font-light tracking-tight overflow-x-auto">
-          {display.length > 12 ? parseFloat(display).toExponential(6) : display}
+        <div className="flex items-end justify-end gap-3">
+          <button
+            onClick={copyToClipboard}
+            className="p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+            title="Copy result"
+          >
+            {copied ? <Check className="h-5 w-5 text-primary" /> : <Copy className="h-5 w-5" />}
+          </button>
+          <div className="text-right text-5xl font-light tracking-tight overflow-x-auto">
+            {display.length > 12 ? parseFloat(display).toExponential(6) : display}
+          </div>
         </div>
+        
+        {/* Copy & Return button */}
+        <button
+          onClick={copyAndReturn}
+          className="mt-4 w-full py-3 rounded-xl bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors active:scale-[0.98]"
+        >
+          Copy & Return to Chat
+        </button>
       </div>
 
       {/* Keypad */}

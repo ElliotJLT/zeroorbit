@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import orbitIcon from '@/assets/orbit-icon.png';
 import BurgerMenu from '@/components/BurgerMenu';
 import NewProblemModal from '@/components/NewProblemModal';
+import MathText from '@/components/MathText';
 import { useToast } from '@/hooks/use-toast';
 import { type Message, type QuestionAnalysis } from '@/hooks/useGuestChat';
 
@@ -167,15 +168,17 @@ export function GuestChat({
               {message.imageUrl && (
                 <img src={message.imageUrl} alt="Uploaded" className="w-full max-h-32 object-contain rounded-lg mb-2" />
               )}
-              <p className={`text-sm leading-relaxed ${message.sender === 'student' ? 'text-right' : ''}`}>
-                {message.content || (
+              <div className={`text-sm leading-relaxed ${message.sender === 'student' ? 'text-right' : ''}`}>
+                {message.content ? (
+                  <MathText text={message.content} />
+                ) : (
                   <span className="inline-flex items-center gap-1">
                     <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                     <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                   </span>
                 )}
-              </p>
+              </div>
             </div>
           ))}
           
