@@ -93,8 +93,13 @@ export default function ArenaSession() {
     setShowSolution,
   } = useArenaSession();
 
-  // Load topics and start session
+  // Track if session has been started to prevent multiple calls
+  const [sessionStarted, setSessionStarted] = useState(false);
+
+  // Load topics and start session - only once
   useEffect(() => {
+    if (sessionStarted) return;
+
     const loadAndStart = async () => {
       // Get selected topic IDs from session storage
       const storedTopicIds = sessionStorage.getItem('arenaTopics');
@@ -121,13 +126,15 @@ export default function ArenaSession() {
 
       setTopics(topicsData as Topic[]);
       setIsLoading(false);
+      setSessionStarted(true);
 
       // Start the session
       await startSession(topicsData as Topic[], difficulty, count);
     };
 
     loadAndStart();
-  }, [navigate, searchParams, startSession]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmitAnswer = async (answer?: string, imageUrl?: string) => {
     const result = await submitAnswer(answer, imageUrl);
