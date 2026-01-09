@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Send, Eye, ArrowRight, RotateCcw } from 'lucide-react';
+import { Camera, Send, Eye, ArrowRight, RotateCcw, Mic, Square, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import MathText from '@/components/MathText';
+import { useSpeech } from '@/hooks/useSpeech';
 import {
   Dialog,
   DialogContent,
@@ -55,6 +56,27 @@ export default function ArenaQuestion({
   const [showSkipDialog, setShowSkipDialog] = useState(false);
   const [showSwipeTutorial, setShowSwipeTutorial] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Voice input
+  const { isRecording, startRecording, stopRecording } = useSpeech();
+  
+  const handleMicClick = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording(
+        (transcript) => {
+          // Submit the voice transcript directly
+          if (transcript.trim()) {
+            onSubmitAnswer(transcript, undefined);
+          }
+        },
+        () => {
+          // Error callback - do nothing
+        }
+      );
+    }
+  };
   
   // Swipe/drag gesture state
   const [swipeX, setSwipeX] = useState(0);
@@ -312,27 +334,10 @@ export default function ArenaQuestion({
             </div>
           </div>
         )}
-
-        {/* Image preview */}
-        {imagePreview && (
-          <div className="relative">
-            <img 
-              src={imagePreview} 
-              alt="Your working" 
-              className="w-full rounded-xl border border-border"
-            />
-            <button
-              onClick={() => setImagePreview(null)}
-              className="absolute top-2 right-2 p-1 bg-background/80 rounded-full"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Input area - fixed at bottom for mobile */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 border-t border-border bg-background/95 backdrop-blur-sm space-y-3 safe-area-inset-bottom z-20">
+      {/* Input area - fixed at bottom for mobile - matches GuestChat style */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-20">
         {isCompleted ? (
           // Completed state - show next button
           <Button 
@@ -343,9 +348,29 @@ export default function ArenaQuestion({
             <ArrowRight className="h-5 w-5" />
           </Button>
         ) : (
-          // Input state
-          <>
-            <div className="flex gap-2">
+          // Input state - native chat style like GuestChat
+          <div className="space-y-3">
+            {/* Image preview */}
+            {imagePreview && (
+              <div className="flex justify-center">
+                <div className="relative">
+                  <img 
+                    src={imagePreview} 
+                    alt="Your working" 
+                    className="max-h-32 rounded-xl border border-border"
+                  />
+                  <button
+                    onClick={() => setImagePreview(null)}
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive flex items-center justify-center"
+                  >
+                    <X className="h-3 w-3 text-destructive-foreground" />
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            <div className="flex items-center gap-2">
+              {/* Hidden file input */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -354,33 +379,71 @@ export default function ArenaQuestion({
                 onChange={handleImageCapture}
                 className="hidden"
               />
-              <Button
-                variant="outline"
-                size="icon"
+              
+              {/* Photo button */}
+              <button 
                 onClick={() => fileInputRef.current?.click()}
-                className="shrink-0"
+                disabled={isEvaluating}
+                className="w-11 h-11 rounded-full bg-muted flex items-center justify-center disabled:opacity-50 active:scale-95 transition-all hover:bg-muted/80"
+                title="Add photo"
               >
-                <Camera className="h-5 w-5" />
-              </Button>
-              <Textarea
-                value={answer}
-                onChange={(e) => setAnswer(e.target.value)}
-                placeholder="Type your answer or add working..."
-                className="min-h-[44px] max-h-32 resize-none"
-                rows={1}
-              />
-              <Button
-                onClick={handleSubmit}
-                disabled={isEvaluating || (!answer.trim() && !imagePreview)}
-                size="icon"
-                className="shrink-0"
-              >
-                {isEvaluating ? (
-                  <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Send className="h-5 w-5" />
+                <Camera className="h-5 w-5 text-muted-foreground" />
+              </button>
+              
+              {/* Text input */}
+              <div className="flex-1 relative">
+                <Input
+                  placeholder="Type your answer..."
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (answer.trim() || imagePreview) {
+                        handleSubmit();
+                      }
+                    }
+                  }}
+                  disabled={isEvaluating}
+                  className="w-full rounded-full bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary h-11 pr-12"
+                />
+                
+                {/* Mic button inside input */}
+                {!answer.trim() && !imagePreview && (
+                  <button 
+                    onClick={handleMicClick}
+                    disabled={isEvaluating}
+                    className={cn(
+                      "absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-50 active:scale-95 transition-all",
+                      isRecording 
+                        ? "bg-destructive text-destructive-foreground animate-pulse" 
+                        : "hover:bg-background/50"
+                    )}
+                    title={isRecording ? "Stop recording" : "Voice note"}
+                  >
+                    {isRecording ? (
+                      <Square className="h-3.5 w-3.5 fill-current" />
+                    ) : (
+                      <Mic className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </button>
                 )}
-              </Button>
+              </div>
+              
+              {/* Send button - only shows when there's content */}
+              {(answer.trim() || imagePreview) && (
+                <button 
+                  onClick={handleSubmit}
+                  disabled={isEvaluating}
+                  className="w-11 h-11 rounded-full bg-primary flex items-center justify-center disabled:opacity-50 active:scale-95 transition-all"
+                >
+                  {isEvaluating ? (
+                    <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Send className="h-5 w-5 text-primary-foreground" />
+                  )}
+                </button>
+              )}
             </div>
 
             {attemptCount >= 2 && !showSolution && (
@@ -393,7 +456,7 @@ export default function ArenaQuestion({
                 Show solution
               </Button>
             )}
-          </>
+          </div>
         )}
       </div>
 
