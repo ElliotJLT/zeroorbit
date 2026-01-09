@@ -324,14 +324,6 @@ export default function Calculator() {
             {display.length > 12 ? parseFloat(display).toExponential(6) : display}
           </div>
         </div>
-        
-        {/* Copy & Return button */}
-        <button
-          onClick={copyAndReturn}
-          className="mt-4 w-full py-3 rounded-xl bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors active:scale-[0.98]"
-        >
-          Copy & Return to Chat
-        </button>
       </div>
 
       {/* Keypad */}
