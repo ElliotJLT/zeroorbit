@@ -236,9 +236,9 @@ export default function ArenaQuestion({
         </div>
       )}
 
-      {/* Question - with swipe transform */}
+      {/* Question - with swipe transform - fills available space */}
       <div 
-        className="flex-1 overflow-y-auto p-4 space-y-4"
+        className="flex-1 overflow-y-auto p-4 space-y-4 pb-[140px]"
         style={{ 
           transform: `translateX(${swipeX}px) rotate(${cardRotation}deg)`,
           transition: isDragging || showSwipeTutorial ? 'none' : 'transform 0.3s ease-out'
@@ -331,8 +331,8 @@ export default function ArenaQuestion({
         )}
       </div>
 
-      {/* Input area */}
-      <div className="p-4 border-t border-border space-y-3">
+      {/* Input area - fixed at bottom for mobile */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 border-t border-border bg-background/95 backdrop-blur-sm space-y-3 safe-area-inset-bottom z-20">
         {isCompleted ? (
           // Completed state - show next button
           <Button 

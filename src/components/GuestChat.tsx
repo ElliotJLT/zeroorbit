@@ -128,7 +128,7 @@ export function GuestChat({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 pb-[180px]">
         <div className="max-w-2xl mx-auto space-y-4">
           {/* Question Card */}
           {imagePreview && (
@@ -188,8 +188,8 @@ export function GuestChat({
         <div className="fixed inset-0 z-10" onClick={() => setShowInput(false)} />
       )}
 
-      {/* Bottom action bar */}
-      <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))] z-20">
+      {/* Bottom action bar - fixed at bottom for mobile */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))] z-20">
         <div className="max-w-2xl mx-auto">
           {/* Hidden file inputs */}
           <input 
