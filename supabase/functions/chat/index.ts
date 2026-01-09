@@ -7,12 +7,35 @@ const corsHeaders = {
 
 const buildSystemPrompt = (
   userContext?: { level: string; board: string; tier?: string; targetGrade?: string; studentName?: string },
-  imageType?: 'working' | 'question' | 'mark_scheme'
+  imageType?: 'working' | 'question' | 'mark_scheme',
+  tutorMode?: 'coach' | 'check'
 ) => {
   const studentName = userContext?.studentName || 'there';
+  const board = userContext?.board || 'Unknown';
+  const level = userContext?.level || 'A-Level';
+  
   const contextLine = userContext 
-    ? `\n\nStudent: ${studentName}, ${userContext.level}, ${userContext.board || 'Unknown'} board, target ${userContext.targetGrade || 'unknown'}.`
+    ? `\n\nStudent: ${studentName}, ${level}, ${board} board, target ${userContext.targetGrade || 'unknown'}.`
     : '';
+
+  // Exam board specific guidance
+  const boardGuidance = `
+## EXAM BOARD ALIGNMENT (CRITICAL - ${board})
+This is the KEY differentiator. You MUST tailor your approach to ${board} ${level} specifically:
+- Use ONLY methods that appear in ${board} mark schemes
+- Avoid advanced techniques or shortcuts not taught at ${level}
+- Match the formula book notation for ${board}
+- Use ${board}-specific terminology (e.g., "${board === 'Edexcel' ? 'pmcc' : board === 'AQA' ? 'product moment correlation coefficient' : 'correlation coefficient'}")
+- Reference ${board} formula book entries when relevant
+- Stick to methods a ${level} student would have been taught
+
+NEVER use:
+- University-level techniques
+- Shortcuts not in the ${board} specification
+- Strange formulas or unintuitive approaches
+- Methods that wouldn't appear in a ${board} mark scheme
+
+The student needs to pass their ${board} ${level} exam. Teach ONLY what scores marks in that exam.`;
 
   let imageHandling = '';
   if (imageType === 'working') {
@@ -36,12 +59,34 @@ Your job is:
 5. Keep focus on the mark scheme's method, not your own approach`;
   }
 
+  // Mode-specific behavior
+  let modeInstructions = '';
+  if (tutorMode === 'check') {
+    modeInstructions = `\n\n## CHECK WORKING MODE (ACTIVE)
+You are in CHECK MODE - NOT Socratic coaching mode. Your job is:
+1. Directly validate what's correct in their working
+2. Identify specific errors with clear explanations
+3. Give a marks estimate (e.g., "This would likely score 3/5 marks")
+4. Suggest the fix needed
+5. Do NOT ask Socratic questions - give direct feedback
+6. Keep it fast and efficient`;
+  } else {
+    modeInstructions = `\n\n## COACH MODE (ACTIVE)
+You are in COACHING mode - use Socratic method:
+1. Ask targeted questions to lead them to the answer
+2. Give one hint at a time
+3. Wait for their working before the next step
+4. Only give the answer if they're stuck twice`;
+  }
+
   const studentNameForPrompt = userContext?.studentName || '';
   const nameInstruction = studentNameForPrompt 
     ? `Use their name "${studentNameForPrompt}" occasionally (not every message) to personalize.`
     : '';
 
-  return `You are Orbit, a direct UK A-Level Maths tutor. ${nameInstruction}
+  return `You are Orbit, a direct UK ${level} Maths tutor specializing in ${board} exam preparation. ${nameInstruction}
+${boardGuidance}
+${modeInstructions}
 
 BANNED PHRASES (never use):
 - "Great question!", "Great effort!", "Good thinking!", "Fantastic!", "Excellent!"
@@ -60,7 +105,7 @@ REQUIRED STYLE:
 - First word must be about THE MATHS, not the student
 - Be direct: "The gradient 0.0106 means..." NOT "This is about linear regression..."
 - Short sentences. 1-2 sentences per message max.
-- Use exam language: "method marks", "show that", "hence"
+- Use ${board} exam language: "method marks", "show that", "hence"
 
 ## ANTI-WAFFLE RULES (CRITICAL)
 - MAXIMUM 6 short lines per message, then ask the student to do something
@@ -154,17 +199,17 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, questionContext, userContext, image_type, latest_image_url } = await req.json();
+    const { messages, questionContext, userContext, image_type, latest_image_url, tutor_mode } = await req.json();
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
     if (!OPENAI_API_KEY) {
       throw new Error("OPENAI_API_KEY is not configured");
     }
 
-    console.log("Chat request with", messages.length, "messages, user context:", userContext, "image_type:", image_type);
+    console.log("Chat request with", messages.length, "messages, user context:", userContext, "image_type:", image_type, "tutor_mode:", tutor_mode);
 
-    // Build context-aware system prompt with image type
-    let systemPrompt = buildSystemPrompt(userContext, image_type);
+    // Build context-aware system prompt with image type and tutor mode
+    let systemPrompt = buildSystemPrompt(userContext, image_type, tutor_mode);
     if (questionContext) {
       systemPrompt += `\n\n## Current Question Context\n${questionContext}`;
     }

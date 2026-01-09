@@ -25,6 +25,7 @@ interface UserContext {
   examBoard: string;
   struggles: string;
   questionText: string;
+  tutorMode?: 'coach' | 'check';
 }
 
 interface UseGuestChatOptions {
@@ -88,7 +89,7 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
   const streamChat = useCallback(async (
     allMessages: Message[]
   ): Promise<{ reply_messages: string[]; student_behavior?: string }> => {
-    const { currentGrade, targetGrade, examBoard, struggles, questionText } = userContext;
+    const { currentGrade, targetGrade, examBoard, struggles, questionText, tutorMode } = userContext;
     
     const response = await fetch(CHAT_URL, {
       method: 'POST',
@@ -100,9 +101,15 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
         messages: allMessages.map((m) => ({
           role: m.sender,
           content: m.content,
-          image_url: m.imageUrl, // Include image URL for vision
+          image_url: m.imageUrl,
         })),
-        questionContext: `A-Level student (${examBoard || 'Unknown board'}), current grade: ${currentGrade || 'Unknown'}, target: ${targetGrade || 'Unknown'}. Struggles with: ${struggles || 'Not specified'}. Question: ${questionText || 'See attached image'}`,
+        questionContext: `${examBoard || 'Unknown board'} A-Level student, current grade: ${currentGrade || 'Unknown'}, target: ${targetGrade || 'Unknown'}. Struggles with: ${struggles || 'Not specified'}. Question: ${questionText || 'See attached image'}`,
+        userContext: {
+          level: 'A-Level',
+          board: examBoard || 'Unknown',
+          targetGrade: targetGrade || 'Unknown',
+        },
+        tutor_mode: tutorMode || 'coach',
       }),
     });
 
@@ -180,7 +187,7 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
     ]);
     
     try {
-      const { currentGrade, targetGrade, examBoard, struggles, questionText } = userContext;
+      const { currentGrade, targetGrade, examBoard, struggles, questionText, tutorMode } = userContext;
       const allMessages = [...messages, imageMessage];
       
       const response = await fetch(CHAT_URL, {
@@ -193,10 +200,16 @@ export function useGuestChat({ userContext, onFirstInput }: UseGuestChatOptions)
           messages: allMessages.map((m) => ({
             role: m.sender,
             content: m.content,
-            image_url: m.imageUrl, // Include image URL for vision
+            image_url: m.imageUrl,
           })),
-          questionContext: `A-Level student (${examBoard || 'Unknown board'}), current grade: ${currentGrade || 'Unknown'}, target: ${targetGrade || 'Unknown'}. Struggles with: ${struggles || 'Not specified'}. Question: ${questionText || 'See attached image'}`,
+          questionContext: `${examBoard || 'Unknown board'} A-Level student, current grade: ${currentGrade || 'Unknown'}, target: ${targetGrade || 'Unknown'}. Struggles with: ${struggles || 'Not specified'}. Question: ${questionText || 'See attached image'}`,
+          userContext: {
+            level: 'A-Level',
+            board: examBoard || 'Unknown',
+            targetGrade: targetGrade || 'Unknown',
+          },
           image_type: imageMode,
+          tutor_mode: tutorMode || 'coach',
         }),
       });
 

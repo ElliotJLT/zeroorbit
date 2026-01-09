@@ -33,8 +33,13 @@ export default function Index() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [step, setStep] = useState<'home' | 'setup' | 'upload' | 'preview' | 'chat'>('home');
+  const [step, setStep] = useState<'home' | 'setup' | 'upload' | 'preview' | 'onboarding' | 'chat'>('home');
   const [selectedTopic, setSelectedTopic] = useState<{ id: string; name: string; slug: string } | null>(null);
+  
+  // Check if first session (no saved context)
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(() => 
+    localStorage.getItem('orbitOnboardingComplete') === 'true'
+  );
   
   // Topics for syllabus browser
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -44,11 +49,12 @@ export default function Index() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<QuestionAnalysis | null>(null);
   const [selectedMode, setSelectedMode] = useState<'coach' | 'check'>('coach');
+  const [pendingAnalysis, setPendingAnalysis] = useState<QuestionAnalysis | null>(null);
   
-  // Student context
-  const [currentGrade, setCurrentGrade] = useState('');
-  const [targetGrade, setTargetGrade] = useState('');
-  const [examBoard, setExamBoard] = useState('');
+  // Student context - load from localStorage if available
+  const [currentGrade, setCurrentGrade] = useState(() => localStorage.getItem('orbitCurrentGrade') || '');
+  const [targetGrade, setTargetGrade] = useState(() => localStorage.getItem('orbitTargetGrade') || '');
+  const [examBoard, setExamBoard] = useState(() => localStorage.getItem('orbitExamBoard') || '');
   const [struggles, setStruggles] = useState('');
   
   // Beta testing state
@@ -70,6 +76,7 @@ export default function Index() {
       examBoard,
       struggles,
       questionText,
+      tutorMode: selectedMode,
     },
     onFirstInput: (method) => {
       if (!firstInputMethod) setFirstInputMethod(method);
@@ -499,6 +506,106 @@ export default function Index() {
     );
   }
 
+  // First-session onboarding (quick setup before chat starts)
+  if (step === 'onboarding') {
+    const canContinue = currentGrade && targetGrade && examBoard;
+    
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <div className="p-4 flex items-center justify-between">
+          <button onClick={() => setStep('preview')} className="text-sm text-muted-foreground hover:text-foreground transition-colors">← Back</button>
+          <h2 className="text-lg font-medium">Quick Setup</h2>
+          <div className="w-12" />
+        </div>
+
+        <main className="flex-1 flex flex-col p-6 max-w-lg mx-auto w-full">
+          <div className="space-y-2 mb-6">
+            <h1 className="text-2xl font-semibold">Tell us about yourself</h1>
+            <p className="text-muted-foreground">This helps Orbit tailor help to your exam board.</p>
+            <p className="text-xs text-muted-foreground">You can change this later in Settings.</p>
+          </div>
+
+          <div className="space-y-5 flex-1">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Exam Board</label>
+              <Select value={examBoard} onValueChange={setExamBoard}>
+                <SelectTrigger className="w-full h-12 bg-card border-border">
+                  <SelectValue placeholder="Select your exam board" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border z-50">
+                  <SelectItem value="AQA">AQA</SelectItem>
+                  <SelectItem value="Edexcel">Edexcel</SelectItem>
+                  <SelectItem value="OCR">OCR</SelectItem>
+                  <SelectItem value="OCR MEI">OCR MEI</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Current Grade</label>
+              <Select value={currentGrade} onValueChange={setCurrentGrade}>
+                <SelectTrigger className="w-full h-12 bg-card border-border">
+                  <SelectValue placeholder="What grade are you getting now?" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border z-50">
+                  <SelectItem value="U">U</SelectItem>
+                  <SelectItem value="E">E</SelectItem>
+                  <SelectItem value="D">D</SelectItem>
+                  <SelectItem value="C">C</SelectItem>
+                  <SelectItem value="B">B</SelectItem>
+                  <SelectItem value="A">A</SelectItem>
+                  <SelectItem value="A*">A*</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Target Grade</label>
+              <Select value={targetGrade} onValueChange={setTargetGrade}>
+                <SelectTrigger className="w-full h-12 bg-card border-border">
+                  <SelectValue placeholder="What grade are you aiming for?" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border z-50">
+                  <SelectItem value="E">E</SelectItem>
+                  <SelectItem value="D">D</SelectItem>
+                  <SelectItem value="C">C</SelectItem>
+                  <SelectItem value="B">B</SelectItem>
+                  <SelectItem value="A">A</SelectItem>
+                  <SelectItem value="A*">A*</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-4">
+            <Button
+              onClick={() => {
+                // Save onboarding as complete
+                localStorage.setItem('orbitOnboardingComplete', 'true');
+                localStorage.setItem('orbitExamBoard', examBoard);
+                localStorage.setItem('orbitCurrentGrade', currentGrade);
+                localStorage.setItem('orbitTargetGrade', targetGrade);
+                setHasCompletedOnboarding(true);
+                
+                // Start chat with pending analysis
+                if (pendingAnalysis) {
+                  startTextChatWithAnalysis(pendingAnalysis);
+                } else {
+                  analyzeAndStartChat();
+                }
+              }}
+              disabled={!canContinue}
+              className="w-full h-14 text-base rounded-2xl font-medium"
+            >
+              Start Learning
+              <ArrowRight className="h-5 w-5 ml-2" />
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   // Preview screen
   if (step === 'preview') {
     return (
@@ -583,7 +690,7 @@ export default function Index() {
                     {isAnalyzing ? 'Analysing...' : 'Review your question'}
                   </h2>
                   <p className="text-muted-foreground">
-                    {isAnalyzing ? 'Orbit is figuring out how to help' : 'Add details to get better help'}
+                    {isAnalyzing ? 'Orbit is figuring out how to help' : 'Choose how you want help'}
                   </p>
                 </div>
 
@@ -606,6 +713,17 @@ export default function Index() {
                       <X className="h-4 w-4" />
                     </button>
                   )}
+                </div>
+
+                {/* Context input - below image, shorter */}
+                <div className={`transition-opacity duration-300 ${isAnalyzing ? 'opacity-30 pointer-events-none' : ''}`}>
+                  <Textarea
+                    placeholder="Add context (optional)"
+                    value={questionText}
+                    onChange={(e) => setQuestionText(e.target.value)}
+                    className="min-h-[60px] rounded-xl bg-muted border-0 resize-none focus-visible:ring-1 focus-visible:ring-primary text-sm"
+                    disabled={isAnalyzing}
+                  />
                 </div>
 
                 {/* Mode selection - shown when analysis is complete */}
@@ -655,18 +773,23 @@ export default function Index() {
                     {/* Start Learning CTA */}
                     <Button 
                       onClick={() => {
-                        if (selectedMode === 'check') {
-                          const checkWorkingAnalysis: QuestionAnalysis = {
-                            questionSummary: questionText || 'Check my working',
-                            topic: analysis?.topic || 'Unknown',
-                            difficulty: analysis?.difficulty || 'Unknown',
-                            socraticOpening: "I can see your working. Let me check it step by step and give you feedback on what's correct and where any errors are.",
-                          };
-                          setAnalysis(checkWorkingAnalysis);
-                          startTextChatWithAnalysis(checkWorkingAnalysis);
+                        // Store the analysis and mode, then check onboarding
+                        const finalAnalysis = selectedMode === 'check' 
+                          ? {
+                              questionSummary: questionText || 'Check my working',
+                              topic: analysis?.topic || 'Unknown',
+                              difficulty: analysis?.difficulty || 'Unknown',
+                              socraticOpening: "I can see your working. Let me check it step by step and give you feedback on what's correct and where any errors are.",
+                            }
+                          : analysis;
+                        
+                        setPendingAnalysis(finalAnalysis || null);
+                        
+                        if (!hasCompletedOnboarding) {
+                          setStep('onboarding');
                         } else {
-                          if (analysis) {
-                            startTextChatWithAnalysis(analysis);
+                          if (finalAnalysis) {
+                            startTextChatWithAnalysis(finalAnalysis);
                           } else {
                             analyzeAndStartChat();
                           }
@@ -688,16 +811,6 @@ export default function Index() {
                     </span>
                   </div>
                 )}
-
-                <div className={`transition-opacity duration-300 ${isAnalyzing ? 'opacity-30 pointer-events-none' : ''}`}>
-                  <Textarea
-                    placeholder="Add context (optional)"
-                    value={questionText}
-                    onChange={(e) => setQuestionText(e.target.value)}
-                    className="min-h-[80px] rounded-xl bg-muted border-0 resize-none focus-visible:ring-1 focus-visible:ring-primary"
-                    disabled={isAnalyzing}
-                  />
-                </div>
               </>
             )}
           </div>
