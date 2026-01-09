@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Camera, X, Send, LogOut, Mic } from 'lucide-react';
+import { Camera, X, Send, LogOut, Mic, Lightbulb, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import orbitIcon from '@/assets/orbit-icon.png';
@@ -149,37 +149,114 @@ export function GuestChat({
           )}
 
           {/* Message bubbles */}
-          {messages.map((message) => (
-            <div 
-              key={message.id}
-              className={`rounded-2xl p-4 ${message.sender === 'tutor' ? 'bg-card border border-border' : 'bg-primary/10 ml-8'}`}
-            >
-              {message.sender === 'tutor' && (
-                <div className="flex items-center gap-2 mb-2">
-                  <img 
-                    src={orbitIcon} 
-                    alt="Orbit" 
-                    className="w-6 h-6 rounded-full object-cover"
-                  />
-                  <span className="text-xs text-muted-foreground">Orbit</span>
+          {messages.map((message, index) => {
+            const isLastTutorMessage = message.sender === 'tutor' && index === messages.length - 1;
+            const showAlternativeButton = isLastTutorMessage && message.nextAction === 'offer_alternative' && message.alternativeMethod;
+            const showStillStuckButton = isLastTutorMessage && message.errorAnalysis?.needs_reteach;
+            
+            return (
+              <div key={message.id} className="space-y-2">
+                <div 
+                  className={`rounded-2xl p-4 ${message.sender === 'tutor' ? 'bg-card border border-border' : 'bg-primary/10 ml-8'}`}
+                >
+                  {message.sender === 'tutor' && (
+                    <div className="flex items-center gap-2 mb-2">
+                      <img 
+                        src={orbitIcon} 
+                        alt="Orbit" 
+                        className="w-6 h-6 rounded-full object-cover"
+                      />
+                      <span className="text-xs text-muted-foreground">Orbit</span>
+                    </div>
+                  )}
+                  {message.imageUrl && (
+                    <img src={message.imageUrl} alt="Uploaded" className="w-full max-h-32 object-contain rounded-lg mb-2" />
+                  )}
+                  <div className={`text-sm leading-relaxed ${message.sender === 'student' ? 'text-right' : ''}`}>
+                    {message.content ? (
+                      <MathText text={message.content} />
+                    ) : (
+                      <span className="inline-flex items-center gap-1">
+                        <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Marks Analysis Card (for check mode) */}
+                  {message.marksAnalysis && message.content && (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg font-bold text-primary">{message.marksAnalysis.estimated_marks}</span>
+                        <span className="text-xs text-muted-foreground">estimated marks</span>
+                      </div>
+                      {message.marksAnalysis.method_marks && (
+                        <div className="text-xs space-y-1">
+                          <p className="text-muted-foreground">{message.marksAnalysis.method_marks}</p>
+                        </div>
+                      )}
+                      {message.marksAnalysis.accuracy_marks && (
+                        <div className="text-xs mt-1">
+                          <p className="text-muted-foreground">{message.marksAnalysis.accuracy_marks}</p>
+                        </div>
+                      )}
+                      {message.marksAnalysis.errors && message.marksAnalysis.errors.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {message.marksAnalysis.errors.map((err, i) => (
+                            <div key={i} className="flex items-start gap-2 text-xs">
+                              {err.type === 'mechanical' ? (
+                                <XCircle className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
+                              ) : (
+                                <XCircle className="w-3.5 h-3.5 text-destructive mt-0.5 shrink-0" />
+                              )}
+                              <span>
+                                <span className="font-medium">{err.line}:</span> {err.description}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Error badge for conceptual errors */}
+                  {message.errorAnalysis?.type === 'conceptual' && message.content && (
+                    <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 bg-destructive/10 text-destructive rounded-full text-xs">
+                      <Lightbulb className="w-3 h-3" />
+                      Conceptual — different approach needed
+                    </div>
+                  )}
                 </div>
-              )}
-              {message.imageUrl && (
-                <img src={message.imageUrl} alt="Uploaded" className="w-full max-h-32 object-contain rounded-lg mb-2" />
-              )}
-              <div className={`text-sm leading-relaxed ${message.sender === 'student' ? 'text-right' : ''}`}>
-                {message.content ? (
-                  <MathText text={message.content} />
-                ) : (
-                  <span className="inline-flex items-center gap-1">
-                    <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </span>
+                
+                {/* Post-message action buttons */}
+                {message.content && (showAlternativeButton || showStillStuckButton) && (
+                  <div className="flex flex-wrap gap-2 pl-2">
+                    {showAlternativeButton && message.alternativeMethod && (
+                      <button
+                        onClick={() => onSendMessage(`Show me another way: ${message.alternativeMethod!.method_name}`, 'text')}
+                        disabled={sending}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 active:scale-95 transition-all disabled:opacity-50"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        See another approach
+                      </button>
+                    )}
+                    {showStillStuckButton && (
+                      <button
+                        onClick={() => onSendMessage("I'm still confused, can you explain it differently?", 'text')}
+                        disabled={sending}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-muted-foreground text-xs font-medium hover:bg-muted/80 active:scale-95 transition-all disabled:opacity-50"
+                      >
+                        <Lightbulb className="w-3 h-3" />
+                        Still stuck?
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
-            </div>
-          ))}
+            );
+          })}
           
           <div ref={messagesEndRef} />
         </div>
