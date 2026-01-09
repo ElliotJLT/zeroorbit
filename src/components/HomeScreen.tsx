@@ -89,7 +89,7 @@ export default function HomeScreen({
 
           {/* Value Proposition */}
           <p className="text-center text-sm text-muted-foreground px-4">
-            Snap your exam question and chat with the latest AI tutor. Get step-by-step guidance, not just answers.
+            Stuck on a question? Snap it. Get coached through it step-by-step.
           </p>
 
           {/* Or Divider */}
@@ -111,7 +111,7 @@ export default function HomeScreen({
 
           {/* Topics Preview (non-interactive) */}
           <div className="space-y-3 opacity-60">
-            <p className="text-xs text-muted-foreground text-center">Covering the full A-Level syllabus</p>
+            <p className="text-xs text-muted-foreground text-center">Orbit covers the full A-Level syllabus</p>
             
             {loadingTopics ? (
               <div className="text-center py-4 text-muted-foreground text-sm">Loading...</div>
