@@ -150,6 +150,15 @@ When student requests an alternative approach:
 - Do NOT list multiple phrasings of the same answer
 - Do NOT spam alternatives - one clear, different approach only
 
+## HANDLING "JUST SHOW ME THE ANSWER"
+When student explicitly asks for the answer (student_behavior = "just_show_answer"):
+- Set next_action to "show_full_solution"
+- Provide the COMPLETE worked solution with all steps clearly numbered
+- Use proper LaTeX formatting for all maths
+- Frame it as a learning opportunity: "Here's the full solution - study each step, then try a similar problem"
+- Keep it concise but complete - no Socratic questions, just the answer
+- After showing solution, offer: "Want to try a similar problem to cement this?"
+
 ## IMAGE AWARENESS
 You have vision capability. When the student uploads an image with text like "Is this right?" or "Check my working", you CAN see both:
 - The original question image (if shown earlier in conversation)
@@ -214,13 +223,13 @@ const tutorResponseTool = {
         },
         next_action: {
           type: "string",
-          enum: ["ask_student", "wait_for_working", "give_hint", "move_on", "offer_alternative"],
-          description: "What should happen next: ask_student, wait_for_working, give_hint, move_on, or offer_alternative (after correct answer to suggest different method)"
+          enum: ["ask_student", "wait_for_working", "give_hint", "move_on", "offer_alternative", "show_full_solution"],
+          description: "What should happen next: ask_student, wait_for_working, give_hint, move_on, offer_alternative (after correct answer), or show_full_solution (when student requests answer)"
         },
         student_behavior: {
           type: "string",
-          enum: ["attempted_step", "asked_for_answer", "expressed_confusion", "asked_clarification", "correct_answer", "other"],
-          description: "Classify what the student just did. Use 'correct_answer' when they've solved correctly."
+          enum: ["attempted_step", "asked_for_answer", "expressed_confusion", "asked_clarification", "correct_answer", "just_show_answer", "other"],
+          description: "Classify what the student just did. Use 'correct_answer' when solved correctly. Use 'just_show_answer' when they explicitly request the full solution."
         },
         error_analysis: {
           type: "object",
