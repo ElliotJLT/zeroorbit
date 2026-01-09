@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Camera, X, Send, Mic, Lightbulb, RefreshCw, CheckCircle, XCircle, Eye, Sparkles } from 'lucide-react';
+import { Camera, X, Send, Mic, Lightbulb, RefreshCw, CheckCircle, XCircle, Eye, Sparkles, Square, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import orbitIcon from '@/assets/orbit-icon.png';
@@ -7,6 +7,7 @@ import BurgerMenu from '@/components/BurgerMenu';
 import NewProblemModal from '@/components/NewProblemModal';
 import MathText from '@/components/MathText';
 import { useToast } from '@/hooks/use-toast';
+import { useSpeech } from '@/hooks/useSpeech';
 import { type Message, type QuestionAnalysis } from '@/hooks/useGuestChat';
 
 interface GuestChatProps {
@@ -43,6 +44,7 @@ export function GuestChat({
   betaMode = true,
 }: GuestChatProps) {
   const { toast } = useToast();
+  const { isRecording, startRecording, stopRecording } = useSpeech();
   const [newMessage, setNewMessage] = useState('');
   const [showNewProblemModal, setShowNewProblemModal] = useState(false);
   const [modalAnalyzing, setModalAnalyzing] = useState(false);
@@ -80,6 +82,10 @@ export function GuestChat({
   const handleVoiceResult = (transcript: string) => {
     if (transcript.trim()) {
       onSendMessage(transcript, 'voice');
+      toast({
+        title: "Voice note sent",
+        description: "Tap the mic again anytime to speak.",
+      });
     }
   };
 
@@ -89,6 +95,14 @@ export function GuestChat({
       title: 'Voice not recognized',
       description: 'Please try again or type your message.',
     });
+  };
+
+  const handleMicClick = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording(handleVoiceResult, handleVoiceError);
+    }
   };
 
   return (
@@ -142,6 +156,7 @@ export function GuestChat({
             const showAlternativeButton = isLastTutorMessage && message.nextAction === 'offer_alternative' && message.alternativeMethod;
             const showStillStuckButton = isLastTutorMessage && message.errorAnalysis?.needs_reteach;
             const showJustShowAnswerButton = isLastTutorMessage && (message.stuckCount ?? 0) >= 2 && !isCorrectAnswer;
+            const showVoiceOffer = isLastTutorMessage && message.offerVoiceResponse;
             
             return (
               <div key={message.id} className="space-y-2">
@@ -229,8 +244,24 @@ export function GuestChat({
                 </div>
                 
                 {/* Post-message action buttons */}
-                {message.content && (showAlternativeButton || showStillStuckButton || showJustShowAnswerButton) && (
+                {message.content && (showAlternativeButton || showStillStuckButton || showJustShowAnswerButton || showVoiceOffer) && (
                   <div className="flex flex-wrap gap-2 pl-2">
+                    {/* Voice response offer */}
+                    {showVoiceOffer && (
+                      <button
+                        onClick={() => {
+                          toast({
+                            title: "Voice responses coming soon!",
+                            description: "We're working on having Orbit speak to you.",
+                          });
+                        }}
+                        disabled={sending}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-500/10 text-violet-700 dark:text-violet-400 text-xs font-medium hover:bg-violet-500/20 active:scale-95 transition-all disabled:opacity-50"
+                      >
+                        <Volume2 className="w-3 h-3" />
+                        Have Orbit speak?
+                      </button>
+                    )}
                     {showAlternativeButton && message.alternativeMethod && (
                       <button
                         onClick={() => onSendMessage(`Show me another way: ${message.alternativeMethod!.method_name}`, 'text')}
@@ -377,20 +408,23 @@ export function GuestChat({
                   className="w-full rounded-full bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary h-11 pr-12"
                 />
                 
-                {/* Mic button inside input */}
+                {/* Mic button inside input - voice note recording */}
                 {!newMessage.trim() && (
                   <button 
-                    onClick={() => {
-                      toast({
-                        title: "Voice mode coming soon",
-                        description: "OpenAI Realtime voice is in development.",
-                      });
-                    }}
+                    onClick={handleMicClick}
                     disabled={sending}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-50 active:scale-95 transition-all hover:bg-background/50"
-                    title="Voice input"
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-50 active:scale-95 transition-all ${
+                      isRecording 
+                        ? 'bg-destructive text-destructive-foreground animate-pulse' 
+                        : 'hover:bg-background/50'
+                    }`}
+                    title={isRecording ? "Stop recording" : "Voice note"}
                   >
-                    <Mic className="h-4 w-4 text-muted-foreground" />
+                    {isRecording ? (
+                      <Square className="h-3.5 w-3.5 fill-current" />
+                    ) : (
+                      <Mic className="h-4 w-4 text-muted-foreground" />
+                    )}
                   </button>
                 )}
               </div>
