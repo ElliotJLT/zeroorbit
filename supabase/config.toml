@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.evaluate-arena-answer]
 verify_jwt = false
+
+[functions.eval-chat]
+verify_jwt = false
