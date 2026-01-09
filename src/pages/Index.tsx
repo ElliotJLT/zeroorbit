@@ -607,51 +607,67 @@ export default function Index() {
                   )}
                 </div>
 
-                {/* Topic & difficulty tags - shown when analysis is complete */}
-                {analysis && !isAnalyzing && (
-                  <div className="flex flex-wrap gap-2 justify-center animate-fade-in">
-                    <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-sm font-medium">
-                      {analysis.topic}
-                    </span>
-                    <span className="px-3 py-1 rounded-full bg-muted text-muted-foreground text-sm">
-                      {analysis.difficulty}
+                {/* Mode selection buttons - shown when analysis is complete */}
+                {!isAnalyzing && (
+                  <div className="space-y-3 animate-fade-in">
+                    <Button 
+                      onClick={() => {
+                        if (analysis) {
+                          startTextChatWithAnalysis(analysis);
+                        } else {
+                          analyzeAndStartChat();
+                        }
+                      }} 
+                      className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all flex items-center justify-between px-5"
+                    >
+                      <div className="text-left">
+                        <p className="font-medium">Coach me through it</p>
+                        <p className="text-xs text-primary-foreground/70">Step-by-step guidance</p>
+                      </div>
+                      <ArrowRight className="h-5 w-5" />
+                    </Button>
+                    
+                    <Button 
+                      onClick={() => {
+                        // Set a flag for check working mode
+                        const checkWorkingAnalysis: QuestionAnalysis = {
+                          questionSummary: questionText || 'Check my working',
+                          topic: analysis?.topic || 'Unknown',
+                          difficulty: analysis?.difficulty || 'Unknown',
+                          socraticOpening: "I can see your working. Let me check it step by step and give you feedback on what's correct and where any errors are.",
+                        };
+                        setAnalysis(checkWorkingAnalysis);
+                        startTextChatWithAnalysis(checkWorkingAnalysis);
+                      }} 
+                      variant="outline"
+                      className="w-full h-14 rounded-2xl border-2 border-border hover:bg-muted active:scale-[0.98] transition-all flex items-center justify-between px-5"
+                    >
+                      <div className="text-left">
+                        <p className="font-medium">Check my working</p>
+                        <p className="text-xs text-muted-foreground">Quick validation & marks</p>
+                      </div>
+                      <ArrowRight className="h-5 w-5" />
+                    </Button>
+                  </div>
+                )}
+
+                {isAnalyzing && (
+                  <div className="flex justify-center py-4">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <span className="h-4 w-4 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+                      Analysing...
                     </span>
                   </div>
                 )}
 
                 <div className={`transition-opacity duration-300 ${isAnalyzing ? 'opacity-30 pointer-events-none' : ''}`}>
                   <Textarea
-                    placeholder="Add context or specify what you need help with (optional)"
+                    placeholder="Add context (optional)"
                     value={questionText}
                     onChange={(e) => setQuestionText(e.target.value)}
-                    className="min-h-[100px] rounded-xl bg-muted border-0 resize-none focus-visible:ring-1 focus-visible:ring-primary"
+                    className="min-h-[80px] rounded-xl bg-muted border-0 resize-none focus-visible:ring-1 focus-visible:ring-primary"
                     disabled={isAnalyzing}
                   />
-                </div>
-
-                <div className="space-y-3 pt-2">
-                  <Button 
-                    onClick={() => {
-                      if (analysis) {
-                        // Analysis already done, just start chat
-                        startTextChatWithAnalysis(analysis);
-                      } else {
-                        // Fallback: run analysis then start chat
-                        analyzeAndStartChat();
-                      }
-                    }} 
-                    disabled={isAnalyzing} 
-                    className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 active:scale-[0.98] disabled:opacity-70 transition-all"
-                  >
-                    {isAnalyzing ? (
-                      <span className="flex items-center gap-2">
-                        <span className="h-4 w-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />
-                        Thinking...
-                      </span>
-                    ) : (
-                      <>Get Help<ArrowRight className="h-4 w-4 ml-2" /></>
-                    )}
-                  </Button>
                 </div>
               </>
             )}

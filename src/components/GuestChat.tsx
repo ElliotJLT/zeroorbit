@@ -229,47 +229,28 @@ export function GuestChat({
                 </button>
               </div>
               
-              <div className="flex flex-wrap justify-center gap-2">
-                {pendingImage.mode === 'working' ? (
-                  <>
-                    <button onClick={() => onConfirmImage("Check my working")} className="min-h-[44px] px-5 py-3 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 active:scale-95 transition-all">Check my working</button>
-                    <button onClick={() => onConfirmImage("Is this right?")} className="min-h-[44px] px-5 py-3 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 active:scale-95 transition-all">Is this right?</button>
-                    <button onClick={() => onConfirmImage("What's next?")} className="min-h-[44px] px-5 py-3 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 active:scale-95 transition-all">What's next?</button>
-                    <button onClick={() => onConfirmImage("I'm stuck here")} className="min-h-[44px] px-5 py-3 rounded-full bg-muted text-muted-foreground text-sm hover:bg-muted/80 active:scale-95 transition-all">I'm stuck here</button>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={() => onConfirmImage("Help me solve this")} className="min-h-[44px] px-5 py-3 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 active:scale-95 transition-all">Help me solve this</button>
-                    <button onClick={() => onConfirmImage("Where do I start?")} className="min-h-[44px] px-5 py-3 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 active:scale-95 transition-all">Where do I start?</button>
-                    <button onClick={() => onConfirmImage("Explain the question")} className="min-h-[44px] px-5 py-3 rounded-full bg-muted text-muted-foreground text-sm hover:bg-muted/80 active:scale-95 transition-all">Explain the question</button>
-                  </>
-                )}
-              </div>
-              
-              <div className="w-full flex items-center gap-2">
-                <Input
-                  placeholder="Add context (optional)"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      onConfirmImage(newMessage.trim() || (pendingImage.mode === 'working' ? "Check my working" : "Help me with this"));
-                      setNewMessage('');
-                    }
-                  }}
-                  className="flex-1 rounded-2xl bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary h-12"
-                />
+              {/* Two clear mode options for any image upload */}
+              <div className="w-full space-y-3">
                 <button 
-                  onClick={() => {
-                    onConfirmImage(newMessage.trim() || (pendingImage.mode === 'working' ? "Check my working" : "Help me with this"));
-                    setNewMessage('');
-                  }}
-                  disabled={sending}
-                  className="w-12 h-12 rounded-full flex items-center justify-center disabled:opacity-50"
-                  style={{ background: 'linear-gradient(135deg, #00FAD7 0%, #00C4AA 100%)' }}
+                  onClick={() => onConfirmImage("Coach me through this step by step")}
+                  className="w-full min-h-[56px] px-5 py-3 rounded-2xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 active:scale-[0.98] transition-all flex items-center justify-between"
                 >
-                  <Send className="h-5 w-5 text-background" />
+                  <div className="text-left">
+                    <p className="font-medium">Coach me through it</p>
+                    <p className="text-xs text-primary-foreground/70">Step-by-step guidance</p>
+                  </div>
+                  <Send className="h-5 w-5" />
+                </button>
+                
+                <button 
+                  onClick={() => onConfirmImage("Check my working - validate correctness, identify errors, give marks estimate. No Socratic questions, just direct feedback.")}
+                  className="w-full min-h-[56px] px-5 py-3 rounded-2xl border-2 border-border bg-card text-foreground font-medium hover:bg-muted active:scale-[0.98] transition-all flex items-center justify-between"
+                >
+                  <div className="text-left">
+                    <p className="font-medium">Check my working</p>
+                    <p className="text-xs text-muted-foreground">Quick validation & marks</p>
+                  </div>
+                  <Send className="h-5 w-5 text-muted-foreground" />
                 </button>
               </div>
             </div>

@@ -33,6 +33,23 @@ export default function BurgerMenu({ onSettings }: BurgerMenuProps) {
 
           {/* Menu Items */}
           <nav className="flex-1 p-2">
+            {/* Calculator - Quick access tool */}
+            <button
+              onClick={() => handleAction(() => navigate('/calculator'))}
+              className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-sidebar-accent transition-colors text-left"
+            >
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Calculator className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium">Calculator</p>
+                <p className="text-sm text-muted-foreground">Scientific calculator</p>
+              </div>
+            </button>
+
+            {/* Divider */}
+            <div className="my-2 mx-4 border-t border-border" />
+
             {/* Practice Arena */}
             <button
               onClick={() => handleAction(() => navigate('/practice-arena'))}
@@ -72,20 +89,6 @@ export default function BurgerMenu({ onSettings }: BurgerMenuProps) {
               <div>
                 <p className="font-medium">My Progress</p>
                 <p className="text-sm text-muted-foreground">Track your fluency</p>
-              </div>
-            </button>
-
-            {/* Calculator */}
-            <button
-              onClick={() => handleAction(() => navigate('/calculator'))}
-              className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-sidebar-accent transition-colors text-left"
-            >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Calculator className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-medium">Calculator</p>
-                <p className="text-sm text-muted-foreground">Scientific calculator for A-Level</p>
               </div>
             </button>
 
