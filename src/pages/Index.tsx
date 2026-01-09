@@ -774,14 +774,8 @@ export default function Index() {
                     <Button 
                       onClick={() => {
                         // Store the analysis and mode, then check onboarding
-                        const finalAnalysis = selectedMode === 'check' 
-                          ? {
-                              questionSummary: questionText || 'Check my working',
-                              topic: analysis?.topic || 'Unknown',
-                              difficulty: analysis?.difficulty || 'Unknown',
-                              socraticOpening: "I can see your working. Let me check it step by step and give you feedback on what's correct and where any errors are.",
-                            }
-                          : analysis;
+                        // Use existing analysis - AI will respond dynamically based on tutor_mode
+                        const finalAnalysis = analysis;
                         
                         setPendingAnalysis(finalAnalysis || null);
                         
