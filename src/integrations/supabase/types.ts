@@ -121,6 +121,51 @@ export type Database = {
           },
         ]
       }
+      eval_results: {
+        Row: {
+          created_at: string
+          expected_behavior: string
+          failure_reason: string | null
+          id: string
+          orbit_response: string
+          passed: boolean
+          red_flags: string[]
+          red_flags_found: string[] | null
+          run_id: string
+          student_input: string
+          test_name: string
+          test_setup: string
+        }
+        Insert: {
+          created_at?: string
+          expected_behavior: string
+          failure_reason?: string | null
+          id?: string
+          orbit_response: string
+          passed: boolean
+          red_flags: string[]
+          red_flags_found?: string[] | null
+          run_id: string
+          student_input: string
+          test_name: string
+          test_setup: string
+        }
+        Update: {
+          created_at?: string
+          expected_behavior?: string
+          failure_reason?: string | null
+          id?: string
+          orbit_response?: string
+          passed?: boolean
+          red_flags?: string[]
+          red_flags_found?: string[] | null
+          run_id?: string
+          student_input?: string
+          test_name?: string
+          test_setup?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
