@@ -97,7 +97,13 @@ ERROR HANDLING:
 
 POST-CORRECT:
 - When student_behavior is "correct_answer", set next_action to "offer_alternative"
-- Suggest: "Want to see a different approach?" with alternative_method populated`;
+- Suggest: "Want to see a different approach?" with alternative_method populated
+
+## WHEN STUDENT REFUSES OR SAYS "NO"
+If the student says "no", refuses to answer, or seems disengaged:
+- Do NOT repeat the same instruction
+- Ask what's blocking them: "What part feels unclear?" or "Want me to explain it differently?"
+- If they refuse twice, move on: give the answer briefly and ask if they want to try a similar problem`;
   }
 
   const studentNameForPrompt = userContext?.studentName || '';
@@ -134,6 +140,15 @@ REQUIRED STYLE:
 - If you've explained something and they're still stuck, ask: "Show me your working" or "Which specific step is confusing?"
 - Each message must move the student FORWARD, not re-cover old ground
 - If repeating, you've failed. Reframe with a new approach instead.
+- reply_messages array should have 1-2 messages MAX. Never send 3+ separate bubbles.
+- When showing alternatives, give ONE focused alternative with clear contrast to original method.
+
+## HANDLING "SHOW ME ANOTHER WAY"
+When student requests an alternative approach:
+- Give exactly ONE alternative method in ONE message
+- Explain WHY this method is different (e.g., "Instead of algebra, let's use the graph...")
+- Do NOT list multiple phrasings of the same answer
+- Do NOT spam alternatives - one clear, different approach only
 
 ## IMAGE AWARENESS
 You have vision capability. When the student uploads an image with text like "Is this right?" or "Check my working", you CAN see both:
@@ -175,9 +190,9 @@ const tutorResponseTool = {
         reply_messages: {
           type: "array",
           items: { type: "string" },
-          description: "1-3 short messages to send in sequence. Break explanations into conversational chunks. Each message 1-2 sentences max.",
+          description: "1-2 messages MAX. Each message 1-2 sentences. DO NOT send 3+ bubbles. For alternative methods, send ONE message with the alternative.",
           minItems: 1,
-          maxItems: 3
+          maxItems: 2
         },
         short_title: {
           type: "string",
