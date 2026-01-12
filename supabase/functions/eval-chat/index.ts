@@ -246,7 +246,7 @@ serve(async (req) => {
   }
 
   try {
-    const { runSubset, specificTests } = await req.json().catch(() => ({}));
+    const { runSubset, specificTests, testLimit } = await req.json().catch(() => ({}));
     
     // Filter tests if specific ones requested
     let testsToRun = testCases;
@@ -254,6 +254,11 @@ serve(async (req) => {
       testsToRun = testCases.filter(t => specificTests.includes(t.name));
     } else if (runSubset) {
       testsToRun = testCases.filter(t => t.category === runSubset);
+    }
+    
+    // Apply test limit if specified
+    if (testLimit && typeof testLimit === 'number' && testLimit > 0 && testLimit < testsToRun.length) {
+      testsToRun = testsToRun.slice(0, testLimit);
     }
 
     const runId = crypto.randomUUID();
