@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, Image, Calendar, FlaskConical, Play, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Image, Calendar, FlaskConical, Play, CheckCircle, XCircle, Loader2, Users, Shield, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { ImageViewer } from '@/components/ImageViewer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
 
 interface SessionWithProfile {
   id: string;
@@ -53,6 +54,15 @@ interface EvalRun {
   results: EvalResult[];
 }
 
+interface TeamMember {
+  id: string;
+  user_id: string;
+  role: 'admin' | 'student';
+  created_at: string;
+  email: string;
+  full_name: string | null;
+}
+
 export default function Admin() {
   const { user, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -63,6 +73,9 @@ export default function Admin() {
   const [evalRuns, setEvalRuns] = useState<EvalRun[]>([]);
   const [selectedRun, setSelectedRun] = useState<EvalRun | null>(null);
   const [runningEval, setRunningEval] = useState(false);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [addingAdmin, setAddingAdmin] = useState(false);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -74,6 +87,7 @@ export default function Admin() {
     if (isAdmin) {
       fetchSessions();
       fetchEvalRuns();
+      fetchTeamMembers();
     }
   }, [isAdmin]);
 
@@ -136,6 +150,90 @@ export default function Admin() {
       if (runs.length > 0 && !selectedRun) {
         setSelectedRun(runs[0]);
       }
+    }
+  };
+
+  const fetchTeamMembers = async () => {
+    try {
+      // Use edge function to get admins with emails
+      const { data, error } = await supabase.functions.invoke('manage-admins', {
+        body: { action: 'list' }
+      });
+
+      if (error) throw error;
+
+      if (data?.admins) {
+        // Also fetch profiles for names
+        const userIds = data.admins.map((a: { user_id: string }) => a.user_id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .in('user_id', userIds);
+
+        const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+        const members: TeamMember[] = data.admins.map((admin: { id: string; user_id: string; email: string; created_at: string }) => ({
+          id: admin.id,
+          user_id: admin.user_id,
+          role: 'admin' as const,
+          created_at: admin.created_at || '',
+          email: admin.email,
+          full_name: profileMap.get(admin.user_id)?.full_name || null
+        }));
+
+        setTeamMembers(members);
+      }
+    } catch (err) {
+      console.error('Error fetching team:', err);
+    }
+  };
+
+  const addAdmin = async () => {
+    if (!newAdminEmail.trim()) return;
+    
+    setAddingAdmin(true);
+    
+    try {
+      // We need to add an edge function for this since we can't query auth.users
+      const { data, error } = await supabase.functions.invoke('manage-admins', {
+        body: { action: 'add', email: newAdminEmail.trim() }
+      });
+
+      if (error) throw error;
+      
+      if (data.success) {
+        toast.success(`Admin role granted to ${newAdminEmail}`);
+        setNewAdminEmail('');
+        fetchTeamMembers();
+      } else {
+        toast.error(data.message || 'Failed to add admin');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to add admin');
+    } finally {
+      setAddingAdmin(false);
+    }
+  };
+
+  const removeAdmin = async (userId: string) => {
+    if (userId === user?.id) {
+      toast.error("You can't remove yourself");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId)
+        .eq('role', 'admin');
+
+      if (error) throw error;
+      
+      toast.success('Admin removed');
+      fetchTeamMembers();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to remove admin');
     }
   };
 
@@ -218,6 +316,10 @@ export default function Admin() {
           <TabsTrigger value="evals">
             <FlaskConical className="h-4 w-4 mr-2" />
             LLM Evals
+          </TabsTrigger>
+          <TabsTrigger value="team">
+            <Users className="h-4 w-4 mr-2" />
+            Team
           </TabsTrigger>
         </TabsList>
 
@@ -545,6 +647,87 @@ export default function Admin() {
                 </div>
               )}
             </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="team" className="m-0">
+          <div className="p-4 max-w-2xl mx-auto space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Add Admin
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    placeholder="Email address"
+                    value={newAdminEmail}
+                    onChange={(e) => setNewAdminEmail(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button onClick={addAdmin} disabled={addingAdmin || !newAdminEmail.trim()}>
+                    {addingAdmin ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      'Grant Admin'
+                    )}
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  User must have an existing account to receive admin rights.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Current Admins
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {teamMembers.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-4">No admins found</p>
+                ) : (
+                  <div className="space-y-2">
+                    {teamMembers.map((member) => (
+                      <div
+                        key={member.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-surface-1"
+                      >
+                        <div>
+                          <p className="font-medium">
+                            {member.full_name || 'Unnamed user'}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            ID: {member.user_id.substring(0, 8)}...
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs px-2 py-1 bg-primary/20 text-primary rounded">
+                            Admin
+                          </span>
+                          {member.user_id !== user?.id && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => removeAdmin(member.user_id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>
