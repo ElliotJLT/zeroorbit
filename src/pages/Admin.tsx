@@ -14,15 +14,21 @@ import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 
 const EVAL_PASSCODE = '1002';
 const TOTAL_AVAILABLE_TESTS = 12;
-
-// Pricing: Claude Sonnet 4 for judging ($3/M input, $15/M output)
-// Orbit chat uses GPT-4o-mini via Lovable AI
-// Average per test: ~1500 input tokens, ~400 output tokens for judge
-const COST_PER_TEST_USD = 0.0105; // ~$0.01 per test (judge only)
 const TIME_PER_TEST_SECONDS = 4; // ~4s per test (includes delay)
+
+// Judge model options with cost per test estimates
+const JUDGE_MODELS = [
+  { id: 'claude-opus-4-5-20251101', name: 'Claude Opus 4.5', cost: 0.075, tier: 'premium' as const },
+  { id: 'claude-sonnet-4-5', name: 'Claude Sonnet 4.5', cost: 0.015, tier: 'standard' as const },
+  { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', cost: 0.015, tier: 'standard' as const },
+  { id: 'claude-3-5-haiku-20241022', name: 'Claude Haiku 3.5', cost: 0.003, tier: 'fast' as const },
+];
 
 interface SessionWithProfile {
   id: string;
@@ -129,6 +135,9 @@ export default function Admin() {
   const [evalUnlocked, setEvalUnlocked] = useState(false);
   const [showEvalModal, setShowEvalModal] = useState(false);
   const [selectedTestCount, setSelectedTestCount] = useState(TOTAL_AVAILABLE_TESTS);
+  const [selectedJudgeModel, setSelectedJudgeModel] = useState(JUDGE_MODELS[0].id);
+  
+  const selectedModelInfo = JUDGE_MODELS.find(m => m.id === selectedJudgeModel) || JUDGE_MODELS[0];
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -473,16 +482,18 @@ Provide concise, actionable insights in bullet points.`
     fetchMessages(session.id);
   };
 
-  const runEval = async (testLimit?: number) => {
+  const runEval = async (testLimit?: number, judgeModel?: string) => {
     setRunningEval(true);
     setShowEvalModal(false);
-    toast.info(`Starting eval run with ${testLimit || TOTAL_AVAILABLE_TESTS} tests...`, { duration: 3000 });
+    const modelName = JUDGE_MODELS.find(m => m.id === judgeModel)?.name || 'Claude Opus 4.5';
+    toast.info(`Starting eval with ${testLimit || TOTAL_AVAILABLE_TESTS} tests using ${modelName}...`, { duration: 3000 });
 
     try {
       const response = await supabase.functions.invoke('eval-chat', {
-        body: testLimit && testLimit < TOTAL_AVAILABLE_TESTS 
-          ? { testLimit } 
-          : {}
+        body: { 
+          testLimit: testLimit || TOTAL_AVAILABLE_TESTS,
+          judgeModel: judgeModel || JUDGE_MODELS[0].id
+        }
       });
 
       if (response.error) {
@@ -1036,10 +1047,15 @@ Provide concise, actionable insights in bullet points.`
                     <Card className="border-red-500/30 bg-red-500/5">
                       <CardHeader className="pb-2">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <CardTitle className="text-base flex items-center gap-2">
-                            <AlertTriangle className="h-5 w-5 text-red-500" />
-                            {selectedRun.failed} Failed
-                          </CardTitle>
+                          <div>
+                            <CardTitle className="text-base flex items-center gap-2">
+                              <AlertTriangle className="h-5 w-5 text-red-500" />
+                              Error Summary
+                            </CardTitle>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {selectedRun.failed} of {selectedRun.total} tests failed in this run
+                            </p>
+                          </div>
                           <Button
                             variant="outline"
                             size="sm"
@@ -1313,7 +1329,7 @@ ${failedTests.map(t => `- ${t.test_name}: ${t.failure_reason || 'Fix needed'}`).
               Run Evaluation
             </DialogTitle>
             <DialogDescription>
-              Configure the eval run. Tests use Claude Sonnet 4 as the judge.
+              Configure the eval run settings including judge model.
             </DialogDescription>
           </DialogHeader>
           
@@ -1354,16 +1370,43 @@ ${failedTests.map(t => `- ${t.test_name}: ${t.failure_reason || 'Fix needed'}`).
                     <span className="text-xs">Est. Cost</span>
                   </div>
                   <p className="text-lg font-semibold">
-                    ${(selectedTestCount * COST_PER_TEST_USD).toFixed(2)}
+                    ${(selectedTestCount * selectedModelInfo.cost).toFixed(2)}
                   </p>
                 </CardContent>
               </Card>
             </div>
 
+            {/* Judge Model Selector */}
+            <div className="space-y-2">
+              <Label className="text-sm">Judge Model</Label>
+              <Select value={selectedJudgeModel} onValueChange={setSelectedJudgeModel}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {JUDGE_MODELS.map((model) => (
+                    <SelectItem key={model.id} value={model.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{model.name}</span>
+                        <Badge variant="outline" className={cn(
+                          "text-[10px] ml-1",
+                          model.tier === 'premium' && "border-amber-500 text-amber-600",
+                          model.tier === 'standard' && "border-blue-500 text-blue-600",
+                          model.tier === 'fast' && "border-green-500 text-green-600"
+                        )}>
+                          {model.tier === 'premium' ? '$$$$' : model.tier === 'standard' ? '$$' : '$'}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="text-xs text-muted-foreground space-y-1 bg-muted/50 p-3 rounded-lg">
-              <p><strong>Judge:</strong> Claude Sonnet 4 ($3/M in, $15/M out)</p>
-              <p><strong>Orbit:</strong> GPT-4o-mini via Lovable AI</p>
-              <p className="text-[10px] mt-2">Each test: ~1.5K input + ~400 output tokens</p>
+              <p><strong>Judge:</strong> {selectedModelInfo.name}</p>
+              <p><strong>Orbit:</strong> GPT-5.2 (OpenAI)</p>
+              <p className="text-[10px] mt-2">~${selectedModelInfo.cost.toFixed(3)}/test</p>
             </div>
           </div>
 
@@ -1371,7 +1414,7 @@ ${failedTests.map(t => `- ${t.test_name}: ${t.failure_reason || 'Fix needed'}`).
             <Button variant="outline" onClick={() => setShowEvalModal(false)}>
               Cancel
             </Button>
-            <Button onClick={() => runEval(selectedTestCount)}>
+            <Button onClick={() => runEval(selectedTestCount, selectedJudgeModel)}>
               <Play className="h-4 w-4 mr-2" />
               Run {selectedTestCount} Tests
             </Button>

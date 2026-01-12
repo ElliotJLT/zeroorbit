@@ -170,7 +170,7 @@ async function callOrbitChat(setup: string, studentInput: string): Promise<{ rep
   return { reply, fullResponse: data };
 }
 
-async function evaluateWithClaude(testCase: TestCase, orbitResponse: string): Promise<{
+async function evaluateWithClaude(testCase: TestCase, orbitResponse: string, judgeModel: string): Promise<{
   pass: boolean;
   redFlagsFound: string[];
   reason: string;
@@ -188,7 +188,7 @@ async function evaluateWithClaude(testCase: TestCase, orbitResponse: string): Pr
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model: judgeModel,
       max_tokens: 500,
       messages: [{
         role: "user",
@@ -246,7 +246,8 @@ serve(async (req) => {
   }
 
   try {
-    const { runSubset, specificTests, testLimit } = await req.json().catch(() => ({}));
+    const { runSubset, specificTests, testLimit, judgeModel } = await req.json().catch(() => ({}));
+    const selectedJudgeModel = judgeModel || "claude-opus-4-5-20251101";
     
     // Filter tests if specific ones requested
     let testsToRun = testCases;
@@ -266,7 +267,7 @@ serve(async (req) => {
     let passed = 0;
     let failed = 0;
 
-    console.log(`🧪 Starting eval run ${runId} with ${testsToRun.length} tests...`);
+    console.log(`🧪 Starting eval run ${runId} with ${testsToRun.length} tests using judge: ${selectedJudgeModel}`);
 
     // Create Supabase client with service role for inserting results
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -282,7 +283,7 @@ serve(async (req) => {
         console.log(`Orbit response: "${orbitResponse.substring(0, 150)}..."`);
         
         // Evaluate with Claude
-        const evaluation = await evaluateWithClaude(testCase, orbitResponse);
+        const evaluation = await evaluateWithClaude(testCase, orbitResponse, selectedJudgeModel);
         
         const result = {
           run_id: runId,
