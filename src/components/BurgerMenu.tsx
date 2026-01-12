@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, Swords, Settings, TrendingUp, FileText, Calculator, Lock, LogIn, LogOut } from 'lucide-react';
+import { Menu, Swords, Settings, TrendingUp, FileText, Calculator, Lock, LogIn, LogOut, Shield } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -12,7 +12,7 @@ interface BurgerMenuProps {
 export default function BurgerMenu({ onSettings }: BurgerMenuProps) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
 
   const handleAction = (action: () => void) => {
     setOpen(false);
@@ -106,6 +106,25 @@ export default function BurgerMenu({ onSettings }: BurgerMenuProps) {
                   <p className="text-sm text-muted-foreground">Sign out of your account</p>
                 </div>
               </button>
+            )}
+
+            {/* Admin Mode - only shown for admins */}
+            {isAdmin && (
+              <>
+                <div className="my-2 mx-4 border-t border-border" />
+                <button
+                  onClick={() => handleAction(() => navigate('/admin'))}
+                  className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-sidebar-accent transition-colors text-left"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                    <Shield className="h-5 w-5 text-amber-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Admin Mode</p>
+                    <p className="text-sm text-muted-foreground">Insights & LLM testing</p>
+                  </div>
+                </button>
+              </>
             )}
           </nav>
 
