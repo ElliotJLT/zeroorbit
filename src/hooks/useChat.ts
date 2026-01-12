@@ -158,34 +158,50 @@ export function useChat({ user, userContext, onFirstInput }: UseChatOptions) {
     imageUrl?: string,
     mode?: 'coach' | 'check'
   ) => {
+    // Build conversation history in the format the edge function expects
     const conversationHistory = messages.map(m => ({
-      role: m.sender === 'student' ? 'user' : 'assistant',
+      role: m.sender, // 'student' or 'tutor'
       content: m.content,
-      ...(m.imageUrl && { imageUrl: m.imageUrl }),
+      ...(m.imageUrl && { image_url: m.imageUrl }),
     }));
+
+    // Add the new student message
+    conversationHistory.push({
+      role: 'student',
+      content: studentMessage || (mode === 'check' ? 'Check my working' : 'Help me with this question'),
+      ...(imageUrl && { image_url: imageUrl }),
+    });
 
     const { data, error } = await supabase.functions.invoke('chat', {
       body: {
-        message: studentMessage,
-        history: conversationHistory,
-        context: userContext,
-        imageUrl,
-        mode,
-        questionAnalysis,
+        messages: conversationHistory,
+        userContext: {
+          level: userContext.yearGroup ? (parseInt(userContext.yearGroup) >= 12 ? 'A-Level' : 'GCSE') : 'A-Level',
+          board: userContext.examBoard || 'Unknown',
+          tier: userContext.tier,
+          targetGrade: userContext.targetGrade,
+        },
+        image_type: imageUrl ? 'working' : undefined,
+        latest_image_url: imageUrl,
+        tutor_mode: mode,
+        questionContext: questionAnalysis ? `Topic: ${questionAnalysis.topic}, Difficulty: ${questionAnalysis.difficulty}` : undefined,
       },
     });
 
     if (error) throw error;
 
+    // The edge function returns structured response with reply_messages array
+    const replyMessages = data.reply_messages || [data.reply || "I'm having trouble responding."];
+    
     return {
-      reply: data.reply as string,
-      showMarksAnalysis: data.showMarksAnalysis as boolean | undefined,
-      errorType: data.errorType as string | undefined,
-      errorLocation: data.errorLocation as string | undefined,
-      showSeeAnotherApproach: data.showSeeAnotherApproach as boolean | undefined,
-      showStillStuck: data.showStillStuck as boolean | undefined,
-      isCorrect: data.isCorrect as boolean | undefined,
-      analysis: data.analysis as QuestionAnalysis | undefined,
+      reply: replyMessages.join('\n\n'),
+      showMarksAnalysis: !!data.marks_analysis,
+      errorType: data.error_analysis?.type,
+      errorLocation: data.error_analysis?.location,
+      showSeeAnotherApproach: data.next_action === 'offer_alternative',
+      showStillStuck: data.student_behavior === 'expressed_confusion',
+      isCorrect: data.student_behavior === 'correct_answer',
+      analysis: data.topic ? { topic: data.topic, difficulty: data.difficulty } : undefined,
     };
   }, [messages, userContext, questionAnalysis]);
 
