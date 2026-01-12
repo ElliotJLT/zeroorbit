@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Send, Mic, MicOff, Loader2, Sparkles, X, Volume2, VolumeX } from 'lucide-react';
+import { Camera, Send, Mic, MicOff, Loader2, Sparkles, X, Volume2, VolumeX, Copy, ThumbsUp, ThumbsDown, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useSpeech } from '@/hooks/useSpeech';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
+import { supabase } from '@/integrations/supabase/client';
 import BurgerMenu from './BurgerMenu';
 import MathText from './MathText';
 import ConfirmNewProblemDialog from './ConfirmNewProblemDialog';
@@ -28,6 +29,7 @@ interface ChatViewProps {
   onSettings: () => void;
   isAuthenticated: boolean;
   onStartVoiceSession?: () => void;
+  sessionId?: string;
 }
 
 export default function ChatView({
@@ -45,6 +47,7 @@ export default function ChatView({
   onSettings,
   isAuthenticated,
   onStartVoiceSession,
+  sessionId,
 }: ChatViewProps) {
   const [newMessage, setNewMessage] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -59,6 +62,10 @@ export default function ChatView({
   
   // TTS state - track which message is being played
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
+  
+  // Feedback state - track which messages have been rated
+  const [feedbackGiven, setFeedbackGiven] = useState<Record<string, 'thumbs_up' | 'thumbs_down' | null>>({});
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -157,7 +164,12 @@ export default function ChatView({
     }
   };
 
-  const handlePlayTTS = (messageId: string, content: string) => {
+  const handlePlayTTS = async (messageId: string, content: string) => {
+    // Track listen action
+    if (sessionId) {
+      trackFeedback(messageId, 'listen');
+    }
+    
     if (playingMessageId === messageId && isPlaying) {
       stop();
       setPlayingMessageId(null);
@@ -167,6 +179,39 @@ export default function ChatView({
     }
   };
 
+  // Track feedback action
+  const trackFeedback = async (messageId: string, feedbackType: 'thumbs_up' | 'thumbs_down' | 'copy' | 'listen') => {
+    if (!sessionId) return;
+    
+    try {
+      await supabase.from('message_feedback').insert({
+        message_id: messageId,
+        session_id: sessionId,
+        feedback_type: feedbackType,
+      });
+    } catch (error) {
+      console.error('Error tracking feedback:', error);
+    }
+  };
+
+  const handleThumbsUp = async (messageId: string) => {
+    if (feedbackGiven[messageId]) return; // Already rated
+    setFeedbackGiven(prev => ({ ...prev, [messageId]: 'thumbs_up' }));
+    await trackFeedback(messageId, 'thumbs_up');
+  };
+
+  const handleThumbsDown = async (messageId: string) => {
+    if (feedbackGiven[messageId]) return; // Already rated
+    setFeedbackGiven(prev => ({ ...prev, [messageId]: 'thumbs_down' }));
+    await trackFeedback(messageId, 'thumbs_down');
+  };
+
+  const handleCopy = async (messageId: string, content: string) => {
+    await navigator.clipboard.writeText(content);
+    setCopiedMessageId(messageId);
+    await trackFeedback(messageId, 'copy');
+    setTimeout(() => setCopiedMessageId(null), 2000);
+  };
   // Reset playing state when TTS stops
   useEffect(() => {
     if (!isPlaying && !isLoading) {
@@ -246,24 +291,55 @@ export default function ChatView({
               {message.isTyping && (
                 <span className="inline-block w-2 h-4 ml-1 bg-current animate-pulse" />
               )}
-              
-              {/* Error feedback */}
-              {message.errorType && (
-                <div className="mt-2 pt-2 border-t border-border/50 text-sm">
-                  <span className="text-amber-500 font-medium">
-                    {message.errorType === 'mechanical' ? '⚙️ Mechanical error' : '💡 Conceptual gap'}
-                  </span>
-                  {message.errorLocation && (
-                    <span className="text-muted-foreground ml-2">
-                      in {message.errorLocation}
-                    </span>
-                  )}
-                </div>
-              )}
 
-              {/* TTS button for tutor messages */}
+              {/* Feedback buttons for tutor messages */}
               {message.sender === 'tutor' && !message.isTyping && (
-                <div className="mt-2 pt-2 border-t border-border/30">
+                <div className="mt-2 pt-2 border-t border-border/30 flex items-center justify-between">
+                  {/* Left side: copy, thumbs */}
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                      onClick={() => handleCopy(message.id, message.content)}
+                    >
+                      {copiedMessageId === message.id ? (
+                        <Check className="h-3.5 w-3.5 text-green-500" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        "h-7 w-7 p-0",
+                        feedbackGiven[message.id] === 'thumbs_up' 
+                          ? "text-green-500" 
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                      onClick={() => handleThumbsUp(message.id)}
+                      disabled={!!feedbackGiven[message.id]}
+                    >
+                      <ThumbsUp className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        "h-7 w-7 p-0",
+                        feedbackGiven[message.id] === 'thumbs_down' 
+                          ? "text-red-500" 
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                      onClick={() => handleThumbsDown(message.id)}
+                      disabled={!!feedbackGiven[message.id]}
+                    >
+                      <ThumbsDown className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                  
+                  {/* Right side: listen */}
                   <Button
                     variant="ghost"
                     size="sm"
