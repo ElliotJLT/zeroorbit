@@ -55,6 +55,7 @@ export default function ArenaQuestion({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [showSkipDialog, setShowSkipDialog] = useState(false);
   const [showSwipeTutorial, setShowSwipeTutorial] = useState(false);
+  const [submittedAnswers, setSubmittedAnswers] = useState<Array<{ text?: string; imageUrl?: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Voice input
@@ -83,6 +84,11 @@ export default function ArenaQuestion({
   const [isDragging, setIsDragging] = useState(false);
   const startX = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Reset submitted answers when question changes
+  useEffect(() => {
+    setSubmittedAnswers([]);
+  }, [question.id]);
 
   // Show swipe tutorial on first question (once per session) - animates the card itself twice
   useEffect(() => {
@@ -199,6 +205,8 @@ export default function ArenaQuestion({
 
   const handleSubmit = () => {
     if (!answer.trim() && !imagePreview) return;
+    // Track submitted answer for display
+    setSubmittedAnswers(prev => [...prev, { text: answer || undefined, imageUrl: imagePreview || undefined }]);
     onSubmitAnswer(answer || undefined, imagePreview || undefined);
     setAnswer('');
     setImagePreview(null);
@@ -283,6 +291,26 @@ export default function ArenaQuestion({
             </div>
           </div>
         </div>
+
+        {/* Submitted answers */}
+        {submittedAnswers.map((submitted, index) => (
+          <div key={index} className="flex justify-end">
+            <div className="bg-primary/10 rounded-xl p-3 max-w-[85%] border border-primary/20">
+              {submitted.imageUrl && (
+                <img 
+                  src={submitted.imageUrl} 
+                  alt="Your working" 
+                  className="max-h-40 rounded-lg mb-2"
+                />
+              )}
+              {submitted.text && (
+                <p className="text-sm">
+                  <MathText text={submitted.text} />
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
 
         {/* Feedback */}
         {feedback && (
