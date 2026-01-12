@@ -737,9 +737,9 @@ Provide concise, actionable insights in bullet points.`
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-5 w-5 text-primary" />
           </Button>
-          <h1 className="text-h2 text-primary">Admin Dashboard</h1>
+          <h1 className="text-h2 text-foreground">Admin Dashboard</h1>
         </div>
       </div>
 
