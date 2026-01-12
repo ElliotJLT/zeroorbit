@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, Image, Calendar, FlaskConical, Play, CheckCircle, XCircle, Loader2, Users, Shield, Trash2, TrendingUp, Sparkles, Clock, ThumbsUp, MessageCircle, Lightbulb, Mail, UserPlus, Lock } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Image, Calendar, FlaskConical, Play, CheckCircle, XCircle, Loader2, Users, Shield, Trash2, TrendingUp, Sparkles, Clock, ThumbsUp, MessageCircle, Lightbulb, Mail, UserPlus, Lock, Copy, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -1018,6 +1018,60 @@ Provide concise, actionable insights in bullet points.`
                       </CardContent>
                     </Card>
                   </div>
+
+                  {/* Error Summary - only show if there are failures */}
+                  {selectedRun.failed > 0 && (
+                    <Card className="border-red-500/30 bg-red-500/5">
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-red-500" />
+                            Error Summary ({selectedRun.failed} failures)
+                          </CardTitle>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const failedTests = selectedRun.results.filter(r => !r.passed);
+                              const summary = `# Orbit Eval Failures - ${formatDate(selectedRun.created_at)}
+Pass rate: ${selectedRun.passed}/${selectedRun.total} (${Math.round((selectedRun.passed / selectedRun.total) * 100)}%)
+
+## Failed Tests:
+
+${failedTests.map(t => `### ${t.test_name}
+**Setup:** ${t.test_setup}
+**Student Input:** ${t.student_input}
+**Expected:** ${t.expected_behavior}
+**Orbit Response:** ${t.orbit_response.slice(0, 300)}${t.orbit_response.length > 300 ? '...' : ''}
+**Failure Reason:** ${t.failure_reason || 'Unknown'}
+${t.red_flags_found?.length ? `**Red Flags:** ${t.red_flags_found.join(', ')}` : ''}
+`).join('\n---\n\n')}
+
+## Summary of Required Fixes:
+${failedTests.map(t => `- ${t.test_name}: ${t.failure_reason || 'Fix needed'}`).join('\n')}
+`;
+                              navigator.clipboard.writeText(summary);
+                              toast.success('Error summary copied to clipboard');
+                            }}
+                          >
+                            <Copy className="h-4 w-4 mr-2" />
+                            Copy Summary
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {selectedRun.results.filter(r => !r.passed).map((result) => (
+                          <div key={result.id} className="flex items-start gap-2 text-sm">
+                            <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-medium">{result.test_name}:</span>{' '}
+                              <span className="text-muted-foreground">{result.failure_reason || 'Failed'}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  )}
 
                   <div className="space-y-3">
                     {selectedRun.results.map((result) => (
