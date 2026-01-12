@@ -24,7 +24,7 @@ export function useTextToSpeech() {
 
     try {
       const { data, error } = await supabase.functions.invoke('text-to-speech', {
-        body: { text, voice: 'shimmer' },
+        body: { text, voice: 'fable' }, // fable = British English voice
       });
 
       if (error) {
