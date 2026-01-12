@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowRight, X, Check, Sparkles, Loader2 } from 'lucide-react';
+import { ArrowRight, X, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import HomeScreen from '@/components/HomeScreen';
 import ChatView from '@/components/ChatView';
-import ImageEditor from '@/components/ImageEditor';
+import QuestionReviewScreen from '@/components/QuestionReviewScreen';
 import { useChat } from '@/hooks/useChat';
 import {
   Select,
@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-type Step = 'home' | 'setup' | 'preview' | 'chat';
+type Step = 'home' | 'setup' | 'review' | 'chat';
 
 export default function Index() {
   const navigate = useNavigate();
@@ -38,15 +38,10 @@ export default function Index() {
   const [targetGrade, setTargetGrade] = useState('');
   const [tier, setTier] = useState('');
   
-  // Image preview state
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [selectedMode, setSelectedMode] = useState<'coach' | 'check' | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<{ topic?: string; difficulty?: string; socraticOpening?: string } | null>(null);
-  
-  // Image editing state
-  const [isEditing, setIsEditing] = useState(false);
+  // Image state
   const [rawImage, setRawImage] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<{ topic?: string; difficulty?: string; socraticOpening?: string } | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -94,36 +89,25 @@ export default function Index() {
       reader.onloadend = () => {
         const base64 = reader.result as string;
         setRawImage(base64);
-        setIsEditing(true);
+        
+        // Check if we need setup first (no profile context)
+        const hasContext = profile?.exam_board || examBoard;
+        if (!hasContext) {
+          setStep('setup');
+        } else {
+          setStep('review');
+        }
+        
+        // Run analysis in background
+        runPreviewAnalysis(base64);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleEditorComplete = (editedUrl: string) => {
-    setImagePreview(editedUrl);
-    setIsEditing(false);
-    setRawImage(null);
-    
-    // Check if we need setup first (no profile context)
-    const hasContext = profile?.exam_board || examBoard;
-    if (!hasContext) {
-      setStep('setup');
-    } else {
-      setStep('preview');
-    }
-    
-    // Run analysis in background
-    runPreviewAnalysis(editedUrl);
-  };
-
-  const handleEditorCancel = () => {
-    setIsEditing(false);
-    setRawImage(null);
-  };
-
   // Run analysis in background for tags
   const runPreviewAnalysis = async (imageUrl: string) => {
+    setIsAnalyzing(true);
     try {
       const { data, error } = await supabase.functions.invoke('analyze-question', {
         body: { imageBase64: imageUrl },
@@ -138,26 +122,24 @@ export default function Index() {
       }
     } catch (err) {
       console.error('Analysis error:', err);
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
   // Handle setup completion
   const handleSetupComplete = () => {
-    setStep('preview');
+    setStep('review');
   };
 
-  // Handle starting learning from preview
-  const handleStartLearning = async () => {
-    if (!imagePreview || !selectedMode) return;
-    
-    setIsAnalyzing(true);
-    
+  // Handle review completion (crop + mode selection done)
+  const handleReviewComplete = async (croppedImageUrl: string, mode: 'coach' | 'check') => {
     // Upload image if needed
-    let finalImageUrl = imagePreview;
-    if (imagePreview.startsWith('data:')) {
+    let finalImageUrl = croppedImageUrl;
+    if (croppedImageUrl.startsWith('data:')) {
       try {
         const fileName = `question-${Date.now()}.jpg`;
-        const base64Data = imagePreview.split(',')[1];
+        const base64Data = croppedImageUrl.split(',')[1];
         const binaryData = atob(base64Data);
         const bytes = new Uint8Array(binaryData.length);
         for (let i = 0; i < binaryData.length; i++) {
@@ -183,23 +165,30 @@ export default function Index() {
     // Set analysis and initialize chat with opening if available
     if (analysisResult) {
       chat.setAnalysis(analysisResult);
-      if (analysisResult.socraticOpening && selectedMode === 'coach') {
+      if (analysisResult.socraticOpening && mode === 'coach') {
         chat.initializeWithOpening(analysisResult.socraticOpening);
       }
     }
     
     // Start chat with image
-    chat.handleImageUpload(finalImageUrl, selectedMode);
+    chat.handleImageUpload(finalImageUrl, mode);
     
     setStep('chat');
-    setIsAnalyzing(false);
+    setRawImage(null);
+    setAnalysisResult(null);
+  };
+
+  // Handle review cancel
+  const handleReviewCancel = () => {
+    setRawImage(null);
+    setAnalysisResult(null);
+    setStep('home');
   };
 
   // Handle new problem (reset chat)
   const handleNewProblem = () => {
     chat.resetChat();
-    setImagePreview(null);
-    setSelectedMode(null);
+    setRawImage(null);
     setAnalysisResult(null);
     setStep('home');
   };
@@ -211,13 +200,15 @@ export default function Index() {
 
   // ==================== RENDER ====================
 
-  // Image editor fullscreen
-  if (isEditing && rawImage) {
+  // Unified review screen (crop + mode selection)
+  if (step === 'review' && rawImage) {
     return (
-      <ImageEditor
+      <QuestionReviewScreen
         imageUrl={rawImage}
-        onComplete={handleEditorComplete}
-        onCancel={handleEditorCancel}
+        analysisResult={analysisResult}
+        isAnalyzing={isAnalyzing}
+        onComplete={handleReviewComplete}
+        onCancel={handleReviewCancel}
       />
     );
   }
@@ -250,11 +241,12 @@ export default function Index() {
   if (step === 'setup') {
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        <header className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <header className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
           <button
             onClick={() => {
               setStep('home');
-              setImagePreview(null);
+              setRawImage(null);
+              setAnalysisResult(null);
             }}
             className="p-2 -ml-2 hover:bg-muted rounded-lg"
           >
@@ -338,131 +330,16 @@ export default function Index() {
           </div>
         </div>
         
-        <div className="p-6">
+        <div className="p-6 shrink-0">
           <Button
-            onClick={handleSetupComplete}
+            onClick={() => {
+              handleSetupComplete();
+            }}
             disabled={!examBoard || !yearGroup}
             className="w-full h-12"
           >
             Continue
             <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Preview screen
-  if (step === 'preview') {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <header className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <button
-            onClick={() => {
-              setStep('home');
-              setImagePreview(null);
-              setSelectedMode(null);
-              setAnalysisResult(null);
-            }}
-            className="p-2 -ml-2 hover:bg-muted rounded-lg"
-          >
-            <X className="h-5 w-5" />
-          </button>
-          <span className="font-medium">Review Your Question</span>
-          <div className="w-9" />
-        </header>
-        
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* Image preview */}
-          {imagePreview && (
-            <div className="relative">
-              <img
-                src={imagePreview}
-                alt="Question"
-                className="w-full rounded-xl border border-border"
-              />
-              {analysisResult && (
-                <div className="absolute bottom-3 left-3 flex gap-2">
-                  {analysisResult.topic && (
-                    <span className="px-2 py-1 text-xs rounded-full bg-primary/20 text-primary backdrop-blur-sm">
-                      {analysisResult.topic}
-                    </span>
-                  )}
-                  {analysisResult.difficulty && (
-                    <span className="px-2 py-1 text-xs rounded-full bg-muted/80 text-muted-foreground backdrop-blur-sm">
-                      {analysisResult.difficulty}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Mode selection */}
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-center">How would you like help?</p>
-            
-            <button
-              onClick={() => setSelectedMode('coach')}
-              className={`w-full p-4 rounded-xl border-2 transition-all flex items-start gap-3 ${
-                selectedMode === 'coach'
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                selectedMode === 'coach' ? 'border-primary bg-primary' : 'border-muted-foreground'
-              }`}>
-                {selectedMode === 'coach' && <Check className="h-3 w-3 text-primary-foreground" />}
-              </div>
-              <div className="text-left">
-                <p className="font-medium">🎓 Coach me through it</p>
-                <p className="text-sm text-muted-foreground">
-                  I'll guide you step-by-step with hints and questions
-                </p>
-              </div>
-            </button>
-            
-            <button
-              onClick={() => setSelectedMode('check')}
-              className={`w-full p-4 rounded-xl border-2 transition-all flex items-start gap-3 ${
-                selectedMode === 'check'
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                selectedMode === 'check' ? 'border-primary bg-primary' : 'border-muted-foreground'
-              }`}>
-                {selectedMode === 'check' && <Check className="h-3 w-3 text-primary-foreground" />}
-              </div>
-              <div className="text-left">
-                <p className="font-medium">📝 Check my working</p>
-                <p className="text-sm text-muted-foreground">
-                  I'll mark your answer and give feedback on errors
-                </p>
-              </div>
-            </button>
-          </div>
-        </div>
-        
-        <div className="p-4">
-          <Button
-            onClick={handleStartLearning}
-            disabled={!selectedMode || isAnalyzing}
-            className="w-full h-12"
-          >
-            {isAnalyzing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Starting...
-              </>
-            ) : (
-              <>
-                Start Learning
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </>
-            )}
           </Button>
         </div>
       </div>
