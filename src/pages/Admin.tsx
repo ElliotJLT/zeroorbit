@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, Image, Calendar, FlaskConical, Play, CheckCircle, XCircle, Loader2, Users, Shield, Trash2 } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Image, Calendar, FlaskConical, Play, CheckCircle, XCircle, Loader2, Users, Shield, Trash2, TrendingUp, Sparkles, Clock, ThumbsUp, MessageCircle, Lightbulb } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChatBubble } from '@/components/ChatBubble';
 import { ImageViewer } from '@/components/ImageViewer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 
 interface SessionWithProfile {
   id: string;
@@ -63,6 +64,18 @@ interface TeamMember {
   full_name: string | null;
 }
 
+interface BetaInsights {
+  totalSessions: number;
+  uniqueUsers: number;
+  avgConfidence: number;
+  avgMessagesPerSession: number;
+  topTopics: { name: string; count: number }[];
+  recentFeedback: { name: string; feedback: string; wouldUseAgain: string }[];
+  inputMethodBreakdown: { method: string; count: number }[];
+  aiInsights: string | null;
+  loading: boolean;
+}
+
 export default function Admin() {
   const { user, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -76,10 +89,22 @@ export default function Admin() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [addingAdmin, setAddingAdmin] = useState(false);
+  const [insights, setInsights] = useState<BetaInsights>({
+    totalSessions: 0,
+    uniqueUsers: 0,
+    avgConfidence: 0,
+    avgMessagesPerSession: 0,
+    topTopics: [],
+    recentFeedback: [],
+    inputMethodBreakdown: [],
+    aiInsights: null,
+    loading: true,
+  });
+  const [generatingAIInsights, setGeneratingAIInsights] = useState(false);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
-      navigate('/home');
+      navigate('/');
     }
   }, [user, isAdmin, authLoading, navigate]);
 
@@ -88,8 +113,131 @@ export default function Admin() {
       fetchSessions();
       fetchEvalRuns();
       fetchTeamMembers();
+      fetchInsights();
     }
   }, [isAdmin]);
+
+  const fetchInsights = async () => {
+    try {
+      // Get session stats
+      const { data: sessionsData, count: totalSessions } = await supabase
+        .from('sessions')
+        .select('*, topic:topics(name)', { count: 'exact' });
+
+      // Get unique users
+      const uniqueUserIds = new Set(sessionsData?.map(s => s.user_id) || []);
+      
+      // Calculate avg confidence
+      const confidences = sessionsData?.filter(s => s.confidence_after).map(s => s.confidence_after!) || [];
+      const avgConfidence = confidences.length > 0 
+        ? confidences.reduce((a, b) => a + b, 0) / confidences.length 
+        : 0;
+
+      // Get message counts per session
+      const { data: messageStats } = await supabase
+        .from('messages')
+        .select('session_id');
+      
+      const sessionMessageCounts = new Map<string, number>();
+      messageStats?.forEach(m => {
+        sessionMessageCounts.set(m.session_id, (sessionMessageCounts.get(m.session_id) || 0) + 1);
+      });
+      const avgMessages = sessionMessageCounts.size > 0
+        ? Array.from(sessionMessageCounts.values()).reduce((a, b) => a + b, 0) / sessionMessageCounts.size
+        : 0;
+
+      // Get top topics
+      const topicCounts = new Map<string, number>();
+      sessionsData?.forEach(s => {
+        const topicName = s.topic?.name || 'Unknown';
+        topicCounts.set(topicName, (topicCounts.get(topicName) || 0) + 1);
+      });
+      const topTopics = Array.from(topicCounts.entries())
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      // Get input method breakdown
+      const inputMethodCounts = new Map<string, number>();
+      sessionsData?.forEach(s => {
+        const method = s.first_input_method || 'unknown';
+        inputMethodCounts.set(method, (inputMethodCounts.get(method) || 0) + 1);
+      });
+      const inputMethodBreakdown = Array.from(inputMethodCounts.entries())
+        .map(([method, count]) => ({ method, count }));
+
+      // Get recent feedback
+      const recentFeedback = sessionsData
+        ?.filter(s => s.beta_feedback)
+        .slice(0, 5)
+        .map(s => ({
+          name: s.beta_tester_name || 'Anonymous',
+          feedback: s.beta_feedback || '',
+          wouldUseAgain: s.would_use_again || 'unknown',
+        })) || [];
+
+      setInsights({
+        totalSessions: totalSessions || 0,
+        uniqueUsers: uniqueUserIds.size,
+        avgConfidence: Math.round(avgConfidence * 10) / 10,
+        avgMessagesPerSession: Math.round(avgMessages * 10) / 10,
+        topTopics,
+        recentFeedback,
+        inputMethodBreakdown,
+        aiInsights: null,
+        loading: false,
+      });
+    } catch (error) {
+      console.error('Error fetching insights:', error);
+      setInsights(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const generateAIInsights = async () => {
+    setGeneratingAIInsights(true);
+    try {
+      // Prepare context for AI
+      const context = {
+        totalSessions: insights.totalSessions,
+        uniqueUsers: insights.uniqueUsers,
+        avgConfidence: insights.avgConfidence,
+        avgMessagesPerSession: insights.avgMessagesPerSession,
+        topTopics: insights.topTopics,
+        inputMethodBreakdown: insights.inputMethodBreakdown,
+        recentFeedback: insights.recentFeedback,
+      };
+
+      const response = await supabase.functions.invoke('chat', {
+        body: {
+          messages: [{
+            role: 'user',
+            content: `You are a product analyst for Orbit, an AI maths tutoring app in beta. Analyze this usage data and provide 3-5 actionable insights for the product team. Focus on what's working, what needs improvement, and specific recommendations.
+
+Data:
+- Total sessions: ${context.totalSessions}
+- Unique users: ${context.uniqueUsers}
+- Avg confidence rating: ${context.avgConfidence}/5
+- Avg messages per session: ${context.avgMessagesPerSession}
+- Top topics: ${context.topTopics.map(t => `${t.name} (${t.count})`).join(', ')}
+- Input methods: ${context.inputMethodBreakdown.map(m => `${m.method}: ${m.count}`).join(', ')}
+- Recent feedback samples: ${context.recentFeedback.map(f => `"${f.feedback}" (would use again: ${f.wouldUseAgain})`).join('; ')}
+
+Provide concise, actionable insights in bullet points.`
+          }],
+          mode: 'check', // Use check mode for direct response
+        }
+      });
+
+      if (response.data?.message) {
+        setInsights(prev => ({ ...prev, aiInsights: response.data.message }));
+      }
+    } catch (error) {
+      console.error('Error generating AI insights:', error);
+      toast.error('Failed to generate AI insights');
+    } finally {
+      setGeneratingAIInsights(false);
+    }
+  };
 
   const fetchSessions = async () => {
     setLoading(true);
@@ -300,28 +448,217 @@ export default function Admin() {
     <div className="min-h-screen">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-4">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/home')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-h2">Admin Dashboard</h1>
         </div>
       </div>
 
-      <Tabs defaultValue="sessions" className="w-full">
+      <Tabs defaultValue="insights" className="w-full">
         <TabsList className="mx-4 mt-4">
-          <TabsTrigger value="sessions">
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Sessions
+          <TabsTrigger value="insights">
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Insights
           </TabsTrigger>
           <TabsTrigger value="evals">
             <FlaskConical className="h-4 w-4 mr-2" />
             LLM Evals
+          </TabsTrigger>
+          <TabsTrigger value="sessions">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Sessions
           </TabsTrigger>
           <TabsTrigger value="team">
             <Users className="h-4 w-4 mr-2" />
             Team
           </TabsTrigger>
         </TabsList>
+
+        {/* Insights Tab */}
+        <TabsContent value="insights" className="m-0 p-4">
+          <div className="max-w-4xl mx-auto space-y-6">
+            {insights.loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <>
+                {/* Key Metrics */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <MessageCircle className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">{insights.totalSessions}</p>
+                          <p className="text-sm text-muted-foreground">Total Sessions</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                          <Users className="h-5 w-5 text-blue-500" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">{insights.uniqueUsers}</p>
+                          <p className="text-sm text-muted-foreground">Unique Users</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                          <ThumbsUp className="h-5 w-5 text-green-500" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">{insights.avgConfidence}/5</p>
+                          <p className="text-sm text-muted-foreground">Avg Confidence</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                          <Clock className="h-5 w-5 text-amber-500" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">{insights.avgMessagesPerSession}</p>
+                          <p className="text-sm text-muted-foreground">Msgs/Session</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* AI Insights */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Sparkles className="h-5 w-5 text-primary" />
+                          AI Insights
+                        </CardTitle>
+                        <CardDescription>AI-generated analysis of beta usage patterns</CardDescription>
+                      </div>
+                      <Button 
+                        onClick={generateAIInsights} 
+                        disabled={generatingAIInsights}
+                        size="sm"
+                      >
+                        {generatingAIInsights ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Analyzing...
+                          </>
+                        ) : (
+                          <>
+                            <Lightbulb className="h-4 w-4 mr-2" />
+                            Generate Insights
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {insights.aiInsights ? (
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <div className="whitespace-pre-wrap text-sm">{insights.aiInsights}</div>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-sm">
+                        Click "Generate Insights" to get AI-powered analysis of your beta usage data.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <div className="grid lg:grid-cols-2 gap-6">
+                  {/* Top Topics */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">Top Topics</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {insights.topTopics.length > 0 ? (
+                        insights.topTopics.map((topic, i) => (
+                          <div key={topic.name} className="space-y-1">
+                            <div className="flex justify-between text-sm">
+                              <span className="truncate">{topic.name}</span>
+                              <span className="text-muted-foreground">{topic.count} sessions</span>
+                            </div>
+                            <Progress 
+                              value={(topic.count / insights.totalSessions) * 100} 
+                              className="h-2" 
+                            />
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">No topic data yet</p>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Input Methods */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">Input Methods</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {insights.inputMethodBreakdown.length > 0 ? (
+                        insights.inputMethodBreakdown.map((method) => (
+                          <div key={method.method} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                            <span className="capitalize font-medium">{method.method}</span>
+                            <span className="text-muted-foreground">{method.count} ({Math.round((method.count / insights.totalSessions) * 100)}%)</span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">No data yet</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Recent Feedback */}
+                {insights.recentFeedback.length > 0 && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">Recent Feedback</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {insights.recentFeedback.map((f, i) => (
+                        <div key={i} className="p-3 rounded-lg bg-muted/50 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-sm">{f.name}</span>
+                            <span className={cn(
+                              "text-xs px-2 py-0.5 rounded",
+                              f.wouldUseAgain === 'yes' && "bg-green-500/20 text-green-600",
+                              f.wouldUseAgain === 'no' && "bg-red-500/20 text-red-600",
+                              f.wouldUseAgain === 'maybe' && "bg-amber-500/20 text-amber-600",
+                            )}>
+                              {f.wouldUseAgain === 'yes' ? 'Would use again' : f.wouldUseAgain === 'no' ? 'Would not use again' : 'Maybe'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{f.feedback}</p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            )}
+          </div>
+        </TabsContent>
 
         <TabsContent value="sessions" className="m-0">
           <div className="flex flex-col lg:flex-row h-[calc(100vh-120px)]">
