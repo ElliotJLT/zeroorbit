@@ -59,7 +59,7 @@ serve(async (req) => {
   }
 
   try {
-    const { text, voice = "shimmer" } = await req.json();
+    const { text, voice = "fable" } = await req.json(); // fable = British English voice
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
     if (!OPENAI_API_KEY) {

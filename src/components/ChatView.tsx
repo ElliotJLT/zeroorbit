@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import BurgerMenu from './BurgerMenu';
 import CitationText from './CitationText';
 import ConfirmNewProblemDialog from './ConfirmNewProblemDialog';
-import ImageEditor from './ImageEditor';
+import QuestionReviewScreen from './QuestionReviewScreen';
 import SignupPrompt from './SignupPrompt';
 import VoiceChatPrompt from './VoiceChatPrompt';
 import SourcesPanel, { Source } from './SourcesPanel';
@@ -18,14 +18,11 @@ import type { Message } from '@/hooks/useChat';
 interface ChatViewProps {
   messages: Message[];
   sending: boolean;
-  pendingImage: { url: string; mode: 'coach' | 'check' } | null;
   guestExchangeCount: number;
   guestLimit: number;
   isAtLimit: boolean;
   onSendMessage: (content: string, inputMethod?: 'text' | 'voice') => void;
-  onImageUpload: (imageUrl: string, mode: 'coach' | 'check') => void;
-  onConfirmImage: (additionalContext?: string) => void;
-  onCancelImage: () => void;
+  onSendImageMessage: (imageUrl: string, mode: 'coach' | 'check') => void;
   onNewProblem: () => void;
   onSettings: () => void;
   isAuthenticated: boolean;
@@ -36,14 +33,11 @@ interface ChatViewProps {
 export default function ChatView({
   messages,
   sending,
-  pendingImage,
   guestExchangeCount,
   guestLimit,
   isAtLimit,
   onSendMessage,
-  onImageUpload,
-  onConfirmImage,
-  onCancelImage,
+  onSendImageMessage,
   onNewProblem,
   onSettings,
   isAuthenticated,
@@ -52,14 +46,12 @@ export default function ChatView({
 }: ChatViewProps) {
   const [newMessage, setNewMessage] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [additionalContext, setAdditionalContext] = useState('');
   const [voiceNoteCount, setVoiceNoteCount] = useState(0);
   const [showVoiceChatPrompt, setShowVoiceChatPrompt] = useState(false);
   const [voicePromptShownAt2, setVoicePromptShownAt2] = useState(false);
   
-  // Image editing state
-  const [isEditing, setIsEditing] = useState(false);
-  const [rawImage, setRawImage] = useState<{ url: string; mode: 'coach' | 'check' } | null>(null);
+  // Image review state - uses QuestionReviewScreen
+  const [reviewImage, setReviewImage] = useState<string | null>(null);
   
   // TTS state - track which message is being played
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
@@ -110,37 +102,27 @@ export default function ChatView({
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, mode: 'coach' | 'check') => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64 = reader.result as string;
-        // Open editor
-        setRawImage({ url: base64, mode });
-        setIsEditing(true);
+        // Open QuestionReviewScreen
+        setReviewImage(base64);
       };
       reader.readAsDataURL(file);
     }
     e.target.value = '';
   };
 
-  const handleEditorComplete = (editedUrl: string) => {
-    if (rawImage) {
-      onImageUpload(editedUrl, rawImage.mode);
-    }
-    setIsEditing(false);
-    setRawImage(null);
+  const handleReviewComplete = (croppedImageUrl: string, mode: 'coach' | 'check') => {
+    setReviewImage(null);
+    onSendImageMessage(croppedImageUrl, mode);
   };
 
-  const handleEditorCancel = () => {
-    setIsEditing(false);
-    setRawImage(null);
-  };
-
-  const handleConfirmWithContext = () => {
-    onConfirmImage(additionalContext || undefined);
-    setAdditionalContext('');
+  const handleReviewCancel = () => {
+    setReviewImage(null);
   };
 
   const handleMicClick = () => {
@@ -284,13 +266,13 @@ export default function ChatView({
     touchStartRef.current = null;
   }, [currentSources]);
 
-  // Image editor fullscreen
-  if (isEditing && rawImage) {
+  // QuestionReviewScreen fullscreen for adding working
+  if (reviewImage) {
     return (
-      <ImageEditor
-        imageUrl={rawImage.url}
-        onComplete={handleEditorComplete}
-        onCancel={handleEditorCancel}
+      <QuestionReviewScreen
+        imageUrl={reviewImage}
+        onComplete={handleReviewComplete}
+        onCancel={handleReviewCancel}
       />
     );
   }
@@ -318,7 +300,7 @@ export default function ChatView({
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 && !pendingImage && (
+        {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground space-y-4">
             <Sparkles className="h-12 w-12 text-primary/50" />
             <div>
@@ -455,49 +437,10 @@ export default function ChatView({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Pending Image Preview */}
-      {pendingImage && (
-        <div className="border-t border-border bg-card p-4 space-y-3">
-          <div className="flex items-start gap-3">
-            <img
-              src={pendingImage.url}
-              alt="To upload"
-              className="w-20 h-20 object-cover rounded-lg"
-            />
-            <div className="flex-1 space-y-2">
-              <p className="text-sm font-medium">
-                {pendingImage.mode === 'check' ? '📝 Check my working' : '🎓 Coach me through it'}
-              </p>
-              <Input
-                ref={contextInputRef}
-                placeholder="Add context (optional)"
-                value={additionalContext}
-                onChange={(e) => setAdditionalContext(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleConfirmWithContext()}
-              />
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onCancelImage}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          <Button
-            onClick={handleConfirmWithContext}
-            disabled={sending}
-            className="w-full"
-          >
-            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send'}
-          </Button>
-        </div>
-      )}
-
       {/* Signup Prompt or Input Bar */}
       {isAtLimit ? (
         <SignupPrompt exchangeCount={guestExchangeCount} limit={guestLimit} />
-      ) : !pendingImage && (
+      ) : (
         <div className="sticky bottom-0 border-t border-border bg-background p-4">
           {/* Guest exchange counter */}
           {!isAuthenticated && guestExchangeCount > 0 && (
@@ -509,14 +452,14 @@ export default function ChatView({
           )}
           
           <div className="flex items-center gap-2">
-            {/* Photo buttons */}
+            {/* Photo button */}
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
               capture="environment"
               className="hidden"
-              onChange={(e) => handleImageChange(e, 'coach')}
+              onChange={handleImageChange}
             />
             <Button
               variant="outline"
