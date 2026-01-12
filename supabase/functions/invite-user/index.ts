@@ -10,9 +10,10 @@ const corsHeaders = {
 };
 
 interface InviteRequest {
-  action: 'invite' | 'list' | 'bulk-invite';
+  action: 'invite' | 'list' | 'bulk-invite' | 'delete-users';
   email?: string;
   emails?: string[];
+  userIds?: string[];
 }
 
 serve(async (req) => {
@@ -66,7 +67,7 @@ serve(async (req) => {
       });
     }
 
-    const { action, email, emails }: InviteRequest = await req.json();
+    const { action, email, emails, userIds }: InviteRequest = await req.json();
 
     if (action === 'list') {
       // Get all users from auth.users
@@ -116,6 +117,25 @@ serve(async (req) => {
       for (const e of emails) {
         const result = await inviteUserInternal(supabaseAdmin, e);
         results.push({ email: e, ...result });
+      }
+      return new Response(JSON.stringify({ results }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === 'delete-users' && userIds && userIds.length > 0) {
+      const results = [];
+      for (const userId of userIds) {
+        try {
+          const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+          if (error) {
+            results.push({ userId, success: false, message: error.message });
+          } else {
+            results.push({ userId, success: true });
+          }
+        } catch (err: any) {
+          results.push({ userId, success: false, message: err.message });
+        }
       }
       return new Response(JSON.stringify({ results }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
