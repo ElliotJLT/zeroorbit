@@ -242,30 +242,15 @@ export default function ArenaSession() {
             })}
           </div>
           
-          {/* Center content - Orbit logo with glow */}
+          {/* Center glow only - no logo or text */}
           <div className="absolute inset-0 flex items-center justify-center z-10">
-            <div className="text-center space-y-6">
-              <div className="relative mx-auto">
-                {/* Glow effect behind logo */}
-                <div 
-                  className="absolute inset-0 w-32 h-32 rounded-full"
-                  style={{
-                    background: 'radial-gradient(circle, hsl(172 100% 49% / 0.4) 0%, hsl(172 100% 49% / 0.15) 40%, transparent 70%)',
-                    filter: 'blur(20px)',
-                    transform: 'scale(1.5)',
-                  }}
-                />
-                <img 
-                  src={orbitIcon} 
-                  alt="Orbit" 
-                  className="relative w-32 h-32 object-contain animate-pulse"
-                />
-              </div>
-              <p className="text-lg font-medium tracking-wide">
-                <span className="text-primary">{loadingMessage.split(' ')[0]}</span>
-                <span className="text-foreground/90"> {loadingMessage.split(' ').slice(1).join(' ')}</span>
-              </p>
-            </div>
+            <div 
+              className="w-40 h-40 rounded-full"
+              style={{
+                background: 'radial-gradient(circle, hsl(172 100% 49% / 0.35) 0%, hsl(172 100% 49% / 0.12) 40%, transparent 70%)',
+                filter: 'blur(24px)',
+              }}
+            />
           </div>
         </div>
       </div>
