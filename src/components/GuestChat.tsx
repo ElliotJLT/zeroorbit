@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import orbitIcon from '@/assets/orbit-icon.png';
 import BurgerMenu from '@/components/BurgerMenu';
 import NewProblemModal from '@/components/NewProblemModal';
+import ImageEditor from '@/components/ImageEditor';
 import MathText from '@/components/MathText';
 import { useToast } from '@/hooks/use-toast';
 import { useSpeech } from '@/hooks/useSpeech';
@@ -49,6 +50,10 @@ export function GuestChat({
   const [showNewProblemModal, setShowNewProblemModal] = useState(false);
   const [modalAnalyzing, setModalAnalyzing] = useState(false);
   
+  // Image editing state
+  const [isEditing, setIsEditing] = useState(false);
+  const [rawImage, setRawImage] = useState<{ url: string; mode: 'working' | 'question' } | null>(null);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const workingFileInputRef = useRef<HTMLInputElement>(null);
   const questionFileInputRef = useRef<HTMLInputElement>(null);
@@ -62,11 +67,26 @@ export function GuestChat({
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        onImageUpload(reader.result as string, mode);
+        // Open editor instead of directly uploading
+        setRawImage({ url: reader.result as string, mode });
+        setIsEditing(true);
       };
       reader.readAsDataURL(file);
     }
     e.target.value = '';
+  };
+
+  const handleEditorComplete = (editedUrl: string) => {
+    if (rawImage) {
+      onImageUpload(editedUrl, rawImage.mode);
+    }
+    setIsEditing(false);
+    setRawImage(null);
+  };
+
+  const handleEditorCancel = () => {
+    setIsEditing(false);
+    setRawImage(null);
   };
 
   const handleNewProblemSubmit = async (imageUrl: string | null, questionText: string) => {
@@ -104,6 +124,17 @@ export function GuestChat({
       startRecording(handleVoiceResult, handleVoiceError);
     }
   };
+
+  // Show image editor fullscreen when editing
+  if (isEditing && rawImage) {
+    return (
+      <ImageEditor
+        imageUrl={rawImage.url}
+        onComplete={handleEditorComplete}
+        onCancel={handleEditorCancel}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

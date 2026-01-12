@@ -335,3 +335,5 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
     </div>
   );
 };
+
+export default ImageEditor;
