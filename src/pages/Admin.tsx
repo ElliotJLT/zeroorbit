@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, Image, Calendar, FlaskConical, Play, CheckCircle, XCircle, Loader2, Users, Shield, Trash2, TrendingUp, Sparkles, Clock, ThumbsUp, MessageCircle, Lightbulb } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Image, Calendar, FlaskConical, Play, CheckCircle, XCircle, Loader2, Users, Shield, Trash2, TrendingUp, Sparkles, Clock, ThumbsUp, MessageCircle, Lightbulb, Mail, UserPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -64,6 +64,16 @@ interface TeamMember {
   full_name: string | null;
 }
 
+interface InvitedUser {
+  id: string;
+  email: string;
+  full_name: string | null;
+  is_admin: boolean;
+  created_at: string;
+  last_sign_in: string | null;
+  confirmed: boolean;
+}
+
 interface BetaInsights {
   totalSessions: number;
   uniqueUsers: number;
@@ -87,8 +97,11 @@ export default function Admin() {
   const [selectedRun, setSelectedRun] = useState<EvalRun | null>(null);
   const [runningEval, setRunningEval] = useState(false);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [invitedUsers, setInvitedUsers] = useState<InvitedUser[]>([]);
   const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [newInviteEmail, setNewInviteEmail] = useState('');
   const [addingAdmin, setAddingAdmin] = useState(false);
+  const [sendingInvite, setSendingInvite] = useState(false);
   const [insights, setInsights] = useState<BetaInsights>({
     totalSessions: 0,
     uniqueUsers: 0,
@@ -113,6 +126,7 @@ export default function Admin() {
       fetchSessions();
       fetchEvalRuns();
       fetchTeamMembers();
+      fetchInvitedUsers();
       fetchInsights();
     }
   }, [isAdmin]);
@@ -333,6 +347,48 @@ Provide concise, actionable insights in bullet points.`
       }
     } catch (err) {
       console.error('Error fetching team:', err);
+    }
+  };
+
+  const fetchInvitedUsers = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: { action: 'list' }
+      });
+
+      if (error) throw error;
+
+      if (data?.users) {
+        setInvitedUsers(data.users);
+      }
+    } catch (err) {
+      console.error('Error fetching users:', err);
+    }
+  };
+
+  const sendInvite = async () => {
+    if (!newInviteEmail.trim()) return;
+    
+    setSendingInvite(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: { action: 'invite', email: newInviteEmail.trim().toLowerCase() }
+      });
+
+      if (error) throw error;
+      
+      if (data.success) {
+        toast.success(`Invitation sent to ${newInviteEmail}`);
+        setNewInviteEmail('');
+        fetchInvitedUsers();
+      } else {
+        toast.error(data.message || 'Failed to send invitation');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to send invitation');
+    } finally {
+      setSendingInvite(false);
     }
   };
 
@@ -988,22 +1044,110 @@ Provide concise, actionable insights in bullet points.`
         </TabsContent>
 
         <TabsContent value="team" className="m-0">
-          <div className="p-4 max-w-2xl mx-auto space-y-6">
+          <div className="p-4 max-w-3xl mx-auto space-y-6">
+            {/* Invite Beta Testers */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Add Admin
+                  <Mail className="h-5 w-5" />
+                  Invite Beta Tester
                 </CardTitle>
+                <CardDescription>
+                  Send a sign-up link via email. New users will receive an Orbit beta invitation.
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex gap-2">
                   <Input
                     type="email"
                     placeholder="Email address"
+                    value={newInviteEmail}
+                    onChange={(e) => setNewInviteEmail(e.target.value)}
+                    className="flex-1"
+                    onKeyDown={(e) => e.key === 'Enter' && sendInvite()}
+                  />
+                  <Button onClick={sendInvite} disabled={sendingInvite || !newInviteEmail.trim()}>
+                    {sendingInvite ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Send Invite
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* All Users List */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  All Users ({invitedUsers.length})
+                </CardTitle>
+                <CardDescription>
+                  All registered users in the Orbit beta
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {invitedUsers.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-4">No users found</p>
+                ) : (
+                  <div className="space-y-2">
+                    {invitedUsers.map((u) => (
+                      <div
+                        key={u.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-surface-1"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">
+                            {u.email}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {u.full_name || 'No name set'} • {u.last_sign_in ? `Last seen ${formatDate(u.last_sign_in)}` : 'Never signed in'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 ml-2">
+                          {!u.confirmed && (
+                            <span className="text-xs px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded">
+                              Pending
+                            </span>
+                          )}
+                          {u.is_admin && (
+                            <span className="text-xs px-2 py-1 bg-primary/20 text-primary rounded">
+                              Admin
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Admin Management */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Admin Access
+                </CardTitle>
+                <CardDescription>
+                  Grant or revoke admin privileges to existing users
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    placeholder="Email address of existing user"
                     value={newAdminEmail}
                     onChange={(e) => setNewAdminEmail(e.target.value)}
                     className="flex-1"
+                    onKeyDown={(e) => e.key === 'Enter' && addAdmin()}
                   />
                   <Button onClick={addAdmin} disabled={addingAdmin || !newAdminEmail.trim()}>
                     {addingAdmin ? (
@@ -1013,52 +1157,31 @@ Provide concise, actionable insights in bullet points.`
                     )}
                   </Button>
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  User must have an existing account to receive admin rights.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Current Admins
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {teamMembers.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-4">No admins found</p>
-                ) : (
-                  <div className="space-y-2">
+                
+                {teamMembers.length > 0 && (
+                  <div className="space-y-2 pt-4 border-t border-border">
+                    <p className="text-sm font-medium text-muted-foreground">Current Admins</p>
                     {teamMembers.map((member) => (
                       <div
                         key={member.id}
                         className="flex items-center justify-between p-3 rounded-lg bg-surface-1"
                       >
                         <div>
-                          <p className="font-medium">
-                            {member.full_name || 'Unnamed user'}
-                          </p>
+                          <p className="font-medium">{member.email}</p>
                           <p className="text-sm text-muted-foreground">
-                            ID: {member.user_id.substring(0, 8)}...
+                            {member.full_name || 'No name set'}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs px-2 py-1 bg-primary/20 text-primary rounded">
-                            Admin
-                          </span>
-                          {member.user_id !== user?.id && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => removeAdmin(member.user_id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
+                        {member.user_id !== user?.id && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => removeAdmin(member.user_id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     ))}
                   </div>

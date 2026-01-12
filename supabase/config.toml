@@ -20,3 +20,9 @@ verify_jwt = false
 
 [functions.eval-chat]
 verify_jwt = false
+
+[functions.manage-admins]
+verify_jwt = false
+
+[functions.invite-user]
+verify_jwt = false
