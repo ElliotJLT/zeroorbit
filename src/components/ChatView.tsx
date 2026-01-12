@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Send, Mic, MicOff, Loader2, Plus, Sparkles, X } from 'lucide-react';
+import { Camera, Send, Mic, MicOff, Loader2, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useSpeech } from '@/hooks/useSpeech';
 import BurgerMenu from './BurgerMenu';
 import MathText from './MathText';
-import NewProblemModal from './NewProblemModal';
+import ConfirmNewProblemDialog from './ConfirmNewProblemDialog';
 import ImageEditor from './ImageEditor';
 import SignupPrompt from './SignupPrompt';
 import type { Message } from '@/hooks/useChat';
@@ -43,7 +43,7 @@ export default function ChatView({
   isAuthenticated,
 }: ChatViewProps) {
   const [newMessage, setNewMessage] = useState('');
-  const [showNewProblemModal, setShowNewProblemModal] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [additionalContext, setAdditionalContext] = useState('');
   
   // Image editing state
@@ -141,14 +141,13 @@ export default function ChatView({
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-border bg-background/95 backdrop-blur-sm">
         <BurgerMenu onSettings={onSettings} />
         
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setShowNewProblemModal(true)}
+          onClick={() => setShowConfirmDialog(true)}
           className="gap-2"
         >
           <Camera className="h-4 w-4" />
@@ -329,20 +328,11 @@ export default function ChatView({
         </div>
       )}
 
-      {/* New Problem Modal */}
-      <NewProblemModal
-        open={showNewProblemModal}
-        onOpenChange={setShowNewProblemModal}
-        onSubmit={(imageUrl, questionText) => {
-          setShowNewProblemModal(false);
-          onNewProblem();
-          if (imageUrl) {
-            // Default to coach mode for new problems from modal
-            onImageUpload(imageUrl, 'coach');
-          } else if (questionText) {
-            onSendMessage(questionText, 'text');
-          }
-        }}
+      {/* Confirm New Problem Dialog */}
+      <ConfirmNewProblemDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        onConfirm={onNewProblem}
       />
     </div>
   );
