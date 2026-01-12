@@ -20,7 +20,8 @@ interface CropRect {
 type DragHandle = 'move' | 'tl' | 'tr' | 'bl' | 'br' | null;
 
 const MIN_CROP_SIZE = 50;
-const HANDLE_SIZE = 24;
+const HANDLE_SIZE = 44; // Increased for better mobile touch targets
+const HANDLE_HIT_AREA = 44; // 44pt minimum touch target
 
 export default function QuestionReviewScreen({
   imageUrl,
@@ -106,12 +107,15 @@ export default function QuestionReviewScreen({
 
   const getHandleAtPoint = (x: number, y: number): DragHandle => {
     const { x: cx, y: cy, width: cw, height: ch } = cropRect;
-    const halfHandle = HANDLE_SIZE / 2;
+    const halfHit = HANDLE_HIT_AREA / 2;
 
-    if (Math.abs(x - cx) < halfHandle && Math.abs(y - cy) < halfHandle) return 'tl';
-    if (Math.abs(x - (cx + cw)) < halfHandle && Math.abs(y - cy) < halfHandle) return 'tr';
-    if (Math.abs(x - cx) < halfHandle && Math.abs(y - (cy + ch)) < halfHandle) return 'bl';
-    if (Math.abs(x - (cx + cw)) < halfHandle && Math.abs(y - (cy + ch)) < halfHandle) return 'br';
+    // Check corners first with larger hit area for mobile
+    if (Math.abs(x - cx) < halfHit && Math.abs(y - cy) < halfHit) return 'tl';
+    if (Math.abs(x - (cx + cw)) < halfHit && Math.abs(y - cy) < halfHit) return 'tr';
+    if (Math.abs(x - cx) < halfHit && Math.abs(y - (cy + ch)) < halfHit) return 'bl';
+    if (Math.abs(x - (cx + cw)) < halfHit && Math.abs(y - (cy + ch)) < halfHit) return 'br';
+    
+    // Check if inside crop area for move
     if (x >= cx && x <= cx + cw && y >= cy && y <= cy + ch) return 'move';
 
     return null;
@@ -244,7 +248,7 @@ export default function QuestionReviewScreen({
         className="flex-1 flex items-center justify-center p-4 overflow-hidden bg-black/90 min-h-0"
       >
         <div
-          className="relative"
+          className="relative touch-none"
           style={{ width: displaySize.width, height: displaySize.height }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
@@ -287,7 +291,7 @@ export default function QuestionReviewScreen({
             {['tl', 'tr', 'bl', 'br'].map((corner) => (
               <div
                 key={corner}
-                className="absolute w-5 h-5 bg-primary rounded-full -translate-x-1/2 -translate-y-1/2"
+                className="absolute w-7 h-7 bg-primary rounded-full -translate-x-1/2 -translate-y-1/2 shadow-lg"
                 style={{
                   left: corner.includes('l') ? 0 : '100%',
                   top: corner.includes('t') ? 0 : '100%',
