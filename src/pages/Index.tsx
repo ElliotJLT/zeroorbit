@@ -98,11 +98,7 @@ export default function Index() {
     fetchTopics();
   }, []);
 
-  useEffect(() => {
-    if (!loading && user) {
-      navigate('/home');
-    }
-  }, [user, loading, navigate]);
+  // No redirect needed - Index is now the unified landing page for all users
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
