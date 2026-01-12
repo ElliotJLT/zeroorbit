@@ -218,11 +218,13 @@ export default function ArenaQuestion({
 
   const handleSkipWithReason = (reason: SkipReason) => {
     setShowSkipDialog(false);
+    setSubmittedAnswers([]);
     onSkip(reason);
   };
 
   const handleSkipWithoutReason = () => {
     setShowSkipDialog(false);
+    setSubmittedAnswers([]);
     onSkip();
   };
 
