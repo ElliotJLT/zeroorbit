@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, Swords, Settings, TrendingUp, FileText, Calculator, Lock, LogIn } from 'lucide-react';
+import { Menu, Swords, Settings, TrendingUp, FileText, Calculator, Lock, LogIn, LogOut } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -12,11 +12,17 @@ interface BurgerMenuProps {
 export default function BurgerMenu({ onSettings }: BurgerMenuProps) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
 
   const handleAction = (action: () => void) => {
     setOpen(false);
     action();
+  };
+
+  const handleLogout = async () => {
+    setOpen(false);
+    await signOut();
+    navigate('/');
   };
 
   const menuItems = [
@@ -85,6 +91,22 @@ export default function BurgerMenu({ onSettings }: BurgerMenuProps) {
                 </div>
               );
             })}
+
+            {/* Logout - only shown for logged-in users */}
+            {user && (
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-sidebar-accent transition-colors text-left"
+              >
+                <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                  <LogOut className="h-5 w-5 text-destructive" />
+                </div>
+                <div>
+                  <p className="font-medium text-destructive">Log out</p>
+                  <p className="text-sm text-muted-foreground">Sign out of your account</p>
+                </div>
+              </button>
+            )}
           </nav>
 
         </div>

@@ -205,25 +205,27 @@ export default function ProgressPage() {
           </CardContent>
         </Card>
 
-        {!hasData ? (
-          /* Empty State */
+        {/* Start Tracking Fluency - shown when no data, positioned under profile */}
+        {!hasData && (
           <Card className="border-dashed">
-            <CardContent className="p-8 text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto">
-                <Target className="h-8 w-8 text-muted-foreground" />
+            <CardContent className="p-6 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto">
+                <Target className="h-6 w-6 text-muted-foreground" />
               </div>
-              <div className="space-y-2">
-                <h3 className="font-semibold text-lg">Start tracking your fluency</h3>
+              <div className="space-y-1">
+                <h3 className="font-semibold">Start tracking your fluency</h3>
                 <p className="text-sm text-muted-foreground">
-                  Test yourself in the Practice Arena to see your stats, focus areas, and improvement over time.
+                  Test yourself in the Practice Arena to see your stats and improvement over time.
                 </p>
               </div>
-              <Button onClick={() => navigate('/practice-arena')} className="mt-2">
+              <Button onClick={() => navigate('/practice-arena')} size="sm" variant="outline">
                 Go to Practice Arena
               </Button>
             </CardContent>
           </Card>
-        ) : (
+        )}
+
+        {hasData && (
           <>
             {/* Fluency Stats Grid */}
             <div className="grid grid-cols-2 gap-3">
@@ -398,15 +400,6 @@ export default function ProgressPage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Practice CTA */}
-        <Button 
-          onClick={() => navigate('/practice-arena')} 
-          className="w-full"
-          size="lg"
-        >
-          Practice in the Arena
-        </Button>
       </main>
     </div>
   );
