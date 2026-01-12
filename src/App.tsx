@@ -3,50 +3,43 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
+import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
-import Home from "./pages/Home";
-import Chat from "./pages/Chat";
-import Progress from "./pages/Progress";
-import Profile from "./pages/Profile";
-import Admin from "./pages/Admin";
-import Settings from "./pages/Settings";
 import PracticeArena from "./pages/PracticeArena";
 import ArenaSession from "./pages/ArenaSession";
 import PastPapers from "./pages/PastPapers";
-import CalculatorPage from "./pages/CalculatorPage";
 import NotFound from "./pages/NotFound";
+import Admin from "./pages/Admin";
+import Settings from "./pages/Settings";
+import Progress from "./pages/Progress";
+import CalculatorPage from "./pages/CalculatorPage";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/chat/:sessionId" element={<Chat />} />
-            <Route path="/progress" element={<Progress />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/practice-arena" element={<PracticeArena />} />
-            <Route path="/arena-session" element={<ArenaSession />} />
-            <Route path="/past-papers" element={<PastPapers />} />
-            <Route path="/calculator" element={<CalculatorPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/practice-arena" element={<PracticeArena />} />
+          <Route path="/arena-session" element={<ArenaSession />} />
+          <Route path="/past-papers" element={<PastPapers />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/progress" element={<Progress />} />
+          <Route path="/calculator" element={<CalculatorPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
   </QueryClientProvider>
 );
 
