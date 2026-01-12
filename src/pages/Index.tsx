@@ -12,6 +12,7 @@ import PostSessionSurvey from '@/components/PostSessionSurvey';
 import HomeScreen from '@/components/HomeScreen';
 import { GuestChat } from '@/components/GuestChat';
 import { useGuestChat, type QuestionAnalysis } from '@/hooks/useGuestChat';
+import ImageEditor from '@/components/ImageEditor';
 import {
   Select,
   SelectContent,
@@ -66,6 +67,10 @@ export default function Index() {
   const [firstInputMethod, setFirstInputMethod] = useState<'text' | 'voice' | 'photo' | null>(null);
   const [notMathsError, setNotMathsError] = useState<string | null>(null);
   
+  // Image editing state
+  const [isEditing, setIsEditing] = useState(false);
+  const [rawImage, setRawImage] = useState<string | null>(null);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Use the refactored guest chat hook - voice OFF by default
@@ -106,13 +111,26 @@ export default function Index() {
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64 = reader.result as string;
-        setImagePreview(base64);
-        setStep('preview');
-        // Start analysis immediately for tags
-        runPreviewAnalysis(base64);
+        // Open editor instead of going straight to preview
+        setRawImage(base64);
+        setIsEditing(true);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleEditorComplete = (editedUrl: string) => {
+    setImagePreview(editedUrl);
+    setIsEditing(false);
+    setRawImage(null);
+    setStep('preview');
+    // Start analysis immediately for tags
+    runPreviewAnalysis(editedUrl);
+  };
+
+  const handleEditorCancel = () => {
+    setIsEditing(false);
+    setRawImage(null);
   };
 
   // Run analysis in background to show topic/difficulty tags on preview
@@ -314,6 +332,17 @@ export default function Index() {
   };
 
   // ==================== RENDER ====================
+
+  // Image editor fullscreen
+  if (isEditing && rawImage) {
+    return (
+      <ImageEditor
+        imageUrl={rawImage}
+        onComplete={handleEditorComplete}
+        onCancel={handleEditorCancel}
+      />
+    );
+  }
 
   // Home screen
   if (step === 'home') {
