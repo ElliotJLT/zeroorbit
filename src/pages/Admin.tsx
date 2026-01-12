@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, Image, Calendar, FlaskConical, Play, CheckCircle, XCircle, Loader2, Users, Shield, Trash2, TrendingUp, Sparkles, Clock, ThumbsUp, MessageCircle, Lightbulb, Mail, UserPlus } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Image, Calendar, FlaskConical, Play, CheckCircle, XCircle, Loader2, Users, Shield, Trash2, TrendingUp, Sparkles, Clock, ThumbsUp, MessageCircle, Lightbulb, Mail, UserPlus, Lock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,9 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
+
+const EVAL_PASSCODE = '1002';
+const ESTIMATED_TOKENS_PER_TEST = 2500; // Approximate tokens used per test
 
 interface SessionWithProfile {
   id: string;
@@ -114,6 +117,9 @@ export default function Admin() {
     loading: true,
   });
   const [generatingAIInsights, setGeneratingAIInsights] = useState(false);
+  const [evalPasscode, setEvalPasscode] = useState('');
+  const [evalUnlocked, setEvalUnlocked] = useState(false);
+  const [testCount, setTestCount] = useState(12); // Default number of tests
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -512,22 +518,22 @@ Provide concise, actionable insights in bullet points.`
       </div>
 
       <Tabs defaultValue="insights" className="w-full">
-        <TabsList className="mx-4 mt-4">
-          <TabsTrigger value="insights">
-            <TrendingUp className="h-4 w-4 mr-2" />
-            Insights
+        <TabsList className="mx-4 mt-4 w-[calc(100%-2rem)] grid grid-cols-4">
+          <TabsTrigger value="insights" className="text-xs sm:text-sm px-2 sm:px-3">
+            <TrendingUp className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Insights</span>
           </TabsTrigger>
-          <TabsTrigger value="evals">
-            <FlaskConical className="h-4 w-4 mr-2" />
-            LLM Evals
+          <TabsTrigger value="evals" className="text-xs sm:text-sm px-2 sm:px-3">
+            <FlaskConical className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Evals</span>
           </TabsTrigger>
-          <TabsTrigger value="sessions">
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Sessions
+          <TabsTrigger value="sessions" className="text-xs sm:text-sm px-2 sm:px-3">
+            <MessageSquare className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Sessions</span>
           </TabsTrigger>
-          <TabsTrigger value="team">
-            <Users className="h-4 w-4 mr-2" />
-            Team
+          <TabsTrigger value="team" className="text-xs sm:text-sm px-2 sm:px-3">
+            <Users className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Team</span>
           </TabsTrigger>
         </TabsList>
 
@@ -599,43 +605,39 @@ Provide concise, actionable insights in bullet points.`
                 {/* AI Insights */}
                 <Card>
                   <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          <Sparkles className="h-5 w-5 text-primary" />
-                          AI Insights
-                        </CardTitle>
-                        <CardDescription>AI-generated analysis of beta usage patterns</CardDescription>
-                      </div>
-                      <Button 
-                        onClick={generateAIInsights} 
-                        disabled={generatingAIInsights}
-                        size="sm"
-                      >
-                        {generatingAIInsights ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Analyzing...
-                          </>
-                        ) : (
-                          <>
-                            <Lightbulb className="h-4 w-4 mr-2" />
-                            Generate Insights
-                          </>
-                        )}
-                      </Button>
-                    </div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Sparkles className="h-5 w-5 text-primary" />
+                      AI Insights
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-4">
                     {insights.aiInsights ? (
                       <div className="prose prose-sm dark:prose-invert max-w-none">
                         <div className="whitespace-pre-wrap text-sm">{insights.aiInsights}</div>
                       </div>
                     ) : (
                       <p className="text-muted-foreground text-sm">
-                        Click "Generate Insights" to get AI-powered analysis of your beta usage data.
+                        Generate AI-powered analysis of your beta usage data.
                       </p>
                     )}
+                    <Button 
+                      onClick={generateAIInsights} 
+                      disabled={generatingAIInsights}
+                      size="sm"
+                      className="w-full sm:w-auto"
+                    >
+                      {generatingAIInsights ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <Lightbulb className="h-4 w-4 mr-2" />
+                          {insights.aiInsights ? 'Regenerate' : 'Generate Insights'}
+                        </>
+                      )}
+                    </Button>
                   </CardContent>
                 </Card>
 
@@ -868,30 +870,73 @@ Provide concise, actionable insights in bullet points.`
               "lg:w-1/3 border-r border-border overflow-y-auto",
               selectedRun && "hidden lg:block"
             )}>
-              <div className="p-4 border-b border-border">
-                <Button 
-                  onClick={() => runEval()} 
-                  disabled={runningEval}
-                  className="w-full"
-                >
-                  {runningEval ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Running...
-                    </>
-                  ) : (
-                    <>
-                      <Play className="h-4 w-4 mr-2" />
-                      Run Full Eval
-                    </>
-                  )}
-                </Button>
+              <div className="p-4 border-b border-border space-y-4">
+                {!evalUnlocked ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Lock className="h-4 w-4" />
+                      <span className="text-sm">Enter passcode to run evals</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        type="password"
+                        placeholder="Passcode"
+                        value={evalPasscode}
+                        onChange={(e) => setEvalPasscode(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && evalPasscode === EVAL_PASSCODE) {
+                            setEvalUnlocked(true);
+                            toast.success('Evals unlocked');
+                          }
+                        }}
+                        className="flex-1"
+                      />
+                      <Button 
+                        onClick={() => {
+                          if (evalPasscode === EVAL_PASSCODE) {
+                            setEvalUnlocked(true);
+                            toast.success('Evals unlocked');
+                          } else {
+                            toast.error('Incorrect passcode');
+                          }
+                        }}
+                        variant="secondary"
+                      >
+                        Unlock
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <Button 
+                      onClick={() => runEval()} 
+                      disabled={runningEval}
+                      className="w-full"
+                    >
+                      {runningEval ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Running...
+                        </>
+                      ) : (
+                        <>
+                          <Play className="h-4 w-4 mr-2" />
+                          Run Full Eval
+                        </>
+                      )}
+                    </Button>
+                    <div className="text-xs text-muted-foreground text-center space-y-1">
+                      <p>~{(testCount * ESTIMATED_TOKENS_PER_TEST).toLocaleString()} tokens estimated</p>
+                      <p className="text-[10px]">{testCount} tests × ~{ESTIMATED_TOKENS_PER_TEST.toLocaleString()} tokens each</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="p-4 space-y-2">
                 {evalRuns.length === 0 ? (
                   <p className="text-muted-foreground text-center py-8">
-                    No eval runs yet. Click "Run Full Eval" to start.
+                    {evalUnlocked ? 'No eval runs yet. Click "Run Full Eval" to start.' : 'Unlock to run evaluations.'}
                   </p>
                 ) : (
                   evalRuns.map((run) => (
