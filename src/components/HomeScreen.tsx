@@ -69,10 +69,10 @@ export default function HomeScreen({
       <main className="flex-1 overflow-auto">
         <div className="max-w-lg mx-auto p-4 space-y-6">
           {/* Hero Section */}
-          <div className="text-center py-8">
-            <div className="relative inline-block mb-6 grain-overlay">
-              <div className="absolute w-80 h-80 logo-glow top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-              <img src={orbitLogo} alt="Orbit" className="relative h-72 w-auto mx-auto" />
+          <div className="text-center py-6">
+            <div className="relative inline-block mb-5 grain-overlay">
+              <div className="absolute w-56 h-56 logo-glow top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+              <img src={orbitLogo} alt="Orbit" className="relative h-48 w-auto mx-auto" />
             </div>
             <h1 className="text-2xl font-semibold mb-2">A-Level Maths Tutor</h1>
             <p className="text-muted-foreground">AQA • Edexcel • OCR</p>
