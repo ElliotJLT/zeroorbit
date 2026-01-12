@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import HomeScreen from '@/components/HomeScreen';
 import ChatView from '@/components/ChatView';
 import QuestionReviewScreen from '@/components/QuestionReviewScreen';
+import VoiceSession from '@/components/VoiceSession';
 import { useChat } from '@/hooks/useChat';
 import {
   Select,
@@ -42,6 +43,7 @@ export default function Index() {
   const [rawImage, setRawImage] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<{ topic?: string; difficulty?: string; socraticOpening?: string } | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showVoiceSession, setShowVoiceSession] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -345,6 +347,27 @@ export default function Index() {
     );
   }
 
+  // Voice session overlay
+  if (showVoiceSession) {
+    // Build config for voice session
+    const voiceConfig = {
+      userContext: {
+        level: profile?.year_group ? `Year ${profile.year_group}` : yearGroup ? `Year ${yearGroup}` : undefined,
+        board: profile?.exam_board || examBoard || undefined,
+        targetGrade: profile?.target_grade || targetGrade || undefined,
+      },
+      questionContext: chat.messages.length > 0 ? chat.messages[0].content : undefined,
+    };
+
+    return (
+      <VoiceSession
+        config={voiceConfig}
+        onEnd={() => setShowVoiceSession(false)}
+        onSwitchToText={() => setShowVoiceSession(false)}
+      />
+    );
+  }
+
   // Chat screen
   return (
     <ChatView
@@ -361,6 +384,7 @@ export default function Index() {
       onNewProblem={handleNewProblem}
       onSettings={handleSettings}
       isAuthenticated={!!user}
+      onStartVoiceSession={() => setShowVoiceSession(true)}
     />
   );
 }
