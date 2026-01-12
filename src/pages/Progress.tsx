@@ -143,7 +143,7 @@ export default function ProgressPage() {
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
-            <img src={orbitLogo} alt="Orbit" className="h-6 w-6" />
+            <img src={orbitLogo} alt="Orbit" className="h-8 w-8" />
             <span className="font-semibold">My Progress</span>
           </div>
           <div className="w-9" />
