@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, X, Swords } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 import { useArenaSession } from '@/hooks/useArenaSession';
 import { useAuth } from '@/hooks/useAuth';
 import ArenaProgress from '@/components/ArenaProgress';
@@ -8,6 +8,7 @@ import ArenaQuestion from '@/components/ArenaQuestion';
 import ArenaSelfRating from '@/components/ArenaSelfRating';
 import ArenaSignupModal from '@/components/ArenaSignupModal';
 import { supabase } from '@/integrations/supabase/client';
+import orbitIcon from '@/assets/orbit-icon.png';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -240,11 +241,24 @@ export default function ArenaSession() {
             })}
           </div>
           
-          {/* Center content - styled to match stars */}
+          {/* Center content - Orbit logo with glow */}
           <div className="absolute inset-0 flex items-center justify-center z-10">
             <div className="text-center space-y-6">
-              <div className="w-20 h-20 mx-auto rounded-2xl bg-background/80 backdrop-blur-sm flex items-center justify-center border border-primary/40 shadow-[0_0_30px_hsl(172_100%_49%/0.3)]">
-                <Swords className="h-10 w-10 text-primary animate-pulse" />
+              <div className="relative mx-auto">
+                {/* Glow effect behind logo */}
+                <div 
+                  className="absolute inset-0 w-32 h-32 rounded-full"
+                  style={{
+                    background: 'radial-gradient(circle, hsl(172 100% 49% / 0.4) 0%, hsl(172 100% 49% / 0.15) 40%, transparent 70%)',
+                    filter: 'blur(20px)',
+                    transform: 'scale(1.5)',
+                  }}
+                />
+                <img 
+                  src={orbitIcon} 
+                  alt="Orbit" 
+                  className="relative w-32 h-32 object-contain animate-pulse"
+                />
               </div>
               <p className="text-lg font-medium tracking-wide">
                 <span className="text-primary">{loadingMessage.split(' ')[0]}</span>
