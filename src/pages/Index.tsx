@@ -373,14 +373,11 @@ export default function Index() {
     <ChatView
       messages={chat.messages}
       sending={chat.sending}
-      pendingImage={chat.pendingImage}
       guestExchangeCount={chat.guestExchangeCount}
       guestLimit={chat.guestLimit}
       isAtLimit={chat.isAtLimit}
       onSendMessage={chat.sendMessage}
-      onImageUpload={chat.handleImageUpload}
-      onConfirmImage={chat.confirmImageUpload}
-      onCancelImage={chat.cancelPendingImage}
+      onSendImageMessage={chat.sendImageMessage}
       onNewProblem={handleNewProblem}
       onSettings={handleSettings}
       isAuthenticated={!!user}
