@@ -1,6 +1,5 @@
-import { X, BookOpen, GraduationCap } from 'lucide-react';
+import { BookOpen, GraduationCap } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import MathText from './MathText';
 
@@ -28,20 +27,10 @@ export default function SourcesPanel({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-[85vw] sm:w-[400px] p-0">
         <SheetHeader className="px-4 py-3 border-b border-border">
-          <div className="flex items-center justify-between">
-            <SheetTitle className="flex items-center gap-2 text-base">
-              <BookOpen className="h-4 w-4 text-primary" />
-              Sources
-            </SheetTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <SheetTitle className="flex items-center gap-2 text-base">
+            <BookOpen className="h-4 w-4 text-primary" />
+            Sources
+          </SheetTitle>
         </SheetHeader>
         
         <ScrollArea className="h-[calc(100vh-60px)]">

@@ -134,7 +134,9 @@ export default function HomeScreen({
                         </div>
                         <div className="flex-1 text-left">
                           <p className="font-medium">{sectionLabels[section as keyof typeof sectionLabels]}</p>
-                          <p className="text-sm text-muted-foreground">{topicsInSection.length} topics</p>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            {topicsInSection.map(t => t.name).join(' · ')}
+                          </p>
                         </div>
                       </div>
                     </div>
