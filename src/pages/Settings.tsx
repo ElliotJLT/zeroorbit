@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 const examBoardOptions = [
   { value: 'AQA', label: 'AQA' },
@@ -16,9 +17,22 @@ const examBoardOptions = [
 export default function Settings() {
   const navigate = useNavigate();
   const { profile, refreshProfile } = useAuth();
+  const { toast } = useToast();
   const [examBoard, setExamBoard] = useState(profile?.exam_board || '');
   const [reminders, setReminders] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
+
+  const handleDarkModeToggle = (enabled: boolean) => {
+    if (!enabled) {
+      // Trying to switch to light mode
+      toast({
+        title: "Oops! Bulb needs replacing 💡",
+        description: "Dark mode is the only way for now.",
+      });
+      return; // Don't change the state
+    }
+    setDarkMode(enabled);
+  };
 
   useEffect(() => {
     if (profile?.exam_board) {
@@ -109,7 +123,7 @@ export default function Settings() {
           </div>
           <Switch
             checked={darkMode}
-            onCheckedChange={setDarkMode}
+            onCheckedChange={handleDarkModeToggle}
           />
         </div>
       </div>

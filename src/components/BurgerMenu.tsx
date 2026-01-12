@@ -110,7 +110,7 @@ export default function BurgerMenu({ onSettings }: BurgerMenuProps) {
                     onClick={() => handleAction(() => navigate('/admin'))}
                     className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <Shield className="h-4 w-4" />
+                    <Shield className="h-4 w-4 text-primary" />
                     <span>Admin</span>
                   </button>
                 )}
