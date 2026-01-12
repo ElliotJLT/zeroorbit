@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronLeft, ChevronRight, X, Camera, Move } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
 
 // Set up PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -30,7 +29,6 @@ export default function PdfScanner({ paper, onClose }: PdfScannerProps) {
   const [scannerPos, setScannerPos] = useState<ScannerPosition>({ y: 100, height: 200 });
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
-  const [isCreatingSession, setIsCreatingSession] = useState(false);
   
   const dragStartY = useRef(0);
   const initialPos = useRef({ y: 0, height: 0 });
@@ -95,34 +93,17 @@ export default function PdfScanner({ paper, onClose }: PdfScannerProps) {
     };
   }, [isDragging, isResizing, handleDrag, handleDragEnd]);
 
-  const handleCaptureAndChat = async () => {
-    setIsCreatingSession(true);
-    
+  const handleCaptureAndChat = () => {
     const questionContext = `I'm working on ${paper.name} (${paper.date}), page ${currentPage}. I've selected a specific question from this paper.`;
     
-    try {
-      // Create a new chat session
-      const { data: session, error } = await supabase
-        .from('sessions')
-        .insert({
-          user_id: 'guest',
-          question_text: questionContext,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Navigate to the chat with the new session
-      navigate(`/chat/${session.id}`);
-    } catch (err) {
-      console.error('Failed to create session:', err);
-      // Fallback: store context and navigate to index for guest flow
-      sessionStorage.setItem('initialContext', questionContext);
-      navigate('/');
-    } finally {
-      setIsCreatingSession(false);
-    }
+    // Navigate to index with state to start chat directly in coach mode
+    navigate('/', { 
+      state: { 
+        fromPastPaper: true,
+        questionContext,
+        mode: 'coach' as const
+      } 
+    });
   };
 
   return (
@@ -248,11 +229,10 @@ export default function PdfScanner({ paper, onClose }: PdfScannerProps) {
         {/* Snap Question CTA */}
         <Button
           onClick={handleCaptureAndChat}
-          disabled={isCreatingSession}
           className="w-full h-11 gap-2"
         >
           <Camera className="h-5 w-5" />
-          <span>{isCreatingSession ? 'Starting chat...' : 'Snap this question'}</span>
+          <span>Snap this question</span>
         </Button>
       </div>
     </div>
