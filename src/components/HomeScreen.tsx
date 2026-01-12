@@ -15,6 +15,7 @@ interface Topic {
 interface HomeScreenProps {
   topics: Topic[];
   loadingTopics: boolean;
+  isAuthenticated?: boolean;
   onSnapQuestion: () => void;
   onSelectTopic: (topic: Topic) => void;
   onTestMe: () => void;
@@ -36,6 +37,7 @@ const sectionLabels = {
 export default function HomeScreen({
   topics,
   loadingTopics,
+  isAuthenticated = false,
   onSnapQuestion,
   onSelectTopic,
   onTestMe,
@@ -57,12 +59,15 @@ export default function HomeScreen({
       {/* Header - 44pt touch targets per Apple HIG */}
       <header className="p-4 flex items-center justify-between border-b border-border">
         <BurgerMenu />
-        <button 
-          onClick={onSignIn} 
-          className="h-11 px-4 rounded-full text-sm text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition-all"
-        >
-          Sign in
-        </button>
+        {!isAuthenticated && (
+          <button 
+            onClick={onSignIn} 
+            className="h-11 px-4 rounded-full text-sm text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition-all"
+          >
+            Sign in
+          </button>
+        )}
+        {isAuthenticated && <div className="w-11" />}
       </header>
 
       {/* Main Content */}

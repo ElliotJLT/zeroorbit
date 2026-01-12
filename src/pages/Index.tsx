@@ -162,20 +162,18 @@ export default function Index() {
       }
     }
     
-    // Set analysis and initialize chat with opening if available
+    // Set analysis if available
     if (analysisResult) {
       chat.setAnalysis(analysisResult);
-      if (analysisResult.socraticOpening && mode === 'coach') {
-        chat.initializeWithOpening(analysisResult.socraticOpening);
-      }
     }
     
-    // Start chat with image
-    chat.handleImageUpload(finalImageUrl, mode);
-    
+    // Move to chat screen first
     setStep('chat');
     setRawImage(null);
     setAnalysisResult(null);
+    
+    // Send the image message directly (no pending state)
+    chat.sendImageMessage(finalImageUrl, mode);
   };
 
   // Handle review cancel
@@ -228,6 +226,7 @@ export default function Index() {
         <HomeScreen
           topics={[]}
           loadingTopics={false}
+          isAuthenticated={!!user}
           onSnapQuestion={() => fileInputRef.current?.click()}
           onSelectTopic={() => {}}
           onTestMe={() => navigate('/practice-arena')}
