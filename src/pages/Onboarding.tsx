@@ -113,7 +113,7 @@ export default function Onboarding() {
       if (sessionStorage.getItem('pendingQuestion')) {
         navigate('/ask');
       } else {
-        navigate('/home');
+        navigate('/');
       }
     }
   };
