@@ -138,6 +138,7 @@ export default function Admin() {
   const [showEvalModal, setShowEvalModal] = useState(false);
   const [selectedTestCount, setSelectedTestCount] = useState(TOTAL_AVAILABLE_TESTS);
   const [selectedJudgeModel, setSelectedJudgeModel] = useState(JUDGE_MODELS[0].id);
+  const [activeTab, setActiveTab] = useState('insights');
   
   const selectedModelInfo = JUDGE_MODELS.find(m => m.id === selectedJudgeModel) || JUDGE_MODELS[0];
 
@@ -551,7 +552,6 @@ Provide concise, actionable insights in bullet points.`
     );
   }
 
-  const [activeTab, setActiveTab] = useState('insights');
 
   return (
     <div className="min-h-screen pb-20 lg:pb-0">
