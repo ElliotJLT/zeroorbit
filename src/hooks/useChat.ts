@@ -406,6 +406,7 @@ export function useChat({ user, userContext, onFirstInput }: UseChatOptions) {
     guestLimit: GUEST_LIMIT,
     isAtLimit,
     questionAnalysis,
+    sessionId: sessionIdRef.current,
     sendMessage,
     handleImageUpload,
     sendImageMessage,

@@ -385,6 +385,7 @@ export default function Index() {
       onSettings={handleSettings}
       isAuthenticated={!!user}
       onStartVoiceSession={() => setShowVoiceSession(true)}
+      sessionId={chat.sessionId}
     />
   );
 }

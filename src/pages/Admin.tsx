@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, Image, Calendar, FlaskConical, Play, CheckCircle, XCircle, Loader2, Users, Shield, Trash2, TrendingUp, Sparkles, Clock, ThumbsUp, MessageCircle, Lightbulb, Mail, UserPlus, Lock, Copy, AlertTriangle, Settings, DollarSign } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Image, Calendar, FlaskConical, Play, CheckCircle, XCircle, Loader2, Users, Shield, Trash2, TrendingUp, Sparkles, Clock, ThumbsUp, ThumbsDown, MessageCircle, Lightbulb, Mail, UserPlus, Lock, Copy, AlertTriangle, Settings, DollarSign, Volume2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -99,6 +99,7 @@ interface BetaInsights {
   topTopics: { name: string; count: number }[];
   recentFeedback: { name: string; feedback: string; wouldUseAgain: string }[];
   inputMethodBreakdown: { method: string; count: number }[];
+  messageFeedback: { thumbsUp: number; thumbsDown: number; copies: number; listens: number };
   aiInsights: string | null;
   loading: boolean;
 }
@@ -127,6 +128,7 @@ export default function Admin() {
     topTopics: [],
     recentFeedback: [],
     inputMethodBreakdown: [],
+    messageFeedback: { thumbsUp: 0, thumbsDown: 0, copies: 0, listens: 0 },
     aiInsights: null,
     loading: true,
   });
@@ -214,6 +216,19 @@ export default function Admin() {
           wouldUseAgain: s.would_use_again || 'unknown',
         })) || [];
 
+      // Get message feedback stats
+      const { data: feedbackData } = await supabase
+        .from('message_feedback')
+        .select('feedback_type');
+      
+      const feedbackCounts = { thumbsUp: 0, thumbsDown: 0, copies: 0, listens: 0 };
+      feedbackData?.forEach((f: { feedback_type: string }) => {
+        if (f.feedback_type === 'thumbs_up') feedbackCounts.thumbsUp++;
+        else if (f.feedback_type === 'thumbs_down') feedbackCounts.thumbsDown++;
+        else if (f.feedback_type === 'copy') feedbackCounts.copies++;
+        else if (f.feedback_type === 'listen') feedbackCounts.listens++;
+      });
+
       setInsights({
         totalSessions: totalSessions || 0,
         uniqueUsers: uniqueUserIds.size,
@@ -222,6 +237,7 @@ export default function Admin() {
         topTopics,
         recentFeedback,
         inputMethodBreakdown,
+        messageFeedback: feedbackCounts,
         aiInsights: null,
         loading: false,
       });
@@ -744,6 +760,56 @@ Provide concise, actionable insights in bullet points.`
                     </CardContent>
                   </Card>
                 </div>
+
+                {/* Message Feedback Stats */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Response Feedback</CardTitle>
+                    <CardDescription>How students interact with Orbit's responses</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="text-center p-3 rounded-lg bg-green-500/10">
+                        <div className="flex items-center justify-center gap-2 mb-1">
+                          <ThumbsUp className="h-4 w-4 text-green-500" />
+                          <span className="text-2xl font-bold text-green-600">{insights.messageFeedback.thumbsUp}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Helpful</p>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-red-500/10">
+                        <div className="flex items-center justify-center gap-2 mb-1">
+                          <ThumbsDown className="h-4 w-4 text-red-500" />
+                          <span className="text-2xl font-bold text-red-600">{insights.messageFeedback.thumbsDown}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Not Helpful</p>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-blue-500/10">
+                        <div className="flex items-center justify-center gap-2 mb-1">
+                          <Copy className="h-4 w-4 text-blue-500" />
+                          <span className="text-2xl font-bold text-blue-600">{insights.messageFeedback.copies}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Copied</p>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-purple-500/10">
+                        <div className="flex items-center justify-center gap-2 mb-1">
+                          <Volume2 className="h-4 w-4 text-purple-500" />
+                          <span className="text-2xl font-bold text-purple-600">{insights.messageFeedback.listens}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Listened</p>
+                      </div>
+                    </div>
+                    {(insights.messageFeedback.thumbsUp + insights.messageFeedback.thumbsDown) > 0 && (
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Satisfaction Rate</span>
+                          <span className="font-medium text-green-600">
+                            {Math.round((insights.messageFeedback.thumbsUp / (insights.messageFeedback.thumbsUp + insights.messageFeedback.thumbsDown)) * 100)}%
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
                 {/* Recent Feedback */}
                 {insights.recentFeedback.length > 0 && (
