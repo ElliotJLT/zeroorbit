@@ -365,10 +365,12 @@ export default function ChatView({
               {message.sources && message.sources.length > 0 && !message.isTyping && (
                 <button
                   onClick={() => handleOpenSources(message)}
-                  className="mt-2 inline-flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors"
+                  className="mt-3 block text-[10px] text-primary hover:text-primary/80 transition-colors"
                 >
-                  <BookOpen className="h-3 w-3" />
-                  {message.sources.length} source{message.sources.length > 1 ? 's' : ''}
+                  <span className="inline-flex items-center gap-1.5">
+                    <BookOpen className="h-3 w-3" />
+                    {message.sources.length} source{message.sources.length > 1 ? 's' : ''}
+                  </span>
                 </button>
               )}
 
