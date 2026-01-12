@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, Swords, Settings, TrendingUp, FileText, Calculator } from 'lucide-react';
+import { Menu, Swords, Settings, TrendingUp, FileText, Calculator, Lock, LogIn } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useAuth } from '@/hooks/useAuth';
 
 interface BurgerMenuProps {
   onBrowseSyllabus?: () => void;
@@ -11,11 +12,20 @@ interface BurgerMenuProps {
 export default function BurgerMenu({ onSettings }: BurgerMenuProps) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleAction = (action: () => void) => {
     setOpen(false);
     action();
   };
+
+  const menuItems = [
+    { icon: Calculator, label: 'Calculator', description: 'Scientific calculator', path: '/calculator', dividerAfter: true },
+    { icon: Swords, label: 'Practice Arena', description: 'Test your skills on any topic', path: '/practice-arena' },
+    { icon: FileText, label: 'Past Papers', description: 'Official exam board papers', path: '/past-papers' },
+    { icon: TrendingUp, label: 'My Progress', description: 'Stats, streak & tokens', path: '/progress', dividerAfter: true },
+    { icon: Settings, label: 'Settings', description: 'Exam board & preferences', path: '/settings', isSettings: true },
+  ];
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -31,83 +41,50 @@ export default function BurgerMenu({ onSettings }: BurgerMenuProps) {
             <span className="font-semibold text-lg">Menu</span>
           </div>
 
+          {/* Sign in CTA for non-logged-in users */}
+          {!user && (
+            <div className="p-4 border-b border-border">
+              <button
+                onClick={() => handleAction(() => navigate('/auth'))}
+                className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+              >
+                <LogIn className="h-4 w-4" />
+                Sign in to unlock
+              </button>
+            </div>
+          )}
+
           {/* Menu Items */}
           <nav className="flex-1 p-2">
-            {/* Calculator - Quick access tool */}
-            <button
-              onClick={() => handleAction(() => navigate('/calculator'))}
-              className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-sidebar-accent transition-colors text-left"
-            >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Calculator className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-medium">Calculator</p>
-                <p className="text-sm text-muted-foreground">Scientific calculator</p>
-              </div>
-            </button>
-
-            {/* Divider */}
-            <div className="my-2 mx-4 border-t border-border" />
-
-            {/* Practice Arena */}
-            <button
-              onClick={() => handleAction(() => navigate('/practice-arena'))}
-              className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-sidebar-accent transition-colors text-left"
-            >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Swords className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-medium">Practice Arena</p>
-                <p className="text-sm text-muted-foreground">Test your skills on any topic</p>
-              </div>
-            </button>
-
-            {/* Past Papers */}
-            <button
-              onClick={() => handleAction(() => navigate('/past-papers'))}
-              className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-sidebar-accent transition-colors text-left"
-            >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <FileText className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-medium">Past Papers</p>
-                <p className="text-sm text-muted-foreground">Official exam board papers</p>
-              </div>
-            </button>
-
-            {/* My Progress - Stats, streak & tokens */}
-            <button
-              onClick={() => handleAction(() => navigate('/progress'))}
-              className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-sidebar-accent transition-colors text-left"
-            >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-medium">My Progress</p>
-                <p className="text-sm text-muted-foreground">Stats, streak & tokens</p>
-              </div>
-            </button>
-
-            {/* Divider */}
-            <div className="my-2 mx-4 border-t border-border" />
-
-            {/* Settings */}
-            <button
-              onClick={() => handleAction(() => navigate('/settings'))}
-              className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-sidebar-accent transition-colors text-left"
-            >
-              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                <Settings className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="font-medium">Settings</p>
-                <p className="text-sm text-muted-foreground">Exam board & preferences</p>
-              </div>
-            </button>
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isLocked = !user;
+              
+              return (
+                <div key={item.path}>
+                  <button
+                    onClick={() => isLocked ? handleAction(() => navigate('/auth')) : handleAction(() => navigate(item.path))}
+                    className={`w-full flex items-center gap-3 p-4 rounded-xl transition-colors text-left ${
+                      isLocked ? 'opacity-60' : 'hover:bg-sidebar-accent'
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      item.isSettings ? 'bg-muted' : 'bg-primary/10'
+                    }`}>
+                      <Icon className={`h-5 w-5 ${item.isSettings ? 'text-muted-foreground' : 'text-primary'}`} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">{item.label}</p>
+                      <p className="text-sm text-muted-foreground">{item.description}</p>
+                    </div>
+                    {isLocked && (
+                      <Lock className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </button>
+                  {item.dividerAfter && <div className="my-2 mx-4 border-t border-border" />}
+                </div>
+              );
+            })}
           </nav>
 
         </div>
