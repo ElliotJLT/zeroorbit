@@ -32,7 +32,7 @@ export default function Auth() {
       if (hasPendingQuestion) {
         navigate('/ask');
       } else {
-        navigate('/home');
+        navigate('/');
       }
     }
   }, [user, navigate, hasPendingQuestion]);

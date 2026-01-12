@@ -140,7 +140,7 @@ export default function Chat() {
         title: 'Session not found',
         description: 'This session may have been deleted.',
       });
-      navigate('/home');
+      navigate('/');
       return;
     }
 
@@ -533,13 +533,13 @@ export default function Chat() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border/50 p-3">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/home')} className="rounded-full">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="rounded-full">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           {/* New Problem button */}
           <Button
             variant="ghost"
-            onClick={() => navigate('/home')}
+            onClick={() => navigate('/')}
             className="h-10 rounded-full text-muted-foreground hover:text-foreground gap-1.5 px-4"
           >
             <Camera className="h-4 w-4" />
