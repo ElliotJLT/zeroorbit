@@ -9,6 +9,7 @@ import ArenaSelfRating from '@/components/ArenaSelfRating';
 import ArenaSignupModal from '@/components/ArenaSignupModal';
 import { supabase } from '@/integrations/supabase/client';
 import orbitIcon from '@/assets/orbit-icon.png';
+import { cn } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -316,13 +317,26 @@ export default function ArenaSession() {
         
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="text-center space-y-6 max-w-sm">
-            <div className="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-4xl">🎉</span>
+            {/* Orbit logo with glow */}
+            <div className="relative mx-auto w-24 h-24">
+              <div 
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background: 'radial-gradient(circle, hsl(172 100% 49% / 0.4) 0%, hsl(172 100% 49% / 0.15) 40%, transparent 70%)',
+                  filter: 'blur(16px)',
+                  transform: 'scale(1.4)',
+                }}
+              />
+              <img 
+                src={orbitIcon} 
+                alt="Orbit" 
+                className="relative w-24 h-24 object-contain"
+              />
             </div>
             <div>
-              <h2 className="text-2xl font-bold mb-2">Well done!</h2>
+              <h2 className="text-2xl font-bold mb-2">Here's how you did</h2>
               <p className="text-muted-foreground">
-                You completed {questionCount} questions
+                {questionCount} questions completed
               </p>
             </div>
             <div className="flex justify-center gap-4 text-sm">
@@ -341,11 +355,31 @@ export default function ArenaSession() {
                 <div className="text-muted-foreground">Missed</div>
               </div>
             </div>
+            
+            {/* Account signup prompt for guests */}
+            {!user && (
+              <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 text-left">
+                <p className="text-sm font-medium text-primary mb-1">Track your progress</p>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Create an account to save your results and get questions tailored to your weak spots.
+                </p>
+                <button
+                  onClick={() => navigate('/auth')}
+                  className="w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium text-sm"
+                >
+                  Create free account
+                </button>
+              </div>
+            )}
+            
             <button
               onClick={() => navigate('/')}
-              className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium"
+              className={cn(
+                "px-6 py-3 rounded-xl font-medium",
+                user ? "bg-primary text-primary-foreground" : "text-muted-foreground underline"
+              )}
             >
-              Back to Home
+              {user ? 'Back to Home' : 'Continue as guest'}
             </button>
           </div>
         </div>
