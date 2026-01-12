@@ -8,9 +8,9 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import Home from "./pages/Home";
-import AskQuestion from "./pages/AskQuestion";
 import Chat from "./pages/Chat";
 import Progress from "./pages/Progress";
+import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import Settings from "./pages/Settings";
 import PracticeArena from "./pages/PracticeArena";
@@ -33,9 +33,9 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/home" element={<Home />} />
-            <Route path="/ask" element={<AskQuestion />} />
             <Route path="/chat/:sessionId" element={<Chat />} />
             <Route path="/progress" element={<Progress />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/practice-arena" element={<PracticeArena />} />
