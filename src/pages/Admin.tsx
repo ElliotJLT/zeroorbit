@@ -535,8 +535,10 @@ Provide concise, actionable insights in bullet points.`
     );
   }
 
+  const [activeTab, setActiveTab] = useState('insights');
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-20 lg:pb-0">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
@@ -546,25 +548,52 @@ Provide concise, actionable insights in bullet points.`
         </div>
       </div>
 
-      <Tabs defaultValue="insights" className="w-full">
-        <TabsList className="mx-4 mt-4 w-[calc(100%-2rem)] grid grid-cols-4">
-          <TabsTrigger value="insights" className="text-xs sm:text-sm px-2 sm:px-3">
-            <TrendingUp className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Insights</span>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {/* Desktop tabs - hidden on mobile */}
+        <TabsList className="hidden lg:grid mx-4 mt-4 w-[calc(100%-2rem)] grid-cols-4">
+          <TabsTrigger value="insights">
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Insights
           </TabsTrigger>
-          <TabsTrigger value="evals" className="text-xs sm:text-sm px-2 sm:px-3">
-            <FlaskConical className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Evals</span>
+          <TabsTrigger value="evals">
+            <FlaskConical className="h-4 w-4 mr-2" />
+            Evals
           </TabsTrigger>
-          <TabsTrigger value="sessions" className="text-xs sm:text-sm px-2 sm:px-3">
-            <MessageSquare className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Sessions</span>
+          <TabsTrigger value="sessions">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Sessions
           </TabsTrigger>
-          <TabsTrigger value="team" className="text-xs sm:text-sm px-2 sm:px-3">
-            <Users className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Team</span>
+          <TabsTrigger value="team">
+            <Users className="h-4 w-4 mr-2" />
+            Team
           </TabsTrigger>
         </TabsList>
+
+        {/* Mobile bottom navigation */}
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border pb-[env(safe-area-inset-bottom)]">
+          <div className="grid grid-cols-4 h-14">
+            {[
+              { id: 'insights', icon: TrendingUp, label: 'Insights' },
+              { id: 'evals', icon: FlaskConical, label: 'Evals' },
+              { id: 'sessions', icon: MessageSquare, label: 'Sessions' },
+              { id: 'team', icon: Users, label: 'Team' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-0.5 transition-colors",
+                  activeTab === tab.id 
+                    ? "text-primary" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <tab.icon className="h-5 w-5" />
+                <span className="text-[10px] font-medium">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </nav>
 
         {/* Insights Tab */}
         <TabsContent value="insights" className="m-0 p-4">

@@ -91,42 +91,32 @@ export default function BurgerMenu({ onSettings }: BurgerMenuProps) {
                 </div>
               );
             })}
-
-            {/* Logout - only shown for logged-in users */}
-            {user && (
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-sidebar-accent transition-colors text-left"
-              >
-                <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
-                  <LogOut className="h-5 w-5 text-destructive" />
-                </div>
-                <div>
-                  <p className="font-medium text-destructive">Log out</p>
-                  <p className="text-sm text-muted-foreground">Sign out of your account</p>
-                </div>
-              </button>
-            )}
-
-            {/* Admin Mode - only shown for admins */}
-            {isAdmin && (
-              <>
-                <div className="my-2 mx-4 border-t border-border" />
-                <button
-                  onClick={() => handleAction(() => navigate('/admin'))}
-                  className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-sidebar-accent transition-colors text-left"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                    <Shield className="h-5 w-5 text-amber-500" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Admin Mode</p>
-                    <p className="text-sm text-muted-foreground">Insights & LLM testing</p>
-                  </div>
-                </button>
-              </>
-            )}
           </nav>
+
+          {/* Footer - subtle secondary actions */}
+          {user && (
+            <div className="border-t border-border p-3">
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Log out</span>
+                </button>
+                
+                {isAdmin && (
+                  <button
+                    onClick={() => handleAction(() => navigate('/admin'))}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Shield className="h-4 w-4" />
+                    <span>Admin</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
         </div>
       </SheetContent>
