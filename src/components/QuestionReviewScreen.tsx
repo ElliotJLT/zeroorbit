@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { X, RotateCcw, RotateCw, Check, ArrowRight, Loader2 } from 'lucide-react';
+import { X, RotateCw, Check, ArrowRight, Loader2 } from 'lucide-react';
 
 interface QuestionReviewScreenProps {
   imageUrl: string;
@@ -296,38 +296,18 @@ export default function QuestionReviewScreen({
             ))}
           </div>
 
-          {/* Analysis tags */}
-          {analysisResult && (
-            <div className="absolute bottom-2 left-2 flex gap-2 pointer-events-none">
-              {analysisResult.topic && (
-                <span className="px-2 py-1 text-xs rounded-full bg-primary/20 text-primary backdrop-blur-sm">
-                  {analysisResult.topic}
-                </span>
-              )}
-              {analysisResult.difficulty && (
-                <span className="px-2 py-1 text-xs rounded-full bg-muted/80 text-muted-foreground backdrop-blur-sm">
-                  {analysisResult.difficulty}
-                </span>
-              )}
-            </div>
-          )}
+          {/* Rotate button inside image area */}
+          <button
+            onClick={() => handleRotate('cw')}
+            className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/80 transition-colors"
+          >
+            <RotateCw className="h-5 w-5" />
+          </button>
         </div>
       </div>
 
       {/* Controls */}
       <div className="border-t border-border bg-background p-4 space-y-4 shrink-0">
-        {/* Rotate buttons */}
-        <div className="flex items-center justify-center gap-4">
-          <Button variant="outline" size="sm" onClick={() => handleRotate('ccw')} className="gap-2">
-            <RotateCcw className="h-4 w-4" />
-            Rotate
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => handleRotate('cw')} className="gap-2">
-            <RotateCw className="h-4 w-4" />
-            Rotate
-          </Button>
-        </div>
-
         {/* Mode selection */}
         <div className="grid grid-cols-2 gap-3">
           <button

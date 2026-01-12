@@ -260,6 +260,63 @@ export function useChat({ user, userContext, onFirstInput }: UseChatOptions) {
     setPendingImage({ url: imageUrl, mode });
   }, []);
 
+  // Send image directly without pending state (for use after review screen)
+  const sendImageMessage = useCallback(async (imageUrl: string, mode: 'coach' | 'check', additionalContext?: string) => {
+    if (sending || isAtLimit) return;
+
+    trackFirstInput('photo');
+
+    const studentMessage: Message = {
+      id: `student-${Date.now()}`,
+      content: additionalContext || (mode === 'check' ? 'Check my working' : 'Help me with this question'),
+      sender: 'student',
+      imageUrl: imageUrl,
+    };
+
+    setMessages(prev => [...prev, studentMessage]);
+    setSending(true);
+
+    // Increment guest exchange count
+    if (!user) {
+      const newCount = incrementGuestExchanges();
+      setGuestExchangeCount(newCount);
+    }
+
+    try {
+      const response = await streamChat(
+        additionalContext || '',
+        imageUrl,
+        mode
+      );
+
+      if (response.analysis) {
+        setQuestionAnalysis(response.analysis);
+      }
+
+      await displayMessagesSequentially([{
+        content: response.reply,
+        showMarksAnalysis: response.showMarksAnalysis,
+        errorType: response.errorType,
+        errorLocation: response.errorLocation,
+        showSeeAnotherApproach: response.showSeeAnotherApproach,
+        showStillStuck: response.showStillStuck,
+        isCorrect: response.isCorrect,
+      }]);
+    } catch (error) {
+      console.error('Image chat error:', error);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `error-${Date.now()}`,
+          content: "Sorry, I couldn't analyze that image. Please try again.",
+          sender: 'tutor',
+        },
+      ]);
+    } finally {
+      setSending(false);
+    }
+  }, [sending, isAtLimit, user, trackFirstInput, streamChat, displayMessagesSequentially]);
+
   const confirmImageUpload = useCallback(async (additionalContext?: string) => {
     if (!pendingImage || sending || isAtLimit) return;
 
@@ -351,6 +408,7 @@ export function useChat({ user, userContext, onFirstInput }: UseChatOptions) {
     questionAnalysis,
     sendMessage,
     handleImageUpload,
+    sendImageMessage,
     confirmImageUpload,
     cancelPendingImage,
     initializeWithOpening,
