@@ -393,6 +393,33 @@ const tutorResponseTool = {
         offer_voice_response: {
           type: "boolean",
           description: "Set to true ONLY when the student just sent a voice message (indicated by input_method='voice' in the last message). This prompts them to enable audio responses."
+        },
+        sources: {
+          type: "array",
+          description: "2-3 key mathematical concepts worth exploring deeper. Reference them as [1], [2] in reply_messages. Include sources when explaining non-trivial concepts.",
+          items: {
+            type: "object",
+            properties: {
+              id: {
+                type: "number",
+                description: "Source number (1, 2, 3) - must match the [1], [2] markers in reply_messages"
+              },
+              title: {
+                type: "string",
+                description: "Short concept name like 'Chain Rule' or 'Gradient Interpretation'"
+              },
+              explanation: {
+                type: "string",
+                description: "2-3 sentence deeper explanation with LaTeX. Explain WHY this concept works, not just WHAT it is."
+              },
+              exam_relevance: {
+                type: "string",
+                description: "How this appears in exams, e.g. 'Often tested with context interpretation questions'"
+              }
+            },
+            required: ["id", "title", "explanation"]
+          },
+          maxItems: 3
         }
       },
       required: ["method_cue", "reply_messages", "topic", "difficulty", "mode", "next_action", "student_behavior"],

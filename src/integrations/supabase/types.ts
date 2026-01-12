@@ -217,6 +217,7 @@ export type Database = {
           input_method: string | null
           sender: Database["public"]["Enums"]["message_sender"]
           session_id: string
+          sources: Json | null
           student_behavior: string | null
         }
         Insert: {
@@ -227,6 +228,7 @@ export type Database = {
           input_method?: string | null
           sender: Database["public"]["Enums"]["message_sender"]
           session_id: string
+          sources?: Json | null
           student_behavior?: string | null
         }
         Update: {
@@ -237,6 +239,7 @@ export type Database = {
           input_method?: string | null
           sender?: Database["public"]["Enums"]["message_sender"]
           session_id?: string
+          sources?: Json | null
           student_behavior?: string | null
         }
         Relationships: [

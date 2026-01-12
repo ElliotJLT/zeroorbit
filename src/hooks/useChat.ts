@@ -5,6 +5,13 @@ import { User } from '@supabase/supabase-js';
 const GUEST_LIMIT = 10;
 const EXCHANGE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 
+export interface Source {
+  id: number;
+  title: string;
+  explanation: string;
+  exam_relevance?: string;
+}
+
 export interface Message {
   id: string;
   content: string;
@@ -17,6 +24,7 @@ export interface Message {
   showSeeAnotherApproach?: boolean;
   showStillStuck?: boolean;
   isCorrect?: boolean;
+  sources?: Source[];
 }
 
 export interface UserContext {
@@ -126,6 +134,7 @@ export function useChat({ user, userContext, onFirstInput }: UseChatOptions) {
       showSeeAnotherApproach?: boolean;
       showStillStuck?: boolean;
       isCorrect?: boolean;
+      sources?: Source[];
     }>
   ) => {
     for (let i = 0; i < tutorMessages.length; i++) {
@@ -193,6 +202,9 @@ export function useChat({ user, userContext, onFirstInput }: UseChatOptions) {
     // The edge function returns structured response with reply_messages array
     const replyMessages = data.reply_messages || [data.reply || "I'm having trouble responding."];
     
+    // Parse sources if present
+    const sources: Source[] = data.sources || [];
+    
     return {
       reply: replyMessages.join('\n\n'),
       showMarksAnalysis: !!data.marks_analysis,
@@ -202,6 +214,7 @@ export function useChat({ user, userContext, onFirstInput }: UseChatOptions) {
       showStillStuck: data.student_behavior === 'expressed_confusion',
       isCorrect: data.student_behavior === 'correct_answer',
       analysis: data.topic ? { topic: data.topic, difficulty: data.difficulty } : undefined,
+      sources,
     };
   }, [messages, userContext, questionAnalysis]);
 
@@ -240,6 +253,7 @@ export function useChat({ user, userContext, onFirstInput }: UseChatOptions) {
         showSeeAnotherApproach: response.showSeeAnotherApproach,
         showStillStuck: response.showStillStuck,
         isCorrect: response.isCorrect,
+        sources: response.sources,
       }]);
     } catch (error) {
       console.error('Chat error:', error);
@@ -301,6 +315,7 @@ export function useChat({ user, userContext, onFirstInput }: UseChatOptions) {
         showSeeAnotherApproach: response.showSeeAnotherApproach,
         showStillStuck: response.showStillStuck,
         isCorrect: response.isCorrect,
+        sources: response.sources,
       }]);
     } catch (error) {
       console.error('Image chat error:', error);
@@ -358,6 +373,7 @@ export function useChat({ user, userContext, onFirstInput }: UseChatOptions) {
         showSeeAnotherApproach: response.showSeeAnotherApproach,
         showStillStuck: response.showStillStuck,
         isCorrect: response.isCorrect,
+        sources: response.sources,
       }]);
     } catch (error) {
       console.error('Image chat error:', error);
