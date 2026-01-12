@@ -36,6 +36,8 @@ interface ArenaQuestionProps {
     feedback_summary: string;
     next_prompt?: string;
   } | null;
+  showRating?: boolean;
+  onRate?: (rating: 'easy' | 'ok' | 'hard') => void;
 }
 
 export default function ArenaQuestion({
@@ -50,6 +52,8 @@ export default function ArenaQuestion({
   onSkip,
   feedback,
   isFirstQuestion,
+  showRating,
+  onRate,
 }: ArenaQuestionProps & { isFirstQuestion?: boolean }) {
   const [answer, setAnswer] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -368,7 +372,35 @@ export default function ArenaQuestion({
 
       {/* Input area - fixed at bottom for mobile - matches GuestChat style */}
       <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-20">
-        {isCompleted ? (
+        {showRating && onRate ? (
+          // Self rating state
+          <div className="space-y-3">
+            <p className="text-sm text-center text-muted-foreground">How did that feel?</p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => onRate('easy')}
+                className="flex-1 h-12 border-green-500/30 hover:bg-green-500/10 hover:border-green-500/50"
+              >
+                😊 Easy
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => onRate('ok')}
+                className="flex-1 h-12 border-yellow-500/30 hover:bg-yellow-500/10 hover:border-yellow-500/50"
+              >
+                🤔 OK
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => onRate('hard')}
+                className="flex-1 h-12 border-red-500/30 hover:bg-red-500/10 hover:border-red-500/50"
+              >
+                😓 Hard
+              </Button>
+            </div>
+          </div>
+        ) : isCompleted ? (
           // Completed state - show next button
           <Button 
             onClick={onNext}

@@ -410,14 +410,9 @@ export default function ArenaSession() {
             onSkip={skipQuestion}
             feedback={feedback}
             isFirstQuestion={currentQuestionIndex === 0}
+            showRating={showRating && !isComplete}
+            onRate={handleSelfRating}
           />
-        )}
-
-        {/* Self rating overlay */}
-        {showRating && !isComplete && (
-          <div className="absolute bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t border-border">
-            <ArenaSelfRating onRate={handleSelfRating} />
-          </div>
         )}
       </div>
 
