@@ -76,7 +76,7 @@ serve(async (req) => {
           type: "server_vad",
           threshold: 0.5,
           prefix_padding_ms: 300,
-          silence_duration_ms: 800, // Quick response after student stops
+          silence_duration_ms: 2500, // Give students time to think before responding
         },
       }),
     });

@@ -1,14 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Send, Mic, MicOff, Loader2, Sparkles, X } from 'lucide-react';
+import { Camera, Send, Mic, MicOff, Loader2, Sparkles, X, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useSpeech } from '@/hooks/useSpeech';
+import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import BurgerMenu from './BurgerMenu';
 import MathText from './MathText';
 import ConfirmNewProblemDialog from './ConfirmNewProblemDialog';
 import ImageEditor from './ImageEditor';
 import SignupPrompt from './SignupPrompt';
+import VoiceChatPrompt from './VoiceChatPrompt';
 import type { Message } from '@/hooks/useChat';
 
 interface ChatViewProps {
@@ -25,6 +27,7 @@ interface ChatViewProps {
   onNewProblem: () => void;
   onSettings: () => void;
   isAuthenticated: boolean;
+  onStartVoiceSession?: () => void;
 }
 
 export default function ChatView({
@@ -41,14 +44,21 @@ export default function ChatView({
   onNewProblem,
   onSettings,
   isAuthenticated,
+  onStartVoiceSession,
 }: ChatViewProps) {
   const [newMessage, setNewMessage] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [additionalContext, setAdditionalContext] = useState('');
+  const [voiceNoteCount, setVoiceNoteCount] = useState(0);
+  const [showVoiceChatPrompt, setShowVoiceChatPrompt] = useState(false);
+  const [voicePromptShownAt2, setVoicePromptShownAt2] = useState(false);
   
   // Image editing state
   const [isEditing, setIsEditing] = useState(false);
   const [rawImage, setRawImage] = useState<{ url: string; mode: 'coach' | 'check' } | null>(null);
+  
+  // TTS state - track which message is being played
+  const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -59,6 +69,11 @@ export default function ChatView({
     startRecording,
     stopRecording,
   } = useSpeech();
+
+  const { speak, stop, isPlaying, isLoading } = useTextToSpeech();
+
+  // Check if voice prompt was dismissed
+  const isVoicePromptDismissed = localStorage.getItem('orbitVoiceChatDismissed') === 'true';
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -119,6 +134,20 @@ export default function ChatView({
         (transcript) => {
           if (transcript.trim()) {
             onSendMessage(transcript, 'voice');
+            
+            // Track voice note count for prompt logic
+            const newCount = voiceNoteCount + 1;
+            setVoiceNoteCount(newCount);
+            
+            // Show voice chat prompt after 2nd and 5th voice note (if not dismissed)
+            if (!isVoicePromptDismissed) {
+              if (newCount === 2 && !voicePromptShownAt2) {
+                setTimeout(() => setShowVoiceChatPrompt(true), 1500);
+                setVoicePromptShownAt2(true);
+              } else if (newCount === 5) {
+                setTimeout(() => setShowVoiceChatPrompt(true), 1500);
+              }
+            }
           }
         },
         () => {
@@ -126,6 +155,28 @@ export default function ChatView({
         }
       );
     }
+  };
+
+  const handlePlayTTS = (messageId: string, content: string) => {
+    if (playingMessageId === messageId && isPlaying) {
+      stop();
+      setPlayingMessageId(null);
+    } else {
+      setPlayingMessageId(messageId);
+      speak(content);
+    }
+  };
+
+  // Reset playing state when TTS stops
+  useEffect(() => {
+    if (!isPlaying && !isLoading) {
+      setPlayingMessageId(null);
+    }
+  }, [isPlaying, isLoading]);
+
+  const handleStartVoiceChat = () => {
+    setShowVoiceChatPrompt(false);
+    onStartVoiceSession?.();
   };
 
   // Image editor fullscreen
@@ -207,6 +258,28 @@ export default function ChatView({
                       in {message.errorLocation}
                     </span>
                   )}
+                </div>
+              )}
+
+              {/* TTS button for tutor messages */}
+              {message.sender === 'tutor' && !message.isTyping && (
+                <div className="mt-2 pt-2 border-t border-border/30">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => handlePlayTTS(message.id, message.content)}
+                    disabled={isLoading && playingMessageId === message.id}
+                  >
+                    {isLoading && playingMessageId === message.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : isPlaying && playingMessageId === message.id ? (
+                      <VolumeX className="h-3.5 w-3.5" />
+                    ) : (
+                      <Volume2 className="h-3.5 w-3.5" />
+                    )}
+                    {isPlaying && playingMessageId === message.id ? 'Stop' : 'Listen'}
+                  </Button>
                 </div>
               )}
             </div>
@@ -333,6 +406,14 @@ export default function ChatView({
         open={showConfirmDialog}
         onOpenChange={setShowConfirmDialog}
         onConfirm={onNewProblem}
+      />
+
+      {/* Voice Chat Prompt */}
+      <VoiceChatPrompt
+        open={showVoiceChatPrompt}
+        onOpenChange={setShowVoiceChatPrompt}
+        onStartVoiceChat={handleStartVoiceChat}
+        showDontShowAgain={voiceNoteCount >= 5}
       />
     </div>
   );
