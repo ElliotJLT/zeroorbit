@@ -14,12 +14,22 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import orbitLogo from '@/assets/orbit-logo.png';
+import confetti from 'canvas-confetti';
 
 const PURCHASE_OPTIONS = [
   { id: 'starter', tokens: 100, price: '£0.99', popular: false },
   { id: 'value', tokens: 500, price: '£3.99', popular: true },
   { id: 'pro', tokens: 1500, price: '£9.99', popular: false },
 ];
+
+const triggerConfetti = () => {
+  confetti({
+    particleCount: 80,
+    spread: 70,
+    origin: { y: 0.6 },
+    colors: ['#FFD700', '#FFA500', '#FF6B6B', '#4CAF50', '#2196F3'],
+  });
+};
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -43,6 +53,7 @@ export default function Profile() {
       const claimed = claimSocialFollow('ig');
       if (claimed) {
         setTokenData(getTokenData());
+        triggerConfetti();
         toast.success('+20 tokens claimed!', { icon: '✨' });
       }
       setClaimingIG(false);
@@ -58,6 +69,7 @@ export default function Profile() {
       const claimed = claimSocialFollow('tiktok');
       if (claimed) {
         setTokenData(getTokenData());
+        triggerConfetti();
         toast.success('+20 tokens claimed!', { icon: '✨' });
       }
       setClaimingTikTok(false);
