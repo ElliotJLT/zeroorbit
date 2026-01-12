@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Coins, Info, Instagram, Gift, Check } from 'lucide-react';
+import { ArrowLeft, Coins, Info, Instagram, Gift, Check, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -12,6 +12,7 @@ import {
   type TokenData 
 } from '@/hooks/useTokens';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import orbitLogo from '@/assets/orbit-logo.png';
 
 const PURCHASE_OPTIONS = [
@@ -23,6 +24,8 @@ const PURCHASE_OPTIONS = [
 export default function Profile() {
   const navigate = useNavigate();
   const [tokenData, setTokenData] = useState<TokenData>(getTokenData());
+  const [claimingIG, setClaimingIG] = useState(false);
+  const [claimingTikTok, setClaimingTikTok] = useState(false);
 
   useEffect(() => {
     // Record engagement when viewing profile
@@ -30,36 +33,38 @@ export default function Profile() {
     setTokenData(getTokenData());
   }, []);
 
-  const handleFollowIG = () => {
-    // Open Instagram (placeholder)
-    window.open('https://instagram.com/orbit_maths', '_blank');
+  const handleClaimIG = () => {
+    if (tokenData.followedIG || claimingIG) return;
     
-    // Claim tokens after a delay (simulating verification)
+    setClaimingIG(true);
+    
+    // Animate then claim
     setTimeout(() => {
       const claimed = claimSocialFollow('ig');
       if (claimed) {
         setTokenData(getTokenData());
-        toast.success('+20 tokens for following on Instagram!');
+        toast.success('+20 tokens claimed!', { icon: '✨' });
       }
-    }, 1500);
+      setClaimingIG(false);
+    }, 600);
   };
 
-  const handleFollowTikTok = () => {
-    // Open TikTok (placeholder)
-    window.open('https://tiktok.com/@orbit_maths', '_blank');
+  const handleClaimTikTok = () => {
+    if (tokenData.followedTikTok || claimingTikTok) return;
     
-    // Claim tokens after a delay
+    setClaimingTikTok(true);
+    
     setTimeout(() => {
       const claimed = claimSocialFollow('tiktok');
       if (claimed) {
         setTokenData(getTokenData());
-        toast.success('+20 tokens for following on TikTok!');
+        toast.success('+20 tokens claimed!', { icon: '✨' });
       }
-    }, 1500);
+      setClaimingTikTok(false);
+    }, 600);
   };
 
   const handlePurchase = (option: typeof PURCHASE_OPTIONS[0]) => {
-    // Placeholder - would integrate with Stripe
     toast.info(`Purchase ${option.tokens} tokens for ${option.price} - coming soon!`);
   };
 
@@ -125,12 +130,22 @@ export default function Profile() {
           <div className="space-y-2">
             {/* Follow Instagram */}
             <button
-              onClick={handleFollowIG}
+              onClick={handleClaimIG}
               disabled={tokenData.followedIG}
-              className="w-full flex items-center justify-between p-4 bg-muted rounded-xl hover:bg-muted/80 transition-colors disabled:opacity-60"
+              className={cn(
+                "w-full flex items-center justify-between p-4 rounded-xl transition-all duration-300",
+                tokenData.followedIG 
+                  ? "bg-primary/10 border-2 border-primary" 
+                  : "bg-muted hover:bg-muted/80 border-2 border-transparent",
+                claimingIG && "scale-95"
+              )}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                <div className={cn(
+                  "w-10 h-10 rounded-lg flex items-center justify-center transition-transform duration-300",
+                  "bg-gradient-to-br from-purple-500 to-pink-500",
+                  claimingIG && "animate-pulse scale-110"
+                )}>
                   <Instagram className="h-5 w-5 text-white" />
                 </div>
                 <div className="text-left">
@@ -139,23 +154,36 @@ export default function Profile() {
                 </div>
               </div>
               {tokenData.followedIG ? (
-                <div className="flex items-center gap-1 text-primary">
-                  <Check className="h-4 w-4" />
-                  <span className="text-sm font-medium">Claimed</span>
+                <div className="flex items-center gap-1.5 text-primary animate-scale-in">
+                  <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                    <Check className="h-4 w-4 text-primary-foreground" />
+                  </div>
+                  <span className="text-sm font-semibold">Claimed</span>
                 </div>
+              ) : claimingIG ? (
+                <Sparkles className="h-5 w-5 text-primary animate-pulse" />
               ) : (
-                <span className="text-primary font-semibold">+20</span>
+                <span className="text-primary font-bold text-lg">+20</span>
               )}
             </button>
 
             {/* Follow TikTok */}
             <button
-              onClick={handleFollowTikTok}
+              onClick={handleClaimTikTok}
               disabled={tokenData.followedTikTok}
-              className="w-full flex items-center justify-between p-4 bg-muted rounded-xl hover:bg-muted/80 transition-colors disabled:opacity-60"
+              className={cn(
+                "w-full flex items-center justify-between p-4 rounded-xl transition-all duration-300",
+                tokenData.followedTikTok 
+                  ? "bg-primary/10 border-2 border-primary" 
+                  : "bg-muted hover:bg-muted/80 border-2 border-transparent",
+                claimingTikTok && "scale-95"
+              )}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-black flex items-center justify-center">
+                <div className={cn(
+                  "w-10 h-10 rounded-lg bg-black flex items-center justify-center transition-transform duration-300",
+                  claimingTikTok && "animate-pulse scale-110"
+                )}>
                   <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
                   </svg>
@@ -166,12 +194,16 @@ export default function Profile() {
                 </div>
               </div>
               {tokenData.followedTikTok ? (
-                <div className="flex items-center gap-1 text-primary">
-                  <Check className="h-4 w-4" />
-                  <span className="text-sm font-medium">Claimed</span>
+                <div className="flex items-center gap-1.5 text-primary animate-scale-in">
+                  <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                    <Check className="h-4 w-4 text-primary-foreground" />
+                  </div>
+                  <span className="text-sm font-semibold">Claimed</span>
                 </div>
+              ) : claimingTikTok ? (
+                <Sparkles className="h-5 w-5 text-primary animate-pulse" />
               ) : (
-                <span className="text-primary font-semibold">+20</span>
+                <span className="text-primary font-bold text-lg">+20</span>
               )}
             </button>
           </div>
