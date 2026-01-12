@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, Image, Calendar, FlaskConical, Play, CheckCircle, XCircle, Loader2, Users, Shield, Trash2, TrendingUp, Sparkles, Clock, ThumbsUp, ThumbsDown, MessageCircle, Lightbulb, Mail, UserPlus, Lock, Copy, AlertTriangle, Settings, DollarSign, Volume2 } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Image, Calendar, FlaskConical, Play, CheckCircle, XCircle, Loader2, Users, Shield, Trash2, TrendingUp, Sparkles, Clock, ThumbsUp, ThumbsDown, MessageCircle, Lightbulb, Mail, UserPlus, Lock, Copy, AlertTriangle, Settings, DollarSign, Volume2, Download, ChevronDown, ChevronRight, Bot } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -91,6 +91,17 @@ interface InvitedUser {
   confirmed: boolean;
 }
 
+interface OutputEntry {
+  id: string;
+  tutorResponse: string;
+  studentInput: string;
+  questionText: string;
+  userId: string;
+  sessionId: string;
+  createdAt: string;
+  hasFeedback: 'thumbs_up' | 'thumbs_down' | null;
+}
+
 interface UnhelpfulResponse {
   messageId: string;
   messageContent: string;
@@ -147,6 +158,9 @@ export default function Admin() {
   const [selectedTestCount, setSelectedTestCount] = useState(TOTAL_AVAILABLE_TESTS);
   const [selectedJudgeModel, setSelectedJudgeModel] = useState(JUDGE_MODELS[0].id);
   const [activeTab, setActiveTab] = useState('insights');
+  const [outputs, setOutputs] = useState<OutputEntry[]>([]);
+  const [outputsLoading, setOutputsLoading] = useState(false);
+  const [expandedOutputs, setExpandedOutputs] = useState<Set<string>>(new Set());
   
   const selectedModelInfo = JUDGE_MODELS.find(m => m.id === selectedJudgeModel) || JUDGE_MODELS[0];
 
@@ -163,8 +177,129 @@ export default function Admin() {
       fetchTeamMembers();
       fetchInvitedUsers();
       fetchInsights();
+      fetchOutputs();
     }
   }, [isAdmin]);
+
+  const fetchOutputs = async () => {
+    setOutputsLoading(true);
+    try {
+      // Get all tutor messages with their preceding student message
+      const { data: tutorMessages } = await supabase
+        .from('messages')
+        .select('id, content, session_id, created_at')
+        .eq('sender', 'tutor')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (!tutorMessages || tutorMessages.length === 0) {
+        setOutputs([]);
+        setOutputsLoading(false);
+        return;
+      }
+
+      // Get session details
+      const sessionIds = [...new Set(tutorMessages.map(m => m.session_id))];
+      const { data: sessionsData } = await supabase
+        .from('sessions')
+        .select('id, user_id, question_text')
+        .in('id', sessionIds);
+
+      const sessionMap = new Map(sessionsData?.map(s => [s.id, s]) || []);
+
+      // Get student messages for context
+      const { data: studentMessages } = await supabase
+        .from('messages')
+        .select('id, content, session_id, created_at')
+        .eq('sender', 'student')
+        .in('session_id', sessionIds);
+
+      // Group student messages by session
+      const studentMessagesBySession = new Map<string, { content: string; created_at: string }[]>();
+      studentMessages?.forEach(m => {
+        const existing = studentMessagesBySession.get(m.session_id) || [];
+        existing.push({ content: m.content, created_at: m.created_at });
+        studentMessagesBySession.set(m.session_id, existing);
+      });
+
+      // Get feedback for messages
+      const messageIds = tutorMessages.map(m => m.id);
+      const { data: feedbackData } = await supabase
+        .from('message_feedback')
+        .select('message_id, feedback_type')
+        .in('message_id', messageIds)
+        .in('feedback_type', ['thumbs_up', 'thumbs_down']);
+
+      const feedbackMap = new Map<string, 'thumbs_up' | 'thumbs_down'>();
+      feedbackData?.forEach(f => {
+        if (f.feedback_type === 'thumbs_up' || f.feedback_type === 'thumbs_down') {
+          feedbackMap.set(f.message_id, f.feedback_type);
+        }
+      });
+
+      // Build output entries
+      const outputEntries: OutputEntry[] = tutorMessages.map(msg => {
+        const session = sessionMap.get(msg.session_id);
+        const studentMsgs = studentMessagesBySession.get(msg.session_id) || [];
+        // Find the most recent student message before this tutor message
+        const precedingStudentMsg = studentMsgs
+          .filter(sm => new Date(sm.created_at) < new Date(msg.created_at))
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+
+        return {
+          id: msg.id,
+          tutorResponse: msg.content,
+          studentInput: precedingStudentMsg?.content || 'No student input',
+          questionText: session?.question_text || 'Unknown question',
+          userId: session?.user_id || 'Unknown',
+          sessionId: msg.session_id,
+          createdAt: msg.created_at,
+          hasFeedback: feedbackMap.get(msg.id) || null,
+        };
+      });
+
+      setOutputs(outputEntries);
+    } catch (error) {
+      console.error('Error fetching outputs:', error);
+    } finally {
+      setOutputsLoading(false);
+    }
+  };
+
+  const toggleOutputExpanded = (id: string) => {
+    setExpandedOutputs(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const downloadOutputsCSV = () => {
+    const headers = ['Timestamp', 'User ID', 'Session ID', 'Question', 'Student Input', 'Tutor Response', 'Feedback'];
+    const rows = outputs.map(o => [
+      new Date(o.createdAt).toISOString(),
+      o.userId,
+      o.sessionId,
+      `"${o.questionText.replace(/"/g, '""')}"`,
+      `"${o.studentInput.replace(/"/g, '""')}"`,
+      `"${o.tutorResponse.replace(/"/g, '""')}"`,
+      o.hasFeedback || 'none',
+    ]);
+
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orbit-outputs-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('CSV downloaded');
+  };
 
   const fetchInsights = async () => {
     try {
@@ -396,9 +531,7 @@ Provide concise, actionable insights in bullet points.`
       }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       setEvalRuns(runs);
-      if (runs.length > 0 && !selectedRun) {
-        setSelectedRun(runs[0]);
-      }
+      // Don't auto-select a run - show list first
     }
   };
 
@@ -622,8 +755,8 @@ Provide concise, actionable insights in bullet points.`
             Evals
           </TabsTrigger>
           <TabsTrigger value="sessions">
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Sessions
+            <Bot className="h-4 w-4 mr-2" />
+            Outputs
           </TabsTrigger>
           <TabsTrigger value="team">
             <Users className="h-4 w-4 mr-2" />
@@ -637,7 +770,7 @@ Provide concise, actionable insights in bullet points.`
             {[
               { id: 'insights', icon: TrendingUp, label: 'Insights' },
               { id: 'evals', icon: FlaskConical, label: 'Evals' },
-              { id: 'sessions', icon: MessageSquare, label: 'Sessions' },
+              { id: 'sessions', icon: Bot, label: 'Outputs' },
               { id: 'team', icon: Users, label: 'Team' },
             ].map((tab) => (
               <button
@@ -908,157 +1041,109 @@ Provide concise, actionable insights in bullet points.`
         </TabsContent>
 
         <TabsContent value="sessions" className="m-0">
-          <div className="flex flex-col lg:flex-row h-[calc(100vh-120px)]">
-            {/* Sessions List */}
-            <div className={cn(
-              "lg:w-1/2 border-r border-border overflow-y-auto",
-              selectedSession && "hidden lg:block"
-            )}>
-              <div className="p-4 space-y-2">
-                {sessions.map((session) => (
-                  <Card
-                    key={session.id}
+          <div className="p-4 max-w-5xl mx-auto space-y-4">
+            {/* Header with download */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-medium">All Outputs</h2>
+                <p className="text-sm text-muted-foreground">{outputs.length} tutor responses</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={downloadOutputsCSV} disabled={outputs.length === 0}>
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+            </div>
+
+            {outputsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : outputs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                <Bot className="h-12 w-12 mb-4 opacity-50" />
+                <p>No tutor outputs yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {outputs.map((output) => (
+                  <Card 
+                    key={output.id}
                     className={cn(
-                      "cursor-pointer transition-all duration-200 hover:border-primary",
-                      selectedSession?.id === session.id && "border-primary bg-primary/5"
+                      "transition-all",
+                      output.hasFeedback === 'thumbs_down' && "border-red-500/30",
+                      output.hasFeedback === 'thumbs_up' && "border-green-500/30"
                     )}
-                    onClick={() => handleSessionClick(session)}
                   >
-                    <CardContent className="p-4">
+                    <CardContent className="p-4 space-y-3">
+                      {/* Header row */}
                       <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">
-                            {session.profile?.full_name || 'Unknown Student'}
-                          </p>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {session.question_text.slice(0, 60)}
-                            {session.question_text.length > 60 ? '...' : ''}
-                          </p>
-                          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {formatDate(session.created_at)}
-                            </span>
-                            {session.topic && (
-                              <span className="px-2 py-0.5 rounded bg-surface-2">
-                                {session.topic.name}
-                              </span>
-                            )}
-                          </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{formatDate(output.createdAt)}</span>
+                          <span className="text-muted-foreground/50">•</span>
+                          <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-[10px]">{output.userId.slice(0, 8)}...</span>
                         </div>
-                        <div className="flex flex-col items-end gap-1">
-                          {session.question_image_url && (
-                            <Image className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex items-center gap-2">
+                          {output.hasFeedback === 'thumbs_up' && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-green-500/20 text-green-500 flex items-center gap-1">
+                              <ThumbsUp className="h-3 w-3" /> Helpful
+                            </span>
                           )}
-                          {session.confidence_after && (
-                            <span className="text-xs px-2 py-0.5 rounded bg-secondary/20 text-secondary">
-                              {session.confidence_after}/5
+                          {output.hasFeedback === 'thumbs_down' && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-red-500/20 text-red-500 flex items-center gap-1">
+                              <ThumbsDown className="h-3 w-3" /> Not Helpful
                             </span>
                           )}
                         </div>
                       </div>
+
+                      {/* Tutor response */}
+                      <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+                        <p className="text-xs font-medium text-primary uppercase mb-1 flex items-center gap-1">
+                          <Bot className="h-3 w-3" /> Orbit Response
+                        </p>
+                        <p className="text-sm whitespace-pre-wrap line-clamp-6">{output.tutorResponse}</p>
+                      </div>
+
+                      {/* Collapsible student input */}
+                      <button
+                        onClick={() => toggleOutputExpanded(output.id)}
+                        className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full text-left"
+                      >
+                        {expandedOutputs.has(output.id) ? (
+                          <ChevronDown className="h-3 w-3" />
+                        ) : (
+                          <ChevronRight className="h-3 w-3" />
+                        )}
+                        <span>Student input & context</span>
+                      </button>
+
+                      {expandedOutputs.has(output.id) && (
+                        <div className="space-y-2 pl-5">
+                          <div className="bg-muted/50 rounded p-2">
+                            <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Question</p>
+                            <p className="text-sm">{output.questionText}</p>
+                          </div>
+                          <div className="bg-muted/50 rounded p-2">
+                            <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Student Said</p>
+                            <p className="text-sm">{output.studentInput}</p>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Session: <span className="font-mono">{output.sessionId.slice(0, 8)}...</span>
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
               </div>
-            </div>
-
-            {/* Session Detail */}
-            <div className={cn(
-              "lg:w-1/2 flex flex-col",
-              !selectedSession && "hidden lg:flex"
-            )}>
-              {selectedSession ? (
-                <>
-                  <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-4">
-                    <div className="flex items-center gap-4">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="lg:hidden"
-                        onClick={() => setSelectedSession(null)}
-                      >
-                        <ArrowLeft className="h-5 w-5" />
-                      </Button>
-                      <div>
-                        <p className="font-medium">
-                          {selectedSession.profile?.full_name || 'Unknown Student'}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {selectedSession.topic?.name || 'No topic'} • {formatDate(selectedSession.created_at)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Images */}
-                  {(selectedSession.question_image_url || selectedSession.working_image_url) && (
-                    <div className="p-4 border-b border-border bg-surface-1">
-                      <div className="flex gap-2">
-                        {selectedSession.question_image_url && (
-                          <ImageViewer
-                            src={selectedSession.question_image_url}
-                            alt="Question"
-                            className="w-24 h-24"
-                          />
-                        )}
-                        {selectedSession.working_image_url && (
-                          <ImageViewer
-                            src={selectedSession.working_image_url}
-                            alt="Working"
-                            className="w-24 h-24"
-                          />
-                        )}
-                      </div>
-                      <p className="text-sm mt-2">{selectedSession.question_text}</p>
-                    </div>
-                  )}
-
-                  {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-4">
-                    <div className="space-y-4">
-                      {messages.map((message) => (
-                        <ChatBubble
-                          key={message.id}
-                          sender={message.sender}
-                          content={message.content}
-                          timestamp={new Date(message.created_at)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Confidence */}
-                  {selectedSession.confidence_after && (
-                    <div className="border-t border-border p-4 bg-surface-1">
-                      <p className="text-sm text-muted-foreground">
-                        Student confidence: {' '}
-                        <span className="text-secondary font-medium">
-                          {selectedSession.confidence_after}/5
-                        </span>
-                      </p>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="flex-1 flex items-center justify-center text-muted-foreground">
-                  <div className="text-center">
-                    <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Select a session to view details</p>
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="evals" className="m-0">
           <div className="flex flex-col lg:flex-row h-[calc(100vh-120px)]">
             {/* Runs List */}
-            <div className={cn(
-              "lg:w-1/3 border-r border-border overflow-y-auto",
-              selectedRun && "hidden lg:block"
-            )}>
+            <div className="lg:w-1/3 border-r border-border overflow-y-auto">
               <div className="p-4 border-b border-border space-y-4">
                 {!evalUnlocked ? (
                   <div className="space-y-3">
