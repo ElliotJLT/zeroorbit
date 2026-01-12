@@ -91,6 +91,14 @@ interface InvitedUser {
   confirmed: boolean;
 }
 
+interface UnhelpfulResponse {
+  messageId: string;
+  messageContent: string;
+  sessionId: string;
+  questionText: string;
+  createdAt: string;
+}
+
 interface BetaInsights {
   totalSessions: number;
   uniqueUsers: number;
@@ -99,7 +107,7 @@ interface BetaInsights {
   topTopics: { name: string; count: number }[];
   recentFeedback: { name: string; feedback: string; wouldUseAgain: string }[];
   inputMethodBreakdown: { method: string; count: number }[];
-  messageFeedback: { thumbsUp: number; thumbsDown: number; copies: number; listens: number };
+  messageFeedback: { thumbsUp: number; thumbsDown: number; listens: number; unhelpfulResponses: UnhelpfulResponse[] };
   aiInsights: string | null;
   loading: boolean;
 }
@@ -128,7 +136,7 @@ export default function Admin() {
     topTopics: [],
     recentFeedback: [],
     inputMethodBreakdown: [],
-    messageFeedback: { thumbsUp: 0, thumbsDown: 0, copies: 0, listens: 0 },
+    messageFeedback: { thumbsUp: 0, thumbsDown: 0, listens: 0, unhelpfulResponses: [] },
     aiInsights: null,
     loading: true,
   });
@@ -217,18 +225,56 @@ export default function Admin() {
           wouldUseAgain: s.would_use_again || 'unknown',
         })) || [];
 
-      // Get message feedback stats
+      // Get message feedback stats with message details for thumbs down
       const { data: feedbackData } = await supabase
         .from('message_feedback')
-        .select('feedback_type');
+        .select('feedback_type, message_id, session_id, created_at');
       
-      const feedbackCounts = { thumbsUp: 0, thumbsDown: 0, copies: 0, listens: 0 };
-      feedbackData?.forEach((f: { feedback_type: string }) => {
+      const feedbackCounts = { thumbsUp: 0, thumbsDown: 0, listens: 0, unhelpfulResponses: [] as UnhelpfulResponse[] };
+      const thumbsDownMessageIds: string[] = [];
+      const thumbsDownFeedback: { message_id: string; session_id: string; created_at: string }[] = [];
+      
+      feedbackData?.forEach((f: { feedback_type: string; message_id: string; session_id: string; created_at: string }) => {
         if (f.feedback_type === 'thumbs_up') feedbackCounts.thumbsUp++;
-        else if (f.feedback_type === 'thumbs_down') feedbackCounts.thumbsDown++;
-        else if (f.feedback_type === 'copy') feedbackCounts.copies++;
+        else if (f.feedback_type === 'thumbs_down') {
+          feedbackCounts.thumbsDown++;
+          thumbsDownMessageIds.push(f.message_id);
+          thumbsDownFeedback.push({ message_id: f.message_id, session_id: f.session_id, created_at: f.created_at });
+        }
         else if (f.feedback_type === 'listen') feedbackCounts.listens++;
       });
+
+      // Fetch actual message content for thumbs down responses
+      if (thumbsDownMessageIds.length > 0) {
+        const { data: messagesData } = await supabase
+          .from('messages')
+          .select('id, content, session_id')
+          .in('id', thumbsDownMessageIds);
+
+        // Get session question texts
+        const sessionIds = [...new Set(thumbsDownFeedback.map(f => f.session_id))];
+        const { data: sessionsData } = await supabase
+          .from('sessions')
+          .select('id, question_text')
+          .in('id', sessionIds);
+
+        const sessionMap = new Map(sessionsData?.map(s => [s.id, s.question_text]) || []);
+        const messageMap = new Map(messagesData?.map(m => [m.id, m]) || []);
+
+        feedbackCounts.unhelpfulResponses = thumbsDownFeedback
+          .map(f => {
+            const message = messageMap.get(f.message_id);
+            return message ? {
+              messageId: f.message_id,
+              messageContent: message.content,
+              sessionId: f.session_id,
+              questionText: sessionMap.get(f.session_id) || 'Unknown question',
+              createdAt: f.created_at,
+            } : null;
+          })
+          .filter((r): r is UnhelpfulResponse => r !== null)
+          .slice(0, 10); // Limit to 10 most recent
+      }
 
       setInsights({
         totalSessions: totalSessions || 0,
@@ -560,7 +606,7 @@ Provide concise, actionable insights in bullet points.`
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-h2">Admin Dashboard</h1>
+          <h1 className="text-h2 text-primary">Admin Dashboard</h1>
         </div>
       </div>
 
@@ -764,11 +810,11 @@ Provide concise, actionable insights in bullet points.`
                 {/* Message Feedback Stats */}
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Response Feedback</CardTitle>
-                    <CardDescription>How students interact with Orbit's responses</CardDescription>
+                    <CardTitle className="text-base">Response Quality</CardTitle>
+                    <CardDescription>Student feedback on Orbit's responses</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-3 gap-4">
                       <div className="text-center p-3 rounded-lg bg-green-500/10">
                         <div className="flex items-center justify-center gap-2 mb-1">
                           <ThumbsUp className="h-4 w-4 text-green-500" />
@@ -783,13 +829,6 @@ Provide concise, actionable insights in bullet points.`
                         </div>
                         <p className="text-xs text-muted-foreground">Not Helpful</p>
                       </div>
-                      <div className="text-center p-3 rounded-lg bg-blue-500/10">
-                        <div className="flex items-center justify-center gap-2 mb-1">
-                          <Copy className="h-4 w-4 text-blue-500" />
-                          <span className="text-2xl font-bold text-blue-600">{insights.messageFeedback.copies}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Copied</p>
-                      </div>
                       <div className="text-center p-3 rounded-lg bg-purple-500/10">
                         <div className="flex items-center justify-center gap-2 mb-1">
                           <Volume2 className="h-4 w-4 text-purple-500" />
@@ -799,7 +838,7 @@ Provide concise, actionable insights in bullet points.`
                       </div>
                     </div>
                     {(insights.messageFeedback.thumbsUp + insights.messageFeedback.thumbsDown) > 0 && (
-                      <div className="mt-4 pt-4 border-t border-border">
+                      <div className="pt-3 border-t border-border">
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">Satisfaction Rate</span>
                           <span className="font-medium text-green-600">
@@ -810,6 +849,32 @@ Provide concise, actionable insights in bullet points.`
                     )}
                   </CardContent>
                 </Card>
+
+                {/* Unhelpful Responses */}
+                {insights.messageFeedback.unhelpfulResponses.length > 0 && (
+                  <Card className="border-red-500/20">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <ThumbsDown className="h-4 w-4 text-red-500" />
+                        Unhelpful Responses
+                      </CardTitle>
+                      <CardDescription>Responses marked as not helpful by students</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {insights.messageFeedback.unhelpfulResponses.map((response, i) => (
+                        <div key={i} className="p-3 rounded-lg bg-red-500/5 border border-red-500/10 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-xs text-muted-foreground">Q: {response.questionText.slice(0, 80)}{response.questionText.length > 80 ? '...' : ''}</p>
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDate(response.createdAt)}</span>
+                          </div>
+                          <div className="bg-background/50 p-2 rounded text-sm">
+                            <p className="line-clamp-4">{response.messageContent}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Recent Feedback */}
                 {insights.recentFeedback.length > 0 && (
@@ -1139,57 +1204,54 @@ Provide concise, actionable insights in bullet points.`
 
                   {/* Error Summary - only show if there are failures */}
                   {selectedRun.failed > 0 && (
-                    <Card className="border-red-500/30 bg-red-500/5">
-                      <CardHeader className="pb-2">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <Card className="border-2 border-red-500/40 bg-gradient-to-br from-red-500/10 to-transparent">
+                      <CardHeader className="pb-3 border-b border-red-500/20">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                           <div>
-                            <CardTitle className="text-base flex items-center gap-2">
-                              <AlertTriangle className="h-5 w-5 text-red-500" />
-                              Error Summary
+                            <CardTitle className="text-lg flex items-center gap-2 text-red-400">
+                              <AlertTriangle className="h-5 w-5" />
+                              Action Required
                             </CardTitle>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {selectedRun.failed} of {selectedRun.total} tests failed in this run
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {selectedRun.failed} test{selectedRun.failed > 1 ? 's' : ''} failed — copy the prompt below and paste directly to Lovable
                             </p>
                           </div>
                           <Button
-                            variant="outline"
+                            variant="default"
                             size="sm"
-                            className="w-full sm:w-auto"
+                            className="w-full sm:w-auto bg-red-500 hover:bg-red-600"
                             onClick={() => {
                               const failedTests = selectedRun.results.filter(r => !r.passed);
-                              const summary = `# Orbit Eval Failures - ${formatDate(selectedRun.created_at)}
-Pass rate: ${selectedRun.passed}/${selectedRun.total} (${Math.round((selectedRun.passed / selectedRun.total) * 100)}%)
+                              const prompt = `Fix these Orbit AI tutor eval failures:
 
-## Failed Tests:
+${failedTests.map((t, i) => `## ${i + 1}. ${t.test_name}
 
-${failedTests.map(t => `### ${t.test_name}
-**Setup:** ${t.test_setup}
-**Student Input:** ${t.student_input}
+**Scenario:** ${t.test_setup}
+**Student said:** "${t.student_input}"
+**Orbit responded:** "${t.orbit_response.slice(0, 400)}${t.orbit_response.length > 400 ? '...' : ''}"
+
+**Problem:** ${t.failure_reason || 'Response did not meet expected behavior'}
 **Expected:** ${t.expected_behavior}
-**Orbit Response:** ${t.orbit_response.slice(0, 300)}${t.orbit_response.length > 300 ? '...' : ''}
-**Failure Reason:** ${t.failure_reason || 'Unknown'}
-${t.red_flags_found?.length ? `**Red Flags:** ${t.red_flags_found.join(', ')}` : ''}
+${t.red_flags_found?.length ? `**Red flags detected:** ${t.red_flags_found.join(', ')}` : ''}
 `).join('\n---\n\n')}
 
-## Summary of Required Fixes:
-${failedTests.map(t => `- ${t.test_name}: ${t.failure_reason || 'Fix needed'}`).join('\n')}
-`;
-                              navigator.clipboard.writeText(summary);
-                              toast.success('Copied! Share this with engineering.');
+Please update the chat edge function system prompt to fix these issues. Focus on: ${failedTests.map(t => t.failure_reason || t.test_name).join('; ')}`;
+                              navigator.clipboard.writeText(prompt);
+                              toast.success('Copied! Paste directly into Lovable chat.');
                             }}
                           >
                             <Copy className="h-4 w-4 mr-2" />
-                            Copy for Engineering
+                            Copy Fix Prompt
                           </Button>
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-2 pt-2">
+                      <CardContent className="pt-4 space-y-2">
                         {selectedRun.results.filter(r => !r.passed).map((result) => (
-                          <div key={result.id} className="flex items-start gap-2 text-sm p-2 rounded bg-background/50">
+                          <div key={result.id} className="flex items-start gap-3 text-sm p-3 rounded-lg bg-background/60 border border-red-500/10">
                             <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-                            <div className="min-w-0">
-                              <p className="font-medium text-sm">{result.test_name}</p>
-                              <p className="text-xs text-muted-foreground line-clamp-2">{result.failure_reason || 'Failed'}</p>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium">{result.test_name}</p>
+                              <p className="text-muted-foreground mt-1">{result.failure_reason || 'Did not meet expected behavior'}</p>
                             </div>
                           </div>
                         ))}
