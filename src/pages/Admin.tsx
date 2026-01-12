@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, Image, Calendar, FlaskConical, Play, CheckCircle, XCircle, Loader2, Users, Shield, Trash2, TrendingUp, Sparkles, Clock, ThumbsUp, MessageCircle, Lightbulb, Mail, UserPlus, Lock, Copy, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Image, Calendar, FlaskConical, Play, CheckCircle, XCircle, Loader2, Users, Shield, Trash2, TrendingUp, Sparkles, Clock, ThumbsUp, MessageCircle, Lightbulb, Mail, UserPlus, Lock, Copy, AlertTriangle, Settings, DollarSign } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -8,13 +8,21 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ChatBubble } from '@/components/ChatBubble';
 import { ImageViewer } from '@/components/ImageViewer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
+import { Slider } from '@/components/ui/slider';
 
 const EVAL_PASSCODE = '1002';
-const ESTIMATED_TOKENS_PER_TEST = 2500; // Approximate tokens used per test
+const TOTAL_AVAILABLE_TESTS = 12;
+
+// Pricing: Claude Sonnet 4 for judging ($3/M input, $15/M output)
+// Orbit chat uses GPT-4o-mini via Lovable AI
+// Average per test: ~1500 input tokens, ~400 output tokens for judge
+const COST_PER_TEST_USD = 0.0105; // ~$0.01 per test (judge only)
+const TIME_PER_TEST_SECONDS = 4; // ~4s per test (includes delay)
 
 interface SessionWithProfile {
   id: string;
@@ -119,7 +127,8 @@ export default function Admin() {
   const [generatingAIInsights, setGeneratingAIInsights] = useState(false);
   const [evalPasscode, setEvalPasscode] = useState('');
   const [evalUnlocked, setEvalUnlocked] = useState(false);
-  const [testCount, setTestCount] = useState(12); // Default number of tests
+  const [showEvalModal, setShowEvalModal] = useState(false);
+  const [selectedTestCount, setSelectedTestCount] = useState(TOTAL_AVAILABLE_TESTS);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -464,13 +473,16 @@ Provide concise, actionable insights in bullet points.`
     fetchMessages(session.id);
   };
 
-  const runEval = async (subset?: string) => {
+  const runEval = async (testLimit?: number) => {
     setRunningEval(true);
-    toast.info('Starting eval run...', { duration: 3000 });
+    setShowEvalModal(false);
+    toast.info(`Starting eval run with ${testLimit || TOTAL_AVAILABLE_TESTS} tests...`, { duration: 3000 });
 
     try {
       const response = await supabase.functions.invoke('eval-chat', {
-        body: subset ? { runSubset: subset } : {}
+        body: testLimit && testLimit < TOTAL_AVAILABLE_TESTS 
+          ? { testLimit } 
+          : {}
       });
 
       if (response.error) {
@@ -478,7 +490,6 @@ Provide concise, actionable insights in bullet points.`
       } else {
         const data = response.data;
         toast.success(`Eval complete: ${data.passed}/${data.total} passed (${data.pass_rate})`);
-        // Refresh eval runs
         await fetchEvalRuns();
       }
     } catch (error) {
@@ -487,6 +498,13 @@ Provide concise, actionable insights in bullet points.`
     } finally {
       setRunningEval(false);
     }
+  };
+
+  const formatDuration = (seconds: number) => {
+    if (seconds < 60) return `~${seconds}s`;
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return secs > 0 ? `~${mins}m ${secs}s` : `~${mins}m`;
   };
 
   const formatDate = (dateString: string) => {
@@ -907,36 +925,30 @@ Provide concise, actionable insights in bullet points.`
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    <Button 
-                      onClick={() => runEval()} 
-                      disabled={runningEval}
-                      className="w-full"
-                    >
-                      {runningEval ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Running...
-                        </>
-                      ) : (
-                        <>
-                          <Play className="h-4 w-4 mr-2" />
-                          Run Full Eval
-                        </>
-                      )}
-                    </Button>
-                    <div className="text-xs text-muted-foreground text-center space-y-1">
-                      <p>~{(testCount * ESTIMATED_TOKENS_PER_TEST).toLocaleString()} tokens estimated</p>
-                      <p className="text-[10px]">{testCount} tests × ~{ESTIMATED_TOKENS_PER_TEST.toLocaleString()} tokens each</p>
-                    </div>
-                  </div>
+                  <Button 
+                    onClick={() => setShowEvalModal(true)} 
+                    disabled={runningEval}
+                    className="w-full"
+                  >
+                    {runningEval ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Running...
+                      </>
+                    ) : (
+                      <>
+                        <Play className="h-4 w-4 mr-2" />
+                        Run Eval
+                      </>
+                    )}
+                  </Button>
                 )}
               </div>
 
               <div className="p-4 space-y-2">
                 {evalRuns.length === 0 ? (
                   <p className="text-muted-foreground text-center py-8">
-                    {evalUnlocked ? 'No eval runs yet. Click "Run Full Eval" to start.' : 'Unlock to run evaluations.'}
+                    {evalUnlocked ? 'No eval runs yet.' : 'Unlock to run evaluations.'}
                   </p>
                 ) : (
                   evalRuns.map((run) => (
@@ -1023,14 +1035,15 @@ Provide concise, actionable insights in bullet points.`
                   {selectedRun.failed > 0 && (
                     <Card className="border-red-500/30 bg-red-500/5">
                       <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <CardTitle className="text-base flex items-center gap-2">
                             <AlertTriangle className="h-5 w-5 text-red-500" />
-                            Error Summary ({selectedRun.failed} failures)
+                            {selectedRun.failed} Failed
                           </CardTitle>
                           <Button
                             variant="outline"
                             size="sm"
+                            className="w-full sm:w-auto"
                             onClick={() => {
                               const failedTests = selectedRun.results.filter(r => !r.passed);
                               const summary = `# Orbit Eval Failures - ${formatDate(selectedRun.created_at)}
@@ -1051,21 +1064,21 @@ ${t.red_flags_found?.length ? `**Red Flags:** ${t.red_flags_found.join(', ')}` :
 ${failedTests.map(t => `- ${t.test_name}: ${t.failure_reason || 'Fix needed'}`).join('\n')}
 `;
                               navigator.clipboard.writeText(summary);
-                              toast.success('Error summary copied to clipboard');
+                              toast.success('Copied! Share this with engineering.');
                             }}
                           >
                             <Copy className="h-4 w-4 mr-2" />
-                            Copy Summary
+                            Copy for Engineering
                           </Button>
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-2">
+                      <CardContent className="space-y-2 pt-2">
                         {selectedRun.results.filter(r => !r.passed).map((result) => (
-                          <div key={result.id} className="flex items-start gap-2 text-sm">
+                          <div key={result.id} className="flex items-start gap-2 text-sm p-2 rounded bg-background/50">
                             <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-                            <div>
-                              <span className="font-medium">{result.test_name}:</span>{' '}
-                              <span className="text-muted-foreground">{result.failure_reason || 'Failed'}</span>
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm">{result.test_name}</p>
+                              <p className="text-xs text-muted-foreground line-clamp-2">{result.failure_reason || 'Failed'}</p>
                             </div>
                           </div>
                         ))}
@@ -1290,6 +1303,81 @@ ${failedTests.map(t => `- ${t.test_name}: ${t.failure_reason || 'Fix needed'}`).
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Eval Configuration Modal */}
+      <Dialog open={showEvalModal} onOpenChange={setShowEvalModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FlaskConical className="h-5 w-5" />
+              Run Evaluation
+            </DialogTitle>
+            <DialogDescription>
+              Configure the eval run. Tests use Claude Sonnet 4 as the judge.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Test Count Slider */}
+            <div className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Number of tests</span>
+                <span className="font-medium">{selectedTestCount} / {TOTAL_AVAILABLE_TESTS}</span>
+              </div>
+              <Slider
+                value={[selectedTestCount]}
+                onValueChange={(v) => setSelectedTestCount(v[0])}
+                min={1}
+                max={TOTAL_AVAILABLE_TESTS}
+                step={1}
+                className="w-full"
+              />
+            </div>
+
+            {/* Estimates */}
+            <div className="grid grid-cols-2 gap-4">
+              <Card>
+                <CardContent className="p-3 text-center">
+                  <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
+                    <Clock className="h-3 w-3" />
+                    <span className="text-xs">Duration</span>
+                  </div>
+                  <p className="text-lg font-semibold">
+                    {formatDuration(selectedTestCount * TIME_PER_TEST_SECONDS)}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-3 text-center">
+                  <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
+                    <DollarSign className="h-3 w-3" />
+                    <span className="text-xs">Est. Cost</span>
+                  </div>
+                  <p className="text-lg font-semibold">
+                    ${(selectedTestCount * COST_PER_TEST_USD).toFixed(2)}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="text-xs text-muted-foreground space-y-1 bg-muted/50 p-3 rounded-lg">
+              <p><strong>Judge:</strong> Claude Sonnet 4 ($3/M in, $15/M out)</p>
+              <p><strong>Orbit:</strong> GPT-4o-mini via Lovable AI</p>
+              <p className="text-[10px] mt-2">Each test: ~1.5K input + ~400 output tokens</p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowEvalModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => runEval(selectedTestCount)}>
+              <Play className="h-4 w-4 mr-2" />
+              Run {selectedTestCount} Tests
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
