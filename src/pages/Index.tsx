@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowRight, X, Check, Sparkles, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,15 @@ type Step = 'home' | 'setup' | 'preview' | 'chat';
 
 export default function Index() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, profile, loading: authLoading } = useAuth();
+  
+  // Check for past paper navigation state
+  const locationState = location.state as { 
+    fromPastPaper?: boolean; 
+    questionContext?: string; 
+    mode?: 'coach' | 'check';
+  } | null;
   
   const [step, setStep] = useState<Step>('home');
   
@@ -65,6 +73,18 @@ export default function Index() {
       navigate('/onboarding');
     }
   }, [authLoading, user, profile, navigate]);
+
+  // Handle navigation from Past Papers
+  useEffect(() => {
+    if (locationState?.fromPastPaper && locationState.questionContext) {
+      // Go directly to chat with the question context
+      chat.sendMessage(locationState.questionContext);
+      setStep('chat');
+      
+      // Clear the location state to prevent re-triggering
+      window.history.replaceState({}, document.title);
+    }
+  }, [locationState]);
 
   // Handle image selection from home screen
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
