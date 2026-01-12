@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { Camera, Send, Mic, MicOff, Loader2, Sparkles, X, Volume2, VolumeX, Copy, ThumbsUp, ThumbsDown, Check } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Camera, Send, Mic, MicOff, Loader2, Sparkles, X, Volume2, VolumeX, Copy, ThumbsUp, ThumbsDown, Check, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -7,11 +7,12 @@ import { useSpeech } from '@/hooks/useSpeech';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import { supabase } from '@/integrations/supabase/client';
 import BurgerMenu from './BurgerMenu';
-import MathText from './MathText';
+import CitationText from './CitationText';
 import ConfirmNewProblemDialog from './ConfirmNewProblemDialog';
 import ImageEditor from './ImageEditor';
 import SignupPrompt from './SignupPrompt';
 import VoiceChatPrompt from './VoiceChatPrompt';
+import SourcesPanel, { Source } from './SourcesPanel';
 import type { Message } from '@/hooks/useChat';
 
 interface ChatViewProps {
@@ -66,6 +67,15 @@ export default function ChatView({
   // Feedback state - track which messages have been rated
   const [feedbackGiven, setFeedbackGiven] = useState<Record<string, 'thumbs_up' | 'thumbs_down' | null>>({});
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  
+  // Sources panel state
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+  const [currentSources, setCurrentSources] = useState<Source[]>([]);
+  const [activeSourceId, setActiveSourceId] = useState<number | undefined>();
+  
+  // Swipe gesture tracking
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -224,6 +234,56 @@ export default function ChatView({
     onStartVoiceSession?.();
   };
 
+  // Handle citation click - open sources panel
+  const handleCitationClick = useCallback((message: Message, sourceId: number) => {
+    if (message.sources && message.sources.length > 0) {
+      setCurrentSources(message.sources);
+      setActiveSourceId(sourceId);
+      setSourcesOpen(true);
+      
+      // Scroll to the source after panel opens
+      setTimeout(() => {
+        const sourceEl = document.getElementById(`source-${sourceId}`);
+        sourceEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }
+  }, []);
+
+  // Open sources panel for a message
+  const handleOpenSources = useCallback((message: Message) => {
+    if (message.sources && message.sources.length > 0) {
+      setCurrentSources(message.sources);
+      setActiveSourceId(undefined);
+      setSourcesOpen(true);
+    }
+  }, []);
+
+  // Swipe gesture handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - touchStartRef.current.x;
+    const deltaY = touch.clientY - touchStartRef.current.y;
+    
+    // Only trigger on horizontal swipes (deltaX > deltaY) with minimum distance
+    const minSwipeDistance = 80;
+    if (Math.abs(deltaX) > minSwipeDistance && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+      if (deltaX < 0 && currentSources.length > 0) {
+        // Swipe left - open sources panel (if we have sources)
+        setSourcesOpen(true);
+      }
+      // Swipe right could open burger menu but it's already accessible via button
+    }
+    
+    touchStartRef.current = null;
+  }, [currentSources]);
+
   // Image editor fullscreen
   if (isEditing && rawImage) {
     return (
@@ -236,7 +296,12 @@ export default function ChatView({
   }
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div 
+      ref={chatContainerRef}
+      className="flex flex-col h-full bg-background"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <header className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-border bg-background/95 backdrop-blur-sm">
         <BurgerMenu onSettings={onSettings} />
         
@@ -287,9 +352,24 @@ export default function ChatView({
                   className="max-w-full rounded-lg mb-2"
                 />
               )}
-              <MathText text={message.content} />
+              <CitationText 
+                text={message.content} 
+                hasSources={!!message.sources?.length}
+                onCitationClick={(sourceId) => handleCitationClick(message, sourceId)}
+              />
               {message.isTyping && (
                 <span className="inline-block w-2 h-4 ml-1 bg-current animate-pulse" />
+              )}
+              
+              {/* Sources badge for messages with sources */}
+              {message.sources && message.sources.length > 0 && !message.isTyping && (
+                <button
+                  onClick={() => handleOpenSources(message)}
+                  className="mt-2 inline-flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors"
+                >
+                  <BookOpen className="h-3 w-3" />
+                  {message.sources.length} source{message.sources.length > 1 ? 's' : ''}
+                </button>
               )}
 
               {/* Feedback buttons for tutor messages */}
@@ -490,6 +570,14 @@ export default function ChatView({
         onOpenChange={setShowVoiceChatPrompt}
         onStartVoiceChat={handleStartVoiceChat}
         showDontShowAgain={voiceNoteCount >= 5}
+      />
+
+      {/* Sources Panel */}
+      <SourcesPanel
+        open={sourcesOpen}
+        onOpenChange={setSourcesOpen}
+        sources={currentSources}
+        activeSourceId={activeSourceId}
       />
     </div>
   );
