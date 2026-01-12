@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { ImageEditor } from '@/components/ImageEditor';
 
 interface NewProblemModalProps {
   open: boolean;
@@ -24,6 +25,8 @@ export default function NewProblemModal({
 }: NewProblemModalProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [questionText, setQuestionText] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [rawImage, setRawImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,10 +34,22 @@ export default function NewProblemModal({
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        setRawImage(reader.result as string);
+        setIsEditing(true);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleEditorComplete = (editedImageUrl: string) => {
+    setImagePreview(editedImageUrl);
+    setIsEditing(false);
+    setRawImage(null);
+  };
+
+  const handleEditorCancel = () => {
+    setIsEditing(false);
+    setRawImage(null);
   };
 
   const handleUploadFromGallery = () => {
@@ -46,7 +61,8 @@ export default function NewProblemModal({
       if (file) {
         const reader = new FileReader();
         reader.onloadend = () => {
-          setImagePreview(reader.result as string);
+          setRawImage(reader.result as string);
+          setIsEditing(true);
         };
         reader.readAsDataURL(file);
       }
@@ -74,6 +90,17 @@ export default function NewProblemModal({
   const clearImage = () => {
     setImagePreview(null);
   };
+
+  // Show image editor as fullscreen overlay
+  if (isEditing && rawImage) {
+    return (
+      <ImageEditor
+        imageUrl={rawImage}
+        onComplete={handleEditorComplete}
+        onCancel={handleEditorCancel}
+      />
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
