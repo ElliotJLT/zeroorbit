@@ -238,11 +238,19 @@ export default function Index() {
     chat.sendImageMessage(finalImageUrl, mode);
   };
 
-  // Handle review cancel
+  // Handle review cancel - return to chat if we came from re-select, else home
   const handleReviewCancel = () => {
-    setRawImage(null);
-    setAnalysisResult(null);
-    setStep('home');
+    // If we have active content, we're re-cropping - go back to chat
+    if (activeContent) {
+      setRawImage(null);
+      setAnalysisResult(null);
+      setStep('chat');
+    } else {
+      // Fresh upload - go home
+      setRawImage(null);
+      setAnalysisResult(null);
+      setStep('home');
+    }
   };
 
   // Handle re-select from content panel (re-crop different section)
