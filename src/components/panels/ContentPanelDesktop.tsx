@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Crop, X, FileText, ImagePlus, Upload } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, FileText, ImagePlus, Upload } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -96,7 +96,9 @@ export default function ContentPanelDesktop({
       {/* Description */}
       <div className="px-3 py-2 border-b border-border/30">
         <p className="text-[11px] text-muted-foreground/70">
-          Add images or documents to give Orbit context about what you're working on.
+          {content?.type === 'pdf' 
+            ? 'Highlight text to ask questions about it.'
+            : 'Add images or documents to give Orbit context.'}
         </p>
       </div>
       
@@ -143,7 +145,7 @@ export default function ContentPanelDesktop({
             </div>
           )}
 
-          {/* Image content */}
+          {/* Image content - simplified, just display the image */}
           {content?.type === 'image' && content.croppedImageUrl && (
             <div className="p-4">
               <img
@@ -151,18 +153,9 @@ export default function ContentPanelDesktop({
                 alt="Question"
                 className="w-full rounded-lg"
               />
-              
-              {onReselectImage && content.originalImageUrl && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onReselectImage}
-                  className="w-full mt-4 gap-2"
-                >
-                  <Crop className="h-4 w-4" />
-                  Select different section
-                </Button>
-              )}
+              <p className="text-[11px] text-muted-foreground/60 text-center mt-3">
+                Upload a new image to change context
+              </p>
             </div>
           )}
 
