@@ -16,7 +16,7 @@ export default function SourcesPanelDesktop({
   onClose,
 }: SourcesPanelDesktopProps) {
   return (
-    <div className="h-full flex flex-col bg-background border-l border-border">
+    <div className="h-full flex flex-col bg-background">
       {/* Header */}
       <div className="px-4 py-3 border-b border-border flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">

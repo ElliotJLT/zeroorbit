@@ -68,9 +68,6 @@ export default function ChatView({
   const [feedbackGiven, setFeedbackGiven] = useState<Record<string, 'thumbs_up' | 'thumbs_down' | null>>({});
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   
-  // Sources panel state - emit to parent instead of managing locally
-  const [currentSources, setCurrentSources] = useState<Source[]>([]);
-  const [activeSourceId, setActiveSourceId] = useState<number | undefined>();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -222,8 +219,6 @@ export default function ChatView({
   // Handle citation click - emit to parent to open sources panel
   const handleCitationClick = useCallback((message: Message, sourceId: number) => {
     if (message.sources && message.sources.length > 0) {
-      setCurrentSources(message.sources);
-      setActiveSourceId(sourceId);
       onOpenSources?.(message.sources, sourceId);
     }
   }, [onOpenSources]);
@@ -231,8 +226,6 @@ export default function ChatView({
   // Open sources panel for a message
   const handleOpenSources = useCallback((message: Message) => {
     if (message.sources && message.sources.length > 0) {
-      setCurrentSources(message.sources);
-      setActiveSourceId(undefined);
       onOpenSources?.(message.sources);
     }
   }, [onOpenSources]);
