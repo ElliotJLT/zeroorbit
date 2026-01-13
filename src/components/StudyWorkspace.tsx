@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Image, BookOpen, Camera } from 'lucide-react';
+import { Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import BurgerMenu from './BurgerMenu';
@@ -128,28 +128,22 @@ export default function StudyWorkspace({
           {children}
         </div>
         
-        {/* Left edge indicator for content panel */}
+        {/* Left edge dragger for content panel */}
         {activeContent && !contentPanelOpen && (
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
             onClick={() => onContentPanelOpenChange(true)}
-            className="fixed left-2 top-1/2 -translate-y-1/2 z-40 h-12 w-8 rounded-r-lg bg-muted/80 backdrop-blur-sm border border-l-0 border-border shadow-lg"
-          >
-            <Image className="h-4 w-4" />
-          </Button>
+            className="fixed left-0 top-1/2 -translate-y-1/2 z-40 h-24 w-1.5 rounded-r-full bg-border/60 hover:bg-primary/40 hover:w-2 transition-all duration-200"
+            aria-label="Open context panel"
+          />
         )}
         
-        {/* Right edge indicator for sources panel */}
+        {/* Right edge dragger for sources panel */}
         {currentSources.length > 0 && !sourcesOpen && (
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
             onClick={() => onSourcesOpenChange(true)}
-            className="fixed right-2 top-1/2 -translate-y-1/2 z-40 h-12 w-8 rounded-l-lg bg-muted/80 backdrop-blur-sm border border-r-0 border-border shadow-lg"
-          >
-            <BookOpen className="h-4 w-4" />
-          </Button>
+            className="fixed right-0 top-1/2 -translate-y-1/2 z-40 h-24 w-1.5 rounded-l-full bg-border/60 hover:bg-primary/40 hover:w-2 transition-all duration-200"
+            aria-label="Open learning panel"
+          />
         )}
         
         <ContentPanelMobile

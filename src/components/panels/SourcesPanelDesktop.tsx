@@ -21,7 +21,7 @@ export default function SourcesPanelDesktop({
       <div className="px-3 py-2 border-b border-border flex items-center justify-between shrink-0">
         <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide flex items-center gap-1.5">
           <BookOpen className="h-3 w-3" />
-          Sources
+          My Learning
         </span>
         <Button
           variant="ghost"

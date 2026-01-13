@@ -80,7 +80,7 @@ export default function ContentPanelDesktop({
         <div className="flex items-center gap-2">
           <FileText className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-            Your Context
+            My Context
           </span>
         </div>
         <Button

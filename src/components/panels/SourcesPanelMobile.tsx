@@ -23,7 +23,7 @@ export default function SourcesPanelMobile({
         <SheetHeader className="px-4 py-3 border-b border-border">
           <SheetTitle className="flex items-center gap-2 text-base">
             <BookOpen className="h-4 w-4 text-primary" />
-            Sources
+            My Learning
           </SheetTitle>
         </SheetHeader>
         
