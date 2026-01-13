@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, X, FileText, ImagePlus, Upload } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,8 @@ export default function ContentPanelDesktop({
   
   const imageInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+  const pdfContainerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(400);
 
   const handleSelectionChange = () => {
     const selection = window.getSelection();
@@ -198,7 +200,8 @@ export default function ContentPanelDesktop({
           {/* PDF content */}
           {content?.type === 'pdf' && content.pdfPath && (
             <div 
-              className="flex flex-col items-center py-2"
+              ref={pdfContainerRef}
+              className="flex flex-col items-center py-2 pdf-text-selection"
               onMouseUp={handleSelectionChange}
             >
               <Document
@@ -206,6 +209,11 @@ export default function ContentPanelDesktop({
                 onLoadSuccess={({ numPages }) => {
                   setNumPages(numPages);
                   setCurrentPage(content.pdfPage || 1);
+                  // Measure container width for responsive PDF
+                  if (pdfContainerRef.current) {
+                    const width = pdfContainerRef.current.clientWidth - 16; // padding
+                    setContainerWidth(Math.min(Math.max(width, 300), 600));
+                  }
                 }}
                 loading={
                   <div className="flex items-center justify-center h-64">
@@ -215,7 +223,7 @@ export default function ContentPanelDesktop({
               >
                 <Page
                   pageNumber={currentPage}
-                  width={320}
+                  width={containerWidth}
                   renderTextLayer={true}
                   renderAnnotationLayer={false}
                 />
