@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Crop, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Crop, X, FileText } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -52,11 +52,14 @@ export default function ContentPanelDesktop({
 
   return (
     <div className="h-full flex flex-col bg-background">
-      {/* Header - smaller, contextual */}
-      <div className="px-3 py-2 border-b border-border flex items-center justify-between shrink-0">
-        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-          Your Context
-        </span>
+      {/* Header */}
+      <div className="px-3 py-2 flex items-center justify-between shrink-0 border-b border-border/50">
+        <div className="flex items-center gap-2">
+          <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+            Your Context
+          </span>
+        </div>
         <Button
           variant="ghost"
           size="icon"

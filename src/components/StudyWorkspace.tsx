@@ -182,7 +182,7 @@ export default function StudyWorkspace({
           {showContent && (
             <>
               <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
-                <div className="h-full rounded-2xl border border-border/40 bg-card/50 overflow-hidden">
+                <div className="h-full overflow-hidden">
                   <ContentPanelDesktop
                     content={activeContent}
                     onClose={() => onContentPanelOpenChange(false)}
