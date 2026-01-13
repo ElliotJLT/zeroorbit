@@ -52,18 +52,18 @@ export default function ContentPanelDesktop({
 
   return (
     <div className="h-full flex flex-col bg-background">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-border flex items-center justify-between shrink-0">
-        <h2 className="font-semibold text-sm">
-          {content.type === 'image' ? 'Question Image' : content.pdfName || 'PDF'}
-        </h2>
+      {/* Header - smaller, contextual */}
+      <div className="px-3 py-2 border-b border-border flex items-center justify-between shrink-0">
+        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+          Your Context
+        </span>
         <Button
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="h-8 w-8"
+          className="h-6 w-6"
         >
-          <X className="h-4 w-4" />
+          <X className="h-3 w-3" />
         </Button>
       </div>
       

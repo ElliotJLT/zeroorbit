@@ -17,19 +17,19 @@ export default function SourcesPanelDesktop({
 }: SourcesPanelDesktopProps) {
   return (
     <div className="h-full flex flex-col bg-background">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-border flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2">
-          <BookOpen className="h-4 w-4 text-primary" />
-          <h2 className="font-semibold text-sm">Sources</h2>
-        </div>
+      {/* Header - smaller, contextual */}
+      <div className="px-3 py-2 border-b border-border flex items-center justify-between shrink-0">
+        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide flex items-center gap-1.5">
+          <BookOpen className="h-3 w-3" />
+          Sources
+        </span>
         <Button
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="h-8 w-8"
+          className="h-6 w-6"
         >
-          <X className="h-4 w-4" />
+          <X className="h-3 w-3" />
         </Button>
       </div>
       
