@@ -173,21 +173,23 @@ export default function StudyWorkspace({
   const showSources = sourcesOpen && currentSources.length > 0;
 
   return (
-    <div className="h-screen w-full flex flex-col">
+    <div className="h-screen w-full flex flex-col bg-background">
       <Header />
       
-      <div className="flex-1 overflow-hidden">
-        <ResizablePanelGroup direction="horizontal" className="h-full">
+      <div className="flex-1 overflow-hidden p-2 pt-0">
+        <ResizablePanelGroup direction="horizontal" className="h-full gap-2">
           {/* Left panel - Content */}
           {showContent && (
             <>
               <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
-                <ContentPanelDesktop
-                  content={activeContent}
-                  onClose={() => onContentPanelOpenChange(false)}
-                  onReselectImage={onReselectImage}
-                  onReselectPdf={onReselectPdf}
-                />
+                <div className="h-full rounded-xl border border-border/50 bg-card/50 overflow-hidden">
+                  <ContentPanelDesktop
+                    content={activeContent}
+                    onClose={() => onContentPanelOpenChange(false)}
+                    onReselectImage={onReselectImage}
+                    onReselectPdf={onReselectPdf}
+                  />
+                </div>
               </ResizablePanel>
               <ResizableHandle withHandle />
             </>
@@ -195,7 +197,7 @@ export default function StudyWorkspace({
           
           {/* Center panel - Chat */}
           <ResizablePanel defaultSize={showContent || showSources ? 50 : 100} minSize={30}>
-            <div className="flex flex-col h-full min-w-0">
+            <div className="flex flex-col h-full min-w-0 rounded-xl border border-border/50 bg-card/30 overflow-hidden">
               {children}
             </div>
           </ResizablePanel>
@@ -205,11 +207,13 @@ export default function StudyWorkspace({
             <>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
-                <SourcesPanelDesktop
-                  sources={currentSources}
-                  activeSourceId={activeSourceId}
-                  onClose={() => onSourcesOpenChange(false)}
-                />
+                <div className="h-full rounded-xl border border-border/50 bg-card/50 overflow-hidden">
+                  <SourcesPanelDesktop
+                    sources={currentSources}
+                    activeSourceId={activeSourceId}
+                    onClose={() => onSourcesOpenChange(false)}
+                  />
+                </div>
               </ResizablePanel>
             </>
           )}
