@@ -176,13 +176,13 @@ export default function StudyWorkspace({
     <div className="h-screen w-full flex flex-col bg-background">
       <Header />
       
-      <div className="flex-1 overflow-hidden p-2 pt-0">
+      <div className="flex-1 overflow-hidden p-3 pt-2">
         <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Left panel - Content */}
           {showContent && (
             <>
               <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
-                <div className="h-full rounded-xl overflow-hidden">
+                <div className="h-full rounded-2xl border border-border/40 bg-card/50 overflow-hidden">
                   <ContentPanelDesktop
                     content={activeContent}
                     onClose={() => onContentPanelOpenChange(false)}
@@ -197,7 +197,7 @@ export default function StudyWorkspace({
           
           {/* Center panel - Chat */}
           <ResizablePanel defaultSize={showContent || showSources ? 50 : 100} minSize={30}>
-            <div className="flex flex-col h-full min-w-0 overflow-hidden">
+            <div className="flex flex-col h-full min-w-0 rounded-2xl border border-border/40 bg-card/50 overflow-hidden">
               {children}
             </div>
           </ResizablePanel>
@@ -207,7 +207,7 @@ export default function StudyWorkspace({
             <>
               <ResizableHandle />
               <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
-                <div className="h-full rounded-xl overflow-hidden">
+                <div className="h-full rounded-2xl border border-border/40 bg-card/50 overflow-hidden">
                   <SourcesPanelDesktop
                     sources={currentSources}
                     activeSourceId={activeSourceId}

@@ -30,13 +30,8 @@ const ResizableHandle = ({
     )}
     {...props}
   >
-    {/* Mint gradient glow - fades at top/bottom, strongest in center */}
-    <div className="absolute inset-0 w-8 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/25 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/15 to-transparent blur-md" />
-    </div>
-    {/* The curved handle line - this IS the separator */}
-    <div className="z-10 h-full w-[2px] rounded-full bg-border/40 group-hover:bg-primary/60 group-hover:w-[3px] transition-all duration-200" />
+    {/* The line itself with gradient - fades at top/bottom */}
+    <div className="z-10 h-full w-[2px] rounded-full bg-gradient-to-b from-transparent via-border/60 to-transparent group-hover:via-primary/70 transition-colors duration-200" />
   </ResizablePrimitive.PanelResizeHandle>
 );
 
