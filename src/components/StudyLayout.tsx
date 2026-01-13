@@ -61,7 +61,7 @@ export default function StudyLayout({
     touchStartRef.current = null;
   }, [currentSources, activeContent, onSourcesOpenChange, onContentPanelOpenChange]);
 
-  // Mobile layout - swipe-based panels
+  // Mobile layout - swipe-based sheet panels
   if (isMobile) {
     return (
       <div 
@@ -72,36 +72,39 @@ export default function StudyLayout({
         {/* Main chat area */}
         {children}
         
-        {/* Content Panel (swipe-right to open) */}
+        {/* Content Panel - sheet overlay (swipe-right to open) */}
         <ContentPanel
           open={contentPanelOpen}
           onOpenChange={onContentPanelOpenChange}
           content={activeContent}
           onReselectImage={onReselectImage}
           onReselectPdf={onReselectPdf}
+          inline={false}
         />
         
-        {/* Sources Panel (swipe-left to open) */}
+        {/* Sources Panel - sheet overlay (swipe-left to open) */}
         <SourcesPanel
           open={sourcesOpen}
           onOpenChange={onSourcesOpenChange}
           sources={currentSources}
           activeSourceId={activeSourceId}
+          inline={false}
         />
       </div>
     );
   }
 
-  // Desktop layout - side-by-side panels
+  // Desktop layout - side-by-side inline columns
   return (
     <div className="flex h-screen w-full">
-      {/* Content Panel - left side (when content exists) */}
+      {/* Content Panel - left column (inline, no sheet) */}
       <ContentPanel
         open={contentPanelOpen}
         onOpenChange={onContentPanelOpenChange}
         content={activeContent}
         onReselectImage={onReselectImage}
         onReselectPdf={onReselectPdf}
+        inline={true}
       />
       
       {/* Main chat area - center */}
@@ -109,12 +112,13 @@ export default function StudyLayout({
         {children}
       </div>
       
-      {/* Sources Panel - right side */}
+      {/* Sources Panel - right column (inline, no sheet) */}
       <SourcesPanel
         open={sourcesOpen}
         onOpenChange={onSourcesOpenChange}
         sources={currentSources}
         activeSourceId={activeSourceId}
+        inline={true}
       />
     </div>
   );

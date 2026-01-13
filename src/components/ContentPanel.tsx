@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { ArrowLeft, ChevronLeft, ChevronRight, Crop, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Crop, X } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import TextSelectionBar from './TextSelectionBar';
 import 'react-pdf/dist/Page/TextLayer.css';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -27,6 +28,7 @@ interface ContentPanelProps {
   content: ActiveContent | null;
   onReselectImage?: () => void;
   onReselectPdf?: (text: string, mode: 'coach' | 'check', page: number) => void;
+  inline?: boolean; // Desktop inline mode (no sheet)
 }
 
 export default function ContentPanel({
@@ -35,13 +37,12 @@ export default function ContentPanel({
   content,
   onReselectImage,
   onReselectPdf,
+  inline = false,
 }: ContentPanelProps) {
   const [currentPage, setCurrentPage] = useState(content?.pdfPage || 1);
   const [numPages, setNumPages] = useState(0);
   const [selectedText, setSelectedText] = useState('');
   const [showSelectionBar, setShowSelectionBar] = useState(false);
-
-  if (!content) return null;
 
   const handleSelectionChange = () => {
     const selection = window.getSelection();
@@ -62,9 +63,128 @@ export default function ContentPanel({
       window.getSelection()?.removeAllRanges();
       setShowSelectionBar(false);
       setSelectedText('');
-      onOpenChange(false); // Close panel after selection
     }
   };
+
+  // Shared content renderer
+  const renderContent = () => (
+    <div className="h-full overflow-auto bg-muted/30">
+      {content?.type === 'image' && content.croppedImageUrl && (
+        <div className="p-4">
+          <img
+            src={content.croppedImageUrl}
+            alt="Question"
+            className="w-full rounded-lg border border-border"
+          />
+          
+          {onReselectImage && content.originalImageUrl && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (!inline) onOpenChange(false);
+                onReselectImage();
+              }}
+              className="w-full mt-4 gap-2"
+            >
+              <Crop className="h-4 w-4" />
+              Select different section
+            </Button>
+          )}
+        </div>
+      )}
+
+      {content?.type === 'pdf' && content.pdfPath && (
+        <div 
+          className="flex flex-col items-center py-2"
+          onMouseUp={handleSelectionChange}
+          onTouchEnd={handleSelectionChange}
+        >
+          <Document
+            file={content.pdfPath}
+            onLoadSuccess={({ numPages }) => {
+              setNumPages(numPages);
+              setCurrentPage(content.pdfPage || 1);
+            }}
+            loading={
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+              </div>
+            }
+          >
+            <Page
+              pageNumber={currentPage}
+              width={inline ? 350 : Math.min(window.innerWidth * 0.8 - 32, 400)}
+              renderTextLayer={true}
+              renderAnnotationLayer={false}
+            />
+          </Document>
+
+          {/* Page navigation */}
+          <div className="flex items-center justify-center gap-4 py-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage <= 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm">
+              {currentPage} / {numPages}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCurrentPage(p => Math.min(numPages, p + 1))}
+              disabled={currentPage >= numPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Text selection bar */}
+          {showSelectionBar && selectedText && (
+            <div className="px-4 w-full">
+              <TextSelectionBar
+                selectedText={selectedText}
+                onSelectMode={handleModeSelect}
+              />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  // Inline desktop mode - render as a column
+  if (inline) {
+    if (!content || !open) return null;
+    
+    return (
+      <div className="w-[380px] border-r border-border flex flex-col bg-background shrink-0">
+        <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+          <h2 className="font-semibold text-sm">
+            {content.type === 'image' ? 'Your Question' : content.pdfName || 'PDF'}
+          </h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onOpenChange(false)}
+            className="h-8 w-8"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <ScrollArea className="flex-1">
+          {renderContent()}
+        </ScrollArea>
+      </div>
+    );
+  }
+
+  // Mobile sheet mode
+  if (!content) return null;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -74,93 +194,8 @@ export default function ContentPanel({
             {content.type === 'image' ? 'Your Question' : content.pdfName || 'PDF'}
           </SheetTitle>
         </SheetHeader>
-
-        <div className="h-[calc(100vh-120px)] overflow-auto bg-muted/30">
-          {content.type === 'image' && content.croppedImageUrl && (
-            <div className="p-4">
-              <img
-                src={content.croppedImageUrl}
-                alt="Question"
-                className="w-full rounded-lg border border-border"
-              />
-              
-              {onReselectImage && content.originalImageUrl && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    onOpenChange(false);
-                    onReselectImage();
-                  }}
-                  className="w-full mt-4 gap-2"
-                >
-                  <Crop className="h-4 w-4" />
-                  Select different section
-                </Button>
-              )}
-            </div>
-          )}
-
-          {content.type === 'pdf' && content.pdfPath && (
-            <div 
-              className="flex flex-col items-center py-2"
-              onMouseUp={handleSelectionChange}
-              onTouchEnd={handleSelectionChange}
-            >
-              <Document
-                file={content.pdfPath}
-                onLoadSuccess={({ numPages }) => {
-                  setNumPages(numPages);
-                  setCurrentPage(content.pdfPage || 1);
-                }}
-                loading={
-                  <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
-                  </div>
-                }
-              >
-                <Page
-                  pageNumber={currentPage}
-                  width={Math.min(window.innerWidth * 0.8 - 32, 400)}
-                  renderTextLayer={true}
-                  renderAnnotationLayer={false}
-                />
-              </Document>
-
-              {/* Page navigation */}
-              <div className="flex items-center justify-center gap-4 py-3">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage <= 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm">
-                  {currentPage} / {numPages}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setCurrentPage(p => Math.min(numPages, p + 1))}
-                  disabled={currentPage >= numPages}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Text selection bar */}
-              {showSelectionBar && selectedText && (
-                <div className="px-4 w-full">
-                  <TextSelectionBar
-                    selectedText={selectedText}
-                    onSelectMode={handleModeSelect}
-                  />
-                </div>
-              )}
-            </div>
-          )}
+        <div className="h-[calc(100vh-60px)]">
+          {renderContent()}
         </div>
       </SheetContent>
     </Sheet>
