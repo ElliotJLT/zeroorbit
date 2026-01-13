@@ -1,9 +1,14 @@
 import { useRef, useCallback } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import ContentPanel, { ActiveContent } from './ContentPanel';
-import SourcesPanel, { Source } from './SourcesPanel';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import ContentPanelDesktop from './panels/ContentPanelDesktop';
+import ContentPanelMobile from './panels/ContentPanelMobile';
+import SourcesPanelDesktop from './panels/SourcesPanelDesktop';
+import SourcesPanelMobile from './panels/SourcesPanelMobile';
+import type { ActiveContent } from './panels/types';
+import type { Source } from './panels/types';
 
-interface StudyLayoutProps {
+interface StudyWorkspaceProps {
   children: React.ReactNode;
   activeContent: ActiveContent | null;
   currentSources: Source[];
@@ -14,10 +19,9 @@ interface StudyLayoutProps {
   onContentPanelOpenChange: (open: boolean) => void;
   onReselectImage?: () => void;
   onReselectPdf?: (text: string, mode: 'coach' | 'check', page: number) => void;
-  onSettings: () => void;
 }
 
-export default function StudyLayout({
+export default function StudyWorkspace({
   children,
   activeContent,
   currentSources,
@@ -28,10 +32,10 @@ export default function StudyLayout({
   onContentPanelOpenChange,
   onReselectImage,
   onReselectPdf,
-}: StudyLayoutProps) {
+}: StudyWorkspaceProps) {
   const isMobile = useIsMobile();
   
-  // Swipe gesture tracking
+  // Swipe gesture tracking for mobile
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -46,14 +50,11 @@ export default function StudyLayout({
     const deltaX = touch.clientX - touchStartRef.current.x;
     const deltaY = touch.clientY - touchStartRef.current.y;
     
-    // Only trigger on horizontal swipes (deltaX > deltaY) with minimum distance
     const minSwipeDistance = 80;
     if (Math.abs(deltaX) > minSwipeDistance && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
       if (deltaX < 0 && currentSources.length > 0) {
-        // Swipe left - open sources panel (if we have sources)
         onSourcesOpenChange(true);
       } else if (deltaX > 0 && activeContent) {
-        // Swipe right - open content panel (if we have content)
         onContentPanelOpenChange(true);
       }
     }
@@ -69,57 +70,69 @@ export default function StudyLayout({
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Main chat area */}
         {children}
         
-        {/* Content Panel - sheet overlay (swipe-right to open) */}
-        <ContentPanel
+        <ContentPanelMobile
           open={contentPanelOpen}
           onOpenChange={onContentPanelOpenChange}
           content={activeContent}
           onReselectImage={onReselectImage}
           onReselectPdf={onReselectPdf}
-          inline={false}
         />
         
-        {/* Sources Panel - sheet overlay (swipe-left to open) */}
-        <SourcesPanel
+        <SourcesPanelMobile
           open={sourcesOpen}
           onOpenChange={onSourcesOpenChange}
           sources={currentSources}
           activeSourceId={activeSourceId}
-          inline={false}
         />
       </div>
     );
   }
 
-  // Desktop layout - side-by-side inline columns
+  // Desktop layout - resizable 3-column layout
+  const showContent = contentPanelOpen && activeContent;
+  const showSources = sourcesOpen && currentSources.length > 0;
+
   return (
-    <div className="flex h-screen w-full">
-      {/* Content Panel - left column (inline, no sheet) */}
-      <ContentPanel
-        open={contentPanelOpen}
-        onOpenChange={onContentPanelOpenChange}
-        content={activeContent}
-        onReselectImage={onReselectImage}
-        onReselectPdf={onReselectPdf}
-        inline={true}
-      />
-      
-      {/* Main chat area - center */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {children}
-      </div>
-      
-      {/* Sources Panel - right column (inline, no sheet) */}
-      <SourcesPanel
-        open={sourcesOpen}
-        onOpenChange={onSourcesOpenChange}
-        sources={currentSources}
-        activeSourceId={activeSourceId}
-        inline={true}
-      />
+    <div className="h-screen w-full">
+      <ResizablePanelGroup direction="horizontal" className="h-full">
+        {/* Left panel - Content */}
+        {showContent && (
+          <>
+            <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
+              <ContentPanelDesktop
+                content={activeContent}
+                onClose={() => onContentPanelOpenChange(false)}
+                onReselectImage={onReselectImage}
+                onReselectPdf={onReselectPdf}
+              />
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+          </>
+        )}
+        
+        {/* Center panel - Chat */}
+        <ResizablePanel defaultSize={showContent || showSources ? 50 : 100} minSize={30}>
+          <div className="flex flex-col h-full min-w-0">
+            {children}
+          </div>
+        </ResizablePanel>
+        
+        {/* Right panel - Sources */}
+        {showSources && (
+          <>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
+              <SourcesPanelDesktop
+                sources={currentSources}
+                activeSourceId={activeSourceId}
+                onClose={() => onSourcesOpenChange(false)}
+              />
+            </ResizablePanel>
+          </>
+        )}
+      </ResizablePanelGroup>
     </div>
   );
 }

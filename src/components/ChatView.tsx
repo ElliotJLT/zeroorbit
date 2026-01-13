@@ -12,7 +12,7 @@ import ConfirmNewProblemDialog from './ConfirmNewProblemDialog';
 import QuestionReviewScreen from './QuestionReviewScreen';
 import SignupPrompt from './SignupPrompt';
 import VoiceChatPrompt from './VoiceChatPrompt';
-import type { Source } from './SourcesPanel';
+import type { Source } from './panels/types';
 import type { Message } from '@/hooks/useChat';
 
 interface ChatViewProps {
