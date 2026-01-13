@@ -180,7 +180,7 @@ export default function StudyWorkspace({
     <div className="h-screen w-full flex flex-col bg-background">
       <Header />
       
-      <div className="flex-1 overflow-hidden p-3 pt-2">
+      <div className="flex-1 overflow-hidden px-3 pb-3">
         <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Left panel - Content */}
           {showContent && (
@@ -203,7 +203,7 @@ export default function StudyWorkspace({
           
           {/* Center panel - Chat */}
           <ResizablePanel defaultSize={showContent || showSources ? 50 : 100} minSize={30}>
-            <div className="flex flex-col h-full min-w-0 rounded-2xl border border-border/40 bg-card/50 overflow-hidden">
+            <div className="flex flex-col h-full min-w-0 rounded-b-2xl border-x border-b border-border/40 bg-card/50 overflow-hidden">
               {children}
             </div>
           </ResizablePanel>
