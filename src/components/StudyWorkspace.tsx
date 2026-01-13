@@ -137,8 +137,8 @@ export default function StudyWorkspace({
           />
         )}
         
-        {/* Right edge dragger for sources panel */}
-        {currentSources.length > 0 && !sourcesOpen && (
+        {/* Right edge dragger for learning panel - always visible */}
+        {!sourcesOpen && (
           <button
             onClick={() => onSourcesOpenChange(true)}
             className="fixed right-0 top-1/2 -translate-y-1/2 z-40 h-24 w-1.5 rounded-l-full bg-border/60 hover:bg-primary/40 hover:w-2 transition-all duration-200"
@@ -168,7 +168,7 @@ export default function StudyWorkspace({
 
   // Desktop layout - shared header + resizable 3-column layout
   const showContent = contentPanelOpen;
-  const showSources = sourcesOpen && currentSources.length > 0;
+  const showSources = sourcesOpen; // Always show when open, regardless of sources
 
   return (
     <div className="h-screen w-full flex flex-col bg-background">

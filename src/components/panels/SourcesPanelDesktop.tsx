@@ -1,7 +1,9 @@
-import { BookOpen, GraduationCap, X } from 'lucide-react';
+import { BookOpen, GraduationCap, X, TrendingUp, Lightbulb } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import MathText from '../MathText';
+import { useAuth } from '@/hooks/useAuth';
 import type { Source } from './types';
 
 interface SourcesPanelDesktopProps {
@@ -15,6 +17,9 @@ export default function SourcesPanelDesktop({
   activeSourceId,
   onClose,
 }: SourcesPanelDesktopProps) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Header - smaller, contextual */}
@@ -36,10 +41,31 @@ export default function SourcesPanelDesktop({
       {/* Content */}
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-4">
+          {/* CTA for logged-in users */}
+          {user && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/progress')}
+              className="w-full gap-2 border-primary/30 hover:bg-primary/10"
+            >
+              <TrendingUp className="h-4 w-4" />
+              View My Progress
+            </Button>
+          )}
+
           {sources.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              No sources available for this message.
-            </p>
+            <div className="text-center py-8 space-y-3">
+              <div className="w-12 h-12 mx-auto rounded-full bg-muted flex items-center justify-center">
+                <Lightbulb className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Sources and insights will appear here as you learn.
+              </p>
+              <p className="text-xs text-muted-foreground/70">
+                Ask questions to unlock helpful explanations and exam tips.
+              </p>
+            </div>
           ) : (
             sources.map((source) => (
               <div
