@@ -265,6 +265,30 @@ export default function Index() {
     }
   };
 
+  // Handle adding image from content panel (adds to existing chat context)
+  const handleAddImage = (file: File) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      setRawImage(base64);
+      setStep('review');
+      runPreviewAnalysis(base64);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Handle adding PDF from content panel
+  const handleAddPdf = async (file: File) => {
+    const pdfUrl = URL.createObjectURL(file);
+    setActiveContent({
+      type: 'pdf',
+      pdfPath: pdfUrl,
+      pdfName: file.name,
+      pdfPage: 1,
+    });
+    setContentPanelOpen(true);
+  };
+
   // Handle new problem (reset chat)
   const handleNewProblem = () => {
     chat.resetChat();
@@ -460,6 +484,8 @@ export default function Index() {
       onContentPanelOpenChange={setContentPanelOpen}
       onReselectImage={handleReselectImage}
       onReselectPdf={handleReselectPdf}
+      onAddImage={handleAddImage}
+      onAddPdf={handleAddPdf}
       onNewProblem={handleNewProblem}
       onSettings={handleSettings}
     >

@@ -23,6 +23,8 @@ interface StudyWorkspaceProps {
   onContentPanelOpenChange: (open: boolean) => void;
   onReselectImage?: () => void;
   onReselectPdf?: (text: string, mode: 'coach' | 'check', page: number) => void;
+  onAddImage?: (file: File) => void;
+  onAddPdf?: (file: File) => void;
   // Header actions
   onNewProblem: () => void;
   onSettings: () => void;
@@ -39,6 +41,8 @@ export default function StudyWorkspace({
   onContentPanelOpenChange,
   onReselectImage,
   onReselectPdf,
+  onAddImage,
+  onAddPdf,
   onNewProblem,
   onSettings,
 }: StudyWorkspaceProps) {
@@ -169,7 +173,7 @@ export default function StudyWorkspace({
   }
 
   // Desktop layout - shared header + resizable 3-column layout
-  const showContent = contentPanelOpen && activeContent;
+  const showContent = contentPanelOpen;
   const showSources = sourcesOpen && currentSources.length > 0;
 
   return (
@@ -188,6 +192,8 @@ export default function StudyWorkspace({
                     onClose={() => onContentPanelOpenChange(false)}
                     onReselectImage={onReselectImage}
                     onReselectPdf={onReselectPdf}
+                    onAddImage={onAddImage}
+                    onAddPdf={onAddPdf}
                   />
                 </div>
               </ResizablePanel>
