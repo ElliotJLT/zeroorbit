@@ -9,6 +9,7 @@ import ChatView from '@/components/ChatView';
 import QuestionReviewScreen from '@/components/QuestionReviewScreen';
 import VoiceSession from '@/components/VoiceSession';
 import { useChat } from '@/hooks/useChat';
+import type { ActiveContent } from '@/components/ContentPanel';
 import {
   Select,
   SelectContent,
@@ -29,9 +30,20 @@ export default function Index() {
     fromPastPaper?: boolean; 
     questionContext?: string; 
     mode?: 'coach' | 'check';
+    // PDF content
+    pdfContent?: {
+      path: string;
+      name: string;
+      date: string;
+      page: number;
+      selectedText: string;
+    };
   } | null;
   
   const [step, setStep] = useState<Step>('home');
+  
+  // Active content state - persists image/PDF for reference during chat
+  const [activeContent, setActiveContent] = useState<ActiveContent | null>(null);
   
   // Setup state (only for users without profile)
   const [examBoard, setExamBoard] = useState('');
@@ -73,10 +85,28 @@ export default function Index() {
 
   // Handle navigation from Past Papers
   useEffect(() => {
-    if (locationState?.fromPastPaper && locationState.questionContext) {
-      // Go directly to chat with the question context
-      chat.sendMessage(locationState.questionContext);
-      setStep('chat');
+    if (locationState?.fromPastPaper) {
+      if (locationState.pdfContent) {
+        // PDF with text selection - store content and start chat
+        const { path, name, date, page, selectedText } = locationState.pdfContent;
+        setActiveContent({
+          type: 'pdf',
+          pdfPath: path,
+          pdfName: name,
+          pdfDate: date,
+          pdfPage: page,
+          selectedText,
+        });
+        
+        // Build context message for the chat
+        const contextMessage = `I'm working on ${name} (${date}), page ${page}. Here's the question I need help with:\n\n"${selectedText}"`;
+        chat.sendMessage(contextMessage);
+        setStep('chat');
+      } else if (locationState.questionContext) {
+        // Legacy flow - just text context
+        chat.sendMessage(locationState.questionContext);
+        setStep('chat');
+      }
       
       // Clear the location state to prevent re-triggering
       window.history.replaceState({}, document.title);
@@ -135,7 +165,7 @@ export default function Index() {
   };
 
   // Handle review completion (crop + mode selection done)
-  const handleReviewComplete = async (croppedImageUrl: string, mode: 'coach' | 'check') => {
+  const handleReviewComplete = async (croppedImageUrl: string, mode: 'coach' | 'check', originalImageUrl?: string) => {
     // Upload image if needed
     let finalImageUrl = croppedImageUrl;
     if (croppedImageUrl.startsWith('data:')) {
@@ -164,12 +194,19 @@ export default function Index() {
       }
     }
     
+    // Store the content for persistence - keep original for re-cropping
+    setActiveContent({
+      type: 'image',
+      croppedImageUrl: finalImageUrl,
+      originalImageUrl: originalImageUrl || rawImage || undefined,
+    });
+    
     // Set analysis if available
     if (analysisResult) {
       chat.setAnalysis(analysisResult);
     }
     
-    // Move to chat screen first
+    // Move to chat screen - DON'T clear rawImage yet (needed for re-crop)
     setStep('chat');
     setRawImage(null);
     setAnalysisResult(null);
@@ -185,11 +222,32 @@ export default function Index() {
     setStep('home');
   };
 
+  // Handle re-select from content panel (re-crop different section)
+  const handleReselectImage = () => {
+    if (activeContent?.originalImageUrl) {
+      setRawImage(activeContent.originalImageUrl);
+      setStep('review');
+    }
+  };
+
+  // Handle new PDF text selection from content panel
+  const handleReselectPdf = (text: string, mode: 'coach' | 'check', page: number) => {
+    if (activeContent?.type === 'pdf') {
+      // Update the page in active content
+      setActiveContent(prev => prev ? { ...prev, pdfPage: page, selectedText: text } : null);
+      
+      // Send as new message in existing chat
+      const contextMessage = `Now I'm looking at page ${page}:\n\n"${text}"`;
+      chat.sendMessage(contextMessage);
+    }
+  };
+
   // Handle new problem (reset chat)
   const handleNewProblem = () => {
     chat.resetChat();
     setRawImage(null);
     setAnalysisResult(null);
+    setActiveContent(null); // Clear persisted content
     setStep('home');
   };
 
@@ -382,6 +440,9 @@ export default function Index() {
       isAuthenticated={!!user}
       onStartVoiceSession={() => setShowVoiceSession(true)}
       sessionId={chat.sessionId}
+      activeContent={activeContent}
+      onReselectImage={handleReselectImage}
+      onReselectPdf={handleReselectPdf}
     />
   );
 }

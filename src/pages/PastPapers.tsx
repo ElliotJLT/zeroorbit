@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, FileText, ExternalLink } from 'lucide-react';
-import PdfScanner from '@/components/PdfScanner';
+import PdfStudyView from '@/components/PdfStudyView';
 
 const orbitPapers = [
   {
@@ -31,8 +31,33 @@ export default function PastPapers() {
   const navigate = useNavigate();
   const [selectedPaper, setSelectedPaper] = useState<typeof orbitPapers[0] | null>(null);
 
+  const handleSelectText = (text: string, mode: 'coach' | 'check', page: number) => {
+    if (!selectedPaper) return;
+    
+    // Navigate to chat with PDF content persisted
+    navigate('/', { 
+      state: { 
+        fromPastPaper: true,
+        pdfContent: {
+          path: selectedPaper.path,
+          name: selectedPaper.name,
+          date: selectedPaper.date,
+          page,
+          selectedText: text,
+        },
+        mode,
+      } 
+    });
+  };
+
   if (selectedPaper) {
-    return <PdfScanner paper={selectedPaper} onClose={() => setSelectedPaper(null)} />;
+    return (
+      <PdfStudyView 
+        paper={selectedPaper} 
+        onClose={() => setSelectedPaper(null)}
+        onSelectText={handleSelectText}
+      />
+    );
   }
 
   return (
@@ -55,7 +80,7 @@ export default function PastPapers() {
         </div>
         <h2 className="text-2xl font-semibold">Past Papers</h2>
         <p className="text-muted-foreground">
-          Download a paper, snap any question with Orbit, and get step-by-step guidance.
+          Select text from any question to get step-by-step guidance.
         </p>
       </div>
 

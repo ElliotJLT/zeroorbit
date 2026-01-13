@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, Send, Mic, MicOff, Loader2, Sparkles, X, Volume2, VolumeX, Copy, ThumbsUp, ThumbsDown, Check, BookOpen } from 'lucide-react';
+import { Camera, Send, Mic, MicOff, Loader2, Sparkles, X, Volume2, VolumeX, Copy, ThumbsUp, ThumbsDown, Check, BookOpen, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,7 @@ import QuestionReviewScreen from './QuestionReviewScreen';
 import SignupPrompt from './SignupPrompt';
 import VoiceChatPrompt from './VoiceChatPrompt';
 import SourcesPanel, { Source } from './SourcesPanel';
+import ContentPanel, { ActiveContent } from './ContentPanel';
 import type { Message } from '@/hooks/useChat';
 
 interface ChatViewProps {
@@ -28,6 +29,10 @@ interface ChatViewProps {
   isAuthenticated: boolean;
   onStartVoiceSession?: () => void;
   sessionId?: string;
+  // Content persistence props
+  activeContent?: ActiveContent | null;
+  onReselectImage?: () => void;
+  onReselectPdf?: (text: string, mode: 'coach' | 'check', page: number) => void;
 }
 
 export default function ChatView({
@@ -43,6 +48,9 @@ export default function ChatView({
   isAuthenticated,
   onStartVoiceSession,
   sessionId,
+  activeContent,
+  onReselectImage,
+  onReselectPdf,
 }: ChatViewProps) {
   const [newMessage, setNewMessage] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -64,6 +72,9 @@ export default function ChatView({
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [currentSources, setCurrentSources] = useState<Source[]>([]);
   const [activeSourceId, setActiveSourceId] = useState<number | undefined>();
+  
+  // Content panel state (for viewing question/PDF)
+  const [contentPanelOpen, setContentPanelOpen] = useState(false);
   
   // Swipe gesture tracking
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -259,12 +270,14 @@ export default function ChatView({
       if (deltaX < 0 && currentSources.length > 0) {
         // Swipe left - open sources panel (if we have sources)
         setSourcesOpen(true);
+      } else if (deltaX > 0 && activeContent) {
+        // Swipe right - open content panel (if we have content)
+        setContentPanelOpen(true);
       }
-      // Swipe right could open burger menu but it's already accessible via button
     }
     
     touchStartRef.current = null;
-  }, [currentSources]);
+  }, [currentSources, activeContent]);
 
   // QuestionReviewScreen fullscreen for adding working
   if (reviewImage) {
@@ -285,7 +298,22 @@ export default function ChatView({
       onTouchEnd={handleTouchEnd}
     >
       <header className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-border bg-background/95 backdrop-blur-sm">
-        <BurgerMenu onSettings={onSettings} />
+        <div className="flex items-center gap-2">
+          <BurgerMenu onSettings={onSettings} />
+          
+          {/* Content indicator button - shows when content exists */}
+          {activeContent && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setContentPanelOpen(true)}
+              className="h-9 w-9"
+              title="View question"
+            >
+              <FileText className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
         
         <Button
           variant="outline"
@@ -523,6 +551,15 @@ export default function ChatView({
         onOpenChange={setSourcesOpen}
         sources={currentSources}
         activeSourceId={activeSourceId}
+      />
+
+      {/* Content Panel (swipe-right to open) */}
+      <ContentPanel
+        open={contentPanelOpen}
+        onOpenChange={setContentPanelOpen}
+        content={activeContent || null}
+        onReselectImage={onReselectImage}
+        onReselectPdf={onReselectPdf}
       />
     </div>
   );

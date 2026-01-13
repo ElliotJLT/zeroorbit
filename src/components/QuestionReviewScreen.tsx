@@ -6,7 +6,7 @@ interface QuestionReviewScreenProps {
   imageUrl: string;
   analysisResult?: { topic?: string; difficulty?: string } | null;
   isAnalyzing?: boolean;
-  onComplete: (croppedImageUrl: string, mode: 'coach' | 'check') => void;
+  onComplete: (croppedImageUrl: string, mode: 'coach' | 'check', originalImageUrl?: string) => void;
   onCancel: () => void;
 }
 
@@ -228,7 +228,7 @@ export default function QuestionReviewScreen({
     if (!selectedMode) return;
     setIsSubmitting(true);
     const croppedUrl = getCroppedImage();
-    onComplete(croppedUrl, selectedMode);
+    onComplete(croppedUrl, selectedMode, imageUrl);
   };
 
   return (
