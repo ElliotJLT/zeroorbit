@@ -145,17 +145,53 @@ export default function ContentPanelDesktop({
             </div>
           )}
 
-          {/* Image content - simplified, just display the image */}
+          {/* Image content with upload options */}
           {content?.type === 'image' && content.croppedImageUrl && (
-            <div className="p-4">
+            <div className="p-4 space-y-4">
               <img
                 src={content.croppedImageUrl}
                 alt="Question"
                 className="w-full rounded-lg"
               />
-              <p className="text-[11px] text-muted-foreground/60 text-center mt-3">
-                Upload a new image to change context
-              </p>
+              
+              {/* Hidden inputs */}
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <input
+                ref={pdfInputRef}
+                type="file"
+                accept=".pdf"
+                onChange={handlePdfUpload}
+                className="hidden"
+              />
+              
+              {/* Upload buttons */}
+              <div className="space-y-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => imageInputRef.current?.click()}
+                  className="w-full gap-2 justify-start text-muted-foreground"
+                >
+                  <ImagePlus className="h-4 w-4" />
+                  Change image
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => pdfInputRef.current?.click()}
+                  className="w-full gap-2 justify-start text-muted-foreground"
+                >
+                  <Upload className="h-4 w-4" />
+                  Upload PDF instead
+                </Button>
+              </div>
             </div>
           )}
 
