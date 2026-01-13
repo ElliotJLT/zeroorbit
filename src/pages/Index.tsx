@@ -59,6 +59,12 @@ export default function Index() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showVoiceSession, setShowVoiceSession] = useState(false);
   
+  // Sources/content panel state lifted from ChatView
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+  const [currentSources, setCurrentSources] = useState<Source[]>([]);
+  const [activeSourceId, setActiveSourceId] = useState<number | undefined>();
+  const [contentPanelOpen, setContentPanelOpen] = useState(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Build user context from profile or local state
@@ -426,13 +432,6 @@ export default function Index() {
       />
     );
   }
-
-  // Sources state lifted from ChatView
-  const [sourcesOpen, setSourcesOpen] = useState(false);
-  const [currentSources, setCurrentSources] = useState<Source[]>([]);
-  const [activeSourceId, setActiveSourceId] = useState<number | undefined>();
-  const [contentPanelOpen, setContentPanelOpen] = useState(false);
-
   const handleOpenSources = useCallback((sources: Source[], activeId?: number) => {
     setCurrentSources(sources);
     setActiveSourceId(activeId);
