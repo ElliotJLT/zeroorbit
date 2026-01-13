@@ -78,7 +78,7 @@ export default function ContentPanelDesktop({
               <img
                 src={content.croppedImageUrl}
                 alt="Question"
-                className="w-full rounded-lg border border-border"
+                className="w-full rounded-lg"
               />
               
               {onReselectImage && content.originalImageUrl && (
