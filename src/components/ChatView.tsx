@@ -6,9 +6,7 @@ import { cn } from '@/lib/utils';
 import { useSpeech } from '@/hooks/useSpeech';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import { supabase } from '@/integrations/supabase/client';
-import BurgerMenu from './BurgerMenu';
 import CitationText from './CitationText';
-import ConfirmNewProblemDialog from './ConfirmNewProblemDialog';
 import QuestionReviewScreen from './QuestionReviewScreen';
 import SignupPrompt from './SignupPrompt';
 import VoiceChatPrompt from './VoiceChatPrompt';
@@ -23,8 +21,6 @@ interface ChatViewProps {
   isAtLimit: boolean;
   onSendMessage: (content: string, inputMethod?: 'text' | 'voice') => void;
   onSendImageMessage: (imageUrl: string, mode: 'coach' | 'check') => void;
-  onNewProblem: () => void;
-  onSettings: () => void;
   isAuthenticated: boolean;
   onStartVoiceSession?: () => void;
   sessionId?: string;
@@ -40,15 +36,12 @@ export default function ChatView({
   isAtLimit,
   onSendMessage,
   onSendImageMessage,
-  onNewProblem,
-  onSettings,
   isAuthenticated,
   onStartVoiceSession,
   sessionId,
   onOpenSources,
 }: ChatViewProps) {
   const [newMessage, setNewMessage] = useState('');
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [voiceNoteCount, setVoiceNoteCount] = useState(0);
   const [showVoiceChatPrompt, setShowVoiceChatPrompt] = useState(false);
   const [voicePromptShownAt2, setVoicePromptShownAt2] = useState(false);
@@ -238,19 +231,6 @@ export default function ChatView({
 
   return (
     <div className="flex flex-col h-full bg-background">
-      <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b border-border bg-background/95 backdrop-blur-sm">
-        <BurgerMenu onSettings={onSettings} />
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowConfirmDialog(true)}
-          className="gap-2"
-        >
-          <Camera className="h-4 w-4" />
-          New Problem
-        </Button>
-      </header>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -455,13 +435,6 @@ export default function ChatView({
           </div>
         </div>
       )}
-
-      {/* Confirm New Problem Dialog */}
-      <ConfirmNewProblemDialog
-        open={showConfirmDialog}
-        onOpenChange={setShowConfirmDialog}
-        onConfirm={onNewProblem}
-      />
 
       {/* Voice Chat Prompt */}
       <VoiceChatPrompt
