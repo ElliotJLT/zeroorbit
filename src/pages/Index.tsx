@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowRight, X, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,8 +8,10 @@ import HomeScreen from '@/components/HomeScreen';
 import ChatView from '@/components/ChatView';
 import QuestionReviewScreen from '@/components/QuestionReviewScreen';
 import VoiceSession from '@/components/VoiceSession';
+import StudyLayout from '@/components/StudyLayout';
 import { useChat } from '@/hooks/useChat';
 import type { ActiveContent } from '@/components/ContentPanel';
+import type { Source } from '@/components/SourcesPanel';
 import {
   Select,
   SelectContent,
@@ -425,24 +427,57 @@ export default function Index() {
     );
   }
 
+  // Sources state lifted from ChatView
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+  const [currentSources, setCurrentSources] = useState<Source[]>([]);
+  const [activeSourceId, setActiveSourceId] = useState<number | undefined>();
+  const [contentPanelOpen, setContentPanelOpen] = useState(false);
+
+  const handleOpenSources = useCallback((sources: Source[], activeId?: number) => {
+    setCurrentSources(sources);
+    setActiveSourceId(activeId);
+    setSourcesOpen(true);
+    
+    // Scroll to source after panel opens
+    if (activeId) {
+      setTimeout(() => {
+        const sourceEl = document.getElementById(`source-${activeId}`);
+        sourceEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }
+  }, []);
+
   // Chat screen
   return (
-    <ChatView
-      messages={chat.messages}
-      sending={chat.sending}
-      guestExchangeCount={chat.guestExchangeCount}
-      guestLimit={chat.guestLimit}
-      isAtLimit={chat.isAtLimit}
-      onSendMessage={chat.sendMessage}
-      onSendImageMessage={chat.sendImageMessage}
-      onNewProblem={handleNewProblem}
-      onSettings={handleSettings}
-      isAuthenticated={!!user}
-      onStartVoiceSession={() => setShowVoiceSession(true)}
-      sessionId={chat.sessionId}
+    <StudyLayout
       activeContent={activeContent}
+      currentSources={currentSources}
+      activeSourceId={activeSourceId}
+      sourcesOpen={sourcesOpen}
+      onSourcesOpenChange={setSourcesOpen}
+      contentPanelOpen={contentPanelOpen}
+      onContentPanelOpenChange={setContentPanelOpen}
       onReselectImage={handleReselectImage}
       onReselectPdf={handleReselectPdf}
-    />
+      onSettings={handleSettings}
+    >
+      <ChatView
+        messages={chat.messages}
+        sending={chat.sending}
+        guestExchangeCount={chat.guestExchangeCount}
+        guestLimit={chat.guestLimit}
+        isAtLimit={chat.isAtLimit}
+        onSendMessage={chat.sendMessage}
+        onSendImageMessage={chat.sendImageMessage}
+        onNewProblem={handleNewProblem}
+        onSettings={handleSettings}
+        isAuthenticated={!!user}
+        onStartVoiceSession={() => setShowVoiceSession(true)}
+        sessionId={chat.sessionId}
+        hasActiveContent={!!activeContent}
+        onOpenContent={() => setContentPanelOpen(true)}
+        onOpenSources={handleOpenSources}
+      />
+    </StudyLayout>
   );
 }
