@@ -375,7 +375,12 @@ export default function ChatView({
       {isAtLimit ? (
         <SignupPrompt exchangeCount={guestExchangeCount} limit={guestLimit} />
       ) : (
-        <div className="shrink-0 border-t border-border bg-background p-4">
+        <div className="shrink-0 relative">
+          {/* Subtle mint glow behind input */}
+          <div className="absolute inset-x-0 -top-8 h-16 bg-gradient-to-t from-primary/8 via-primary/4 to-transparent pointer-events-none" />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-radial from-primary/6 via-transparent to-transparent pointer-events-none blur-xl" />
+          
+          <div className="relative border-t border-border bg-background/95 backdrop-blur-sm p-4">
           {/* Guest exchange counter */}
           {!isAuthenticated && guestExchangeCount > 0 && (
             <div className="text-center mb-2">
@@ -432,6 +437,7 @@ export default function ChatView({
             >
               {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
             </Button>
+          </div>
           </div>
         </div>
       )}
