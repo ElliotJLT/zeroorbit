@@ -1,8 +1,10 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Image, BookOpen } from 'lucide-react';
+import { Image, BookOpen, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import BurgerMenu from './BurgerMenu';
+import ConfirmNewProblemDialog from './ConfirmNewProblemDialog';
 import ContentPanelDesktop from './panels/ContentPanelDesktop';
 import ContentPanelMobile from './panels/ContentPanelMobile';
 import SourcesPanelDesktop from './panels/SourcesPanelDesktop';
@@ -21,6 +23,9 @@ interface StudyWorkspaceProps {
   onContentPanelOpenChange: (open: boolean) => void;
   onReselectImage?: () => void;
   onReselectPdf?: (text: string, mode: 'coach' | 'check', page: number) => void;
+  // Header actions
+  onNewProblem: () => void;
+  onSettings: () => void;
 }
 
 export default function StudyWorkspace({
@@ -34,9 +39,11 @@ export default function StudyWorkspace({
   onContentPanelOpenChange,
   onReselectImage,
   onReselectPdf,
+  onNewProblem,
+  onSettings,
 }: StudyWorkspaceProps) {
   const isMobile = useIsMobile();
-  
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   // Auto-open content panel on desktop when content becomes available
   useEffect(() => {
     if (!isMobile && activeContent && !contentPanelOpen) {
@@ -78,6 +85,31 @@ export default function StudyWorkspace({
     touchStartRef.current = null;
   }, [currentSources, activeContent, onSourcesOpenChange, onContentPanelOpenChange]);
 
+  // Shared header component
+  const Header = () => (
+    <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b border-border bg-background/95 backdrop-blur-sm">
+      <BurgerMenu onSettings={onSettings} />
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setShowConfirmDialog(true)}
+        className="gap-2"
+      >
+        <Camera className="h-4 w-4" />
+        New Problem
+      </Button>
+    </header>
+  );
+
+  // Shared confirm dialog
+  const ConfirmDialog = () => (
+    <ConfirmNewProblemDialog
+      open={showConfirmDialog}
+      onOpenChange={setShowConfirmDialog}
+      onConfirm={onNewProblem}
+    />
+  );
+
   // Mobile layout - swipe-based sheet panels with edge indicators
   if (isMobile) {
     return (
@@ -86,7 +118,11 @@ export default function StudyWorkspace({
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {children}
+        <Header />
+        
+        <div className="flex-1 overflow-hidden">
+          {children}
+        </div>
         
         {/* Left edge indicator for content panel */}
         {activeContent && !contentPanelOpen && (
@@ -126,53 +162,61 @@ export default function StudyWorkspace({
           sources={currentSources}
           activeSourceId={activeSourceId}
         />
+        
+        <ConfirmDialog />
       </div>
     );
   }
 
-  // Desktop layout - resizable 3-column layout
+  // Desktop layout - shared header + resizable 3-column layout
   const showContent = contentPanelOpen && activeContent;
   const showSources = sourcesOpen && currentSources.length > 0;
 
   return (
-    <div className="h-screen w-full">
-      <ResizablePanelGroup direction="horizontal" className="h-full">
-        {/* Left panel - Content */}
-        {showContent && (
-          <>
-            <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
-              <ContentPanelDesktop
-                content={activeContent}
-                onClose={() => onContentPanelOpenChange(false)}
-                onReselectImage={onReselectImage}
-                onReselectPdf={onReselectPdf}
-              />
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-          </>
-        )}
-        
-        {/* Center panel - Chat */}
-        <ResizablePanel defaultSize={showContent || showSources ? 50 : 100} minSize={30}>
-          <div className="flex flex-col h-full min-w-0">
-            {children}
-          </div>
-        </ResizablePanel>
-        
-        {/* Right panel - Sources */}
-        {showSources && (
-          <>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
-              <SourcesPanelDesktop
-                sources={currentSources}
-                activeSourceId={activeSourceId}
-                onClose={() => onSourcesOpenChange(false)}
-              />
-            </ResizablePanel>
-          </>
-        )}
-      </ResizablePanelGroup>
+    <div className="h-screen w-full flex flex-col">
+      <Header />
+      
+      <div className="flex-1 overflow-hidden">
+        <ResizablePanelGroup direction="horizontal" className="h-full">
+          {/* Left panel - Content */}
+          {showContent && (
+            <>
+              <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
+                <ContentPanelDesktop
+                  content={activeContent}
+                  onClose={() => onContentPanelOpenChange(false)}
+                  onReselectImage={onReselectImage}
+                  onReselectPdf={onReselectPdf}
+                />
+              </ResizablePanel>
+              <ResizableHandle withHandle />
+            </>
+          )}
+          
+          {/* Center panel - Chat */}
+          <ResizablePanel defaultSize={showContent || showSources ? 50 : 100} minSize={30}>
+            <div className="flex flex-col h-full min-w-0">
+              {children}
+            </div>
+          </ResizablePanel>
+          
+          {/* Right panel - Sources */}
+          {showSources && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
+                <SourcesPanelDesktop
+                  sources={currentSources}
+                  activeSourceId={activeSourceId}
+                  onClose={() => onSourcesOpenChange(false)}
+                />
+              </ResizablePanel>
+            </>
+          )}
+        </ResizablePanelGroup>
+      </div>
+      
+      <ConfirmDialog />
     </div>
   );
 }

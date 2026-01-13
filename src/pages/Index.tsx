@@ -460,6 +460,8 @@ export default function Index() {
       onContentPanelOpenChange={setContentPanelOpen}
       onReselectImage={handleReselectImage}
       onReselectPdf={handleReselectPdf}
+      onNewProblem={handleNewProblem}
+      onSettings={handleSettings}
     >
       <ChatView
         messages={chat.messages}
@@ -469,8 +471,6 @@ export default function Index() {
         isAtLimit={chat.isAtLimit}
         onSendMessage={chat.sendMessage}
         onSendImageMessage={chat.sendImageMessage}
-        onNewProblem={handleNewProblem}
-        onSettings={handleSettings}
         isAuthenticated={!!user}
         onStartVoiceSession={() => setShowVoiceSession(true)}
         sessionId={chat.sessionId}
