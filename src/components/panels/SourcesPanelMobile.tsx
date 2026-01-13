@@ -1,7 +1,10 @@
-import { BookOpen, GraduationCap } from 'lucide-react';
+import { BookOpen, GraduationCap, TrendingUp, Lightbulb } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 import MathText from '../MathText';
+import { useAuth } from '@/hooks/useAuth';
 import type { Source } from './types';
 
 interface SourcesPanelMobileProps {
@@ -17,6 +20,9 @@ export default function SourcesPanelMobile({
   sources,
   activeSourceId,
 }: SourcesPanelMobileProps) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-[85vw] sm:w-[400px] p-0">
@@ -29,10 +35,34 @@ export default function SourcesPanelMobile({
         
         <ScrollArea className="h-[calc(100vh-60px)]">
           <div className="p-4 space-y-4">
+            {/* CTA for logged-in users */}
+            {user && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  onOpenChange(false);
+                  navigate('/progress');
+                }}
+                className="w-full gap-2 border-primary/30 hover:bg-primary/10"
+              >
+                <TrendingUp className="h-4 w-4" />
+                View My Progress
+              </Button>
+            )}
+
             {sources.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                No sources available for this message.
-              </p>
+              <div className="text-center py-8 space-y-3">
+                <div className="w-12 h-12 mx-auto rounded-full bg-muted flex items-center justify-center">
+                  <Lightbulb className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Sources and insights will appear here as you learn.
+                </p>
+                <p className="text-xs text-muted-foreground/70">
+                  Ask questions to unlock helpful explanations and exam tips.
+                </p>
+              </div>
             ) : (
               sources.map((source) => (
                 <div
