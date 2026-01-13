@@ -55,7 +55,7 @@ export default function ContentPanelDesktop({
       {/* Header */}
       <div className="px-4 py-3 border-b border-border flex items-center justify-between shrink-0">
         <h2 className="font-semibold text-sm">
-          {content.type === 'image' ? 'Your Question' : content.pdfName || 'PDF'}
+          {content.type === 'image' ? 'Question Image' : content.pdfName || 'PDF'}
         </h2>
         <Button
           variant="ghost"

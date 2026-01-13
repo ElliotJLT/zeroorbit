@@ -59,7 +59,7 @@ export default function ContentPanelMobile({
       <SheetContent side="left" className="w-[85vw] sm:w-[450px] p-0">
         <SheetHeader className="px-4 py-3 border-b border-border">
           <SheetTitle className="text-base">
-            {content.type === 'image' ? 'Your Question' : content.pdfName || 'PDF'}
+            {content.type === 'image' ? 'Question Image' : content.pdfName || 'PDF'}
           </SheetTitle>
         </SheetHeader>
         
