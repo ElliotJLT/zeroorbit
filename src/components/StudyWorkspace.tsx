@@ -177,12 +177,12 @@ export default function StudyWorkspace({
       <Header />
       
       <div className="flex-1 overflow-hidden p-2 pt-0">
-        <ResizablePanelGroup direction="horizontal" className="h-full gap-2">
+        <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Left panel - Content */}
           {showContent && (
             <>
               <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
-                <div className="h-full rounded-xl border border-border/50 bg-card/50 overflow-hidden">
+                <div className="h-full rounded-xl overflow-hidden">
                   <ContentPanelDesktop
                     content={activeContent}
                     onClose={() => onContentPanelOpenChange(false)}
@@ -191,13 +191,13 @@ export default function StudyWorkspace({
                   />
                 </div>
               </ResizablePanel>
-              <ResizableHandle withHandle />
+              <ResizableHandle />
             </>
           )}
           
           {/* Center panel - Chat */}
           <ResizablePanel defaultSize={showContent || showSources ? 50 : 100} minSize={30}>
-            <div className="flex flex-col h-full min-w-0 rounded-xl border border-border/50 bg-card/30 overflow-hidden">
+            <div className="flex flex-col h-full min-w-0 overflow-hidden">
               {children}
             </div>
           </ResizablePanel>
@@ -205,9 +205,9 @@ export default function StudyWorkspace({
           {/* Right panel - Sources */}
           {showSources && (
             <>
-              <ResizableHandle withHandle />
+              <ResizableHandle />
               <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
-                <div className="h-full rounded-xl border border-border/50 bg-card/50 overflow-hidden">
+                <div className="h-full rounded-xl overflow-hidden">
                   <SourcesPanelDesktop
                     sources={currentSources}
                     activeSourceId={activeSourceId}
