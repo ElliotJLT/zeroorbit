@@ -8,10 +8,9 @@ import HomeScreen from '@/components/HomeScreen';
 import ChatView from '@/components/ChatView';
 import QuestionReviewScreen from '@/components/QuestionReviewScreen';
 import VoiceSession from '@/components/VoiceSession';
-import StudyLayout from '@/components/StudyLayout';
+import StudyWorkspace from '@/components/StudyWorkspace';
 import { useChat } from '@/hooks/useChat';
-import type { ActiveContent } from '@/components/ContentPanel';
-import type { Source } from '@/components/SourcesPanel';
+import type { ActiveContent, Source } from '@/components/panels/types';
 import {
   Select,
   SelectContent,
@@ -450,7 +449,7 @@ export default function Index() {
 
   // Chat screen
   return (
-    <StudyLayout
+    <StudyWorkspace
       activeContent={activeContent}
       currentSources={currentSources}
       activeSourceId={activeSourceId}
@@ -460,7 +459,6 @@ export default function Index() {
       onContentPanelOpenChange={setContentPanelOpen}
       onReselectImage={handleReselectImage}
       onReselectPdf={handleReselectPdf}
-      onSettings={handleSettings}
     >
       <ChatView
         messages={chat.messages}
@@ -479,6 +477,6 @@ export default function Index() {
         onOpenContent={() => setContentPanelOpen(true)}
         onOpenSources={handleOpenSources}
       />
-    </StudyLayout>
+    </StudyWorkspace>
   );
 }
