@@ -12,8 +12,7 @@ import ConfirmNewProblemDialog from './ConfirmNewProblemDialog';
 import QuestionReviewScreen from './QuestionReviewScreen';
 import SignupPrompt from './SignupPrompt';
 import VoiceChatPrompt from './VoiceChatPrompt';
-import SourcesPanel, { Source } from './SourcesPanel';
-import ContentPanel, { ActiveContent } from './ContentPanel';
+import type { Source } from './SourcesPanel';
 import type { Message } from '@/hooks/useChat';
 
 interface ChatViewProps {
@@ -29,10 +28,11 @@ interface ChatViewProps {
   isAuthenticated: boolean;
   onStartVoiceSession?: () => void;
   sessionId?: string;
-  // Content persistence props
-  activeContent?: ActiveContent | null;
-  onReselectImage?: () => void;
-  onReselectPdf?: (text: string, mode: 'coach' | 'check', page: number) => void;
+  // Content indicator
+  hasActiveContent?: boolean;
+  onOpenContent?: () => void;
+  // Sources callbacks
+  onOpenSources?: (sources: Source[], activeId?: number) => void;
 }
 
 export default function ChatView({
@@ -48,9 +48,9 @@ export default function ChatView({
   isAuthenticated,
   onStartVoiceSession,
   sessionId,
-  activeContent,
-  onReselectImage,
-  onReselectPdf,
+  hasActiveContent,
+  onOpenContent,
+  onOpenSources,
 }: ChatViewProps) {
   const [newMessage, setNewMessage] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -68,17 +68,9 @@ export default function ChatView({
   const [feedbackGiven, setFeedbackGiven] = useState<Record<string, 'thumbs_up' | 'thumbs_down' | null>>({});
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   
-  // Sources panel state
-  const [sourcesOpen, setSourcesOpen] = useState(false);
+  // Sources panel state - emit to parent instead of managing locally
   const [currentSources, setCurrentSources] = useState<Source[]>([]);
   const [activeSourceId, setActiveSourceId] = useState<number | undefined>();
-  
-  // Content panel state (for viewing question/PDF)
-  const [contentPanelOpen, setContentPanelOpen] = useState(false);
-  
-  // Swipe gesture tracking
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -227,57 +219,23 @@ export default function ChatView({
     onStartVoiceSession?.();
   };
 
-  // Handle citation click - open sources panel
+  // Handle citation click - emit to parent to open sources panel
   const handleCitationClick = useCallback((message: Message, sourceId: number) => {
     if (message.sources && message.sources.length > 0) {
       setCurrentSources(message.sources);
       setActiveSourceId(sourceId);
-      setSourcesOpen(true);
-      
-      // Scroll to the source after panel opens
-      setTimeout(() => {
-        const sourceEl = document.getElementById(`source-${sourceId}`);
-        sourceEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 300);
+      onOpenSources?.(message.sources, sourceId);
     }
-  }, []);
+  }, [onOpenSources]);
 
   // Open sources panel for a message
   const handleOpenSources = useCallback((message: Message) => {
     if (message.sources && message.sources.length > 0) {
       setCurrentSources(message.sources);
       setActiveSourceId(undefined);
-      setSourcesOpen(true);
+      onOpenSources?.(message.sources);
     }
-  }, []);
-
-  // Swipe gesture handlers
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
-  }, []);
-
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (!touchStartRef.current) return;
-    
-    const touch = e.changedTouches[0];
-    const deltaX = touch.clientX - touchStartRef.current.x;
-    const deltaY = touch.clientY - touchStartRef.current.y;
-    
-    // Only trigger on horizontal swipes (deltaX > deltaY) with minimum distance
-    const minSwipeDistance = 80;
-    if (Math.abs(deltaX) > minSwipeDistance && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
-      if (deltaX < 0 && currentSources.length > 0) {
-        // Swipe left - open sources panel (if we have sources)
-        setSourcesOpen(true);
-      } else if (deltaX > 0 && activeContent) {
-        // Swipe right - open content panel (if we have content)
-        setContentPanelOpen(true);
-      }
-    }
-    
-    touchStartRef.current = null;
-  }, [currentSources, activeContent]);
+  }, [onOpenSources]);
 
   // QuestionReviewScreen fullscreen for adding working
   if (reviewImage) {
@@ -291,22 +249,17 @@ export default function ChatView({
   }
 
   return (
-    <div 
-      ref={chatContainerRef}
-      className="flex flex-col h-full bg-background"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
+    <div className="flex flex-col h-full bg-background">
       <header className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-border bg-background/95 backdrop-blur-sm">
         <div className="flex items-center gap-2">
           <BurgerMenu onSettings={onSettings} />
           
           {/* Content indicator button - shows when content exists */}
-          {activeContent && (
+          {hasActiveContent && onOpenContent && (
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setContentPanelOpen(true)}
+              onClick={onOpenContent}
               className="h-9 w-9"
               title="View question"
             >
@@ -543,23 +496,6 @@ export default function ChatView({
         onOpenChange={setShowVoiceChatPrompt}
         onStartVoiceChat={handleStartVoiceChat}
         showDontShowAgain={voiceNoteCount >= 5}
-      />
-
-      {/* Sources Panel */}
-      <SourcesPanel
-        open={sourcesOpen}
-        onOpenChange={setSourcesOpen}
-        sources={currentSources}
-        activeSourceId={activeSourceId}
-      />
-
-      {/* Content Panel (swipe-right to open) */}
-      <ContentPanel
-        open={contentPanelOpen}
-        onOpenChange={setContentPanelOpen}
-        content={activeContent || null}
-        onReselectImage={onReselectImage}
-        onReselectPdf={onReselectPdf}
       />
     </div>
   );
