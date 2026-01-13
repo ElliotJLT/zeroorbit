@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, Send, Mic, MicOff, Loader2, Sparkles, X, Volume2, VolumeX, Copy, ThumbsUp, ThumbsDown, Check, BookOpen, FileText } from 'lucide-react';
+import { Camera, Send, Mic, MicOff, Loader2, Sparkles, Volume2, VolumeX, Copy, ThumbsUp, ThumbsDown, Check, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -28,9 +28,6 @@ interface ChatViewProps {
   isAuthenticated: boolean;
   onStartVoiceSession?: () => void;
   sessionId?: string;
-  // Content indicator
-  hasActiveContent?: boolean;
-  onOpenContent?: () => void;
   // Sources callbacks
   onOpenSources?: (sources: Source[], activeId?: number) => void;
 }
@@ -48,8 +45,6 @@ export default function ChatView({
   isAuthenticated,
   onStartVoiceSession,
   sessionId,
-  hasActiveContent,
-  onOpenContent,
   onOpenSources,
 }: ChatViewProps) {
   const [newMessage, setNewMessage] = useState('');
@@ -243,23 +238,8 @@ export default function ChatView({
 
   return (
     <div className="flex flex-col h-full bg-background">
-      <header className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-border bg-background/95 backdrop-blur-sm">
-        <div className="flex items-center gap-2">
-          <BurgerMenu onSettings={onSettings} />
-          
-          {/* Content indicator button - shows when content exists */}
-          {hasActiveContent && onOpenContent && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onOpenContent}
-              className="h-9 w-9"
-              title="View question"
-            >
-              <FileText className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+      <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b border-border bg-background/95 backdrop-blur-sm">
+        <BurgerMenu onSettings={onSettings} />
         
         <Button
           variant="outline"

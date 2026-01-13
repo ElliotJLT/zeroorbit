@@ -62,7 +62,8 @@ export default function Index() {
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [currentSources, setCurrentSources] = useState<Source[]>([]);
   const [activeSourceId, setActiveSourceId] = useState<number | undefined>();
-  const [contentPanelOpen, setContentPanelOpen] = useState(false);
+  // Desktop: auto-open content panel when content is available
+  const [contentPanelOpen, setContentPanelOpen] = useState(true);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -473,8 +474,6 @@ export default function Index() {
         isAuthenticated={!!user}
         onStartVoiceSession={() => setShowVoiceSession(true)}
         sessionId={chat.sessionId}
-        hasActiveContent={!!activeContent}
-        onOpenContent={() => setContentPanelOpen(true)}
         onOpenSources={handleOpenSources}
       />
     </StudyWorkspace>
