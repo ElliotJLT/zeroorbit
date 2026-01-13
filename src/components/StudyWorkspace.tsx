@@ -55,12 +55,12 @@ export default function StudyWorkspace({
     }
   }, [activeContent, isMobile]);
   
-  // Auto-open sources panel on desktop when sources become available
+  // Auto-open sources panel on desktop (always show it)
   useEffect(() => {
-    if (!isMobile && currentSources.length > 0 && !sourcesOpen) {
+    if (!isMobile && !sourcesOpen) {
       onSourcesOpenChange(true);
     }
-  }, [currentSources, isMobile]);
+  }, [isMobile]);
   
   // Swipe gesture tracking for mobile
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -168,7 +168,7 @@ export default function StudyWorkspace({
 
   // Desktop layout - shared header + resizable 3-column layout
   const showContent = contentPanelOpen;
-  const showSources = sourcesOpen; // Always show when open, regardless of sources
+  const showSources = true; // Always show on desktop
 
   return (
     <div className="h-screen w-full flex flex-col bg-background">
@@ -202,21 +202,18 @@ export default function StudyWorkspace({
             </div>
           </ResizablePanel>
           
-          {/* Right panel - Sources */}
-          {showSources && (
-            <>
-              <ResizableHandle />
-              <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
-                <div className="h-full rounded-2xl border border-border/40 bg-card/50 overflow-hidden">
-                  <SourcesPanelDesktop
-                    sources={currentSources}
-                    activeSourceId={activeSourceId}
-                    onClose={() => onSourcesOpenChange(false)}
-                  />
-                </div>
-              </ResizablePanel>
-            </>
-          )}
+          {/* Right panel - My Learning (always visible, narrower) */}
+          <>
+            <ResizableHandle />
+            <ResizablePanel defaultSize={18} minSize={12} maxSize={30}>
+              <div className="h-full rounded-2xl border border-border/40 bg-card/50 overflow-hidden">
+              <SourcesPanelDesktop
+                sources={currentSources}
+                activeSourceId={activeSourceId}
+              />
+              </div>
+            </ResizablePanel>
+          </>
         </ResizablePanelGroup>
       </div>
       

@@ -1,4 +1,4 @@
-import { BookOpen, GraduationCap, X, TrendingUp, Lightbulb } from 'lucide-react';
+import { BookOpen, GraduationCap, TrendingUp, Lightbulb } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -9,13 +9,11 @@ import type { Source } from './types';
 interface SourcesPanelDesktopProps {
   sources: Source[];
   activeSourceId?: number;
-  onClose: () => void;
 }
 
 export default function SourcesPanelDesktop({ 
   sources,
   activeSourceId,
-  onClose,
 }: SourcesPanelDesktopProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -23,19 +21,11 @@ export default function SourcesPanelDesktop({
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Header - smaller, contextual */}
-      <div className="px-3 py-2 border-b border-border flex items-center justify-between shrink-0">
+      <div className="px-3 py-2.5 border-b border-border shrink-0">
         <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide flex items-center gap-1.5">
           <BookOpen className="h-3 w-3" />
           My Learning
         </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          className="h-6 w-6"
-        >
-          <X className="h-3 w-3" />
-        </Button>
       </div>
       
       {/* Content */}
