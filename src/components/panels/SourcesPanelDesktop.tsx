@@ -31,19 +31,6 @@ export default function SourcesPanelDesktop({
       {/* Content */}
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-4">
-          {/* CTA for logged-in users */}
-          {user && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/progress')}
-              className="w-full gap-2 border-primary/30 hover:bg-primary/10"
-            >
-              <TrendingUp className="h-4 w-4" />
-              View My Progress
-            </Button>
-          )}
-
           {sources.length === 0 ? (
             <div className="text-center py-8 space-y-3">
               <div className="w-12 h-12 mx-auto rounded-full bg-muted flex items-center justify-center">
@@ -55,6 +42,19 @@ export default function SourcesPanelDesktop({
               <p className="text-xs text-muted-foreground/70">
                 Ask questions to unlock helpful explanations and exam tips.
               </p>
+              
+              {/* CTA for logged-in users - below placeholder */}
+              {user && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/progress')}
+                  className="mt-4 gap-2 border-primary/30 hover:bg-primary/10"
+                >
+                  <TrendingUp className="h-4 w-4" />
+                  View My Progress
+                </Button>
+              )}
             </div>
           ) : (
             sources.map((source) => (
