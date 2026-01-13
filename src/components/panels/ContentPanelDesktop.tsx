@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Crop, X, FileText } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { ChevronLeft, ChevronRight, Crop, X, FileText, ImagePlus, Upload } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -11,10 +11,12 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface ContentPanelDesktopProps {
-  content: ActiveContent;
+  content: ActiveContent | null;
   onClose: () => void;
   onReselectImage?: () => void;
   onReselectPdf?: (text: string, mode: 'coach' | 'check', page: number) => void;
+  onAddImage?: (file: File) => void;
+  onAddPdf?: (file: File) => void;
 }
 
 export default function ContentPanelDesktop({
@@ -22,11 +24,16 @@ export default function ContentPanelDesktop({
   onClose,
   onReselectImage,
   onReselectPdf,
+  onAddImage,
+  onAddPdf,
 }: ContentPanelDesktopProps) {
   const [currentPage, setCurrentPage] = useState(content?.pdfPage || 1);
   const [numPages, setNumPages] = useState(0);
   const [selectedText, setSelectedText] = useState('');
   const [showSelectionBar, setShowSelectionBar] = useState(false);
+  
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const handleSelectionChange = () => {
     const selection = window.getSelection();
@@ -50,6 +57,22 @@ export default function ContentPanelDesktop({
     }
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onAddImage) {
+      onAddImage(file);
+    }
+    e.target.value = '';
+  };
+
+  const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onAddPdf) {
+      onAddPdf(file);
+    }
+    e.target.value = '';
+  };
+
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Header */}
@@ -70,10 +93,58 @@ export default function ContentPanelDesktop({
         </Button>
       </div>
       
+      {/* Description */}
+      <div className="px-3 py-2 border-b border-border/30">
+        <p className="text-[11px] text-muted-foreground/70">
+          Add images or documents to give Orbit context about what you're working on.
+        </p>
+      </div>
+      
       {/* Content */}
       <ScrollArea className="flex-1">
-        <div className="bg-muted/30 min-h-full">
-          {content.type === 'image' && content.croppedImageUrl && (
+        <div className="min-h-full">
+          {/* Upload buttons when no content */}
+          {!content && (
+            <div className="p-4 space-y-3">
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <input
+                ref={pdfInputRef}
+                type="file"
+                accept=".pdf"
+                onChange={handlePdfUpload}
+                className="hidden"
+              />
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => imageInputRef.current?.click()}
+                className="w-full gap-2 justify-start"
+              >
+                <ImagePlus className="h-4 w-4" />
+                Add image
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => pdfInputRef.current?.click()}
+                className="w-full gap-2 justify-start"
+              >
+                <Upload className="h-4 w-4" />
+                Upload PDF
+              </Button>
+            </div>
+          )}
+
+          {/* Image content */}
+          {content?.type === 'image' && content.croppedImageUrl && (
             <div className="p-4">
               <img
                 src={content.croppedImageUrl}
@@ -95,7 +166,8 @@ export default function ContentPanelDesktop({
             </div>
           )}
 
-          {content.type === 'pdf' && content.pdfPath && (
+          {/* PDF content */}
+          {content?.type === 'pdf' && content.pdfPath && (
             <div 
               className="flex flex-col items-center py-2"
               onMouseUp={handleSelectionChange}
