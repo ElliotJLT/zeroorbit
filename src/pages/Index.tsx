@@ -67,6 +67,21 @@ export default function Index() {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Callback for opening sources panel
+  const handleOpenSources = useCallback((sources: Source[], activeId?: number) => {
+    setCurrentSources(sources);
+    setActiveSourceId(activeId);
+    setSourcesOpen(true);
+    
+    // Scroll to source after panel opens
+    if (activeId) {
+      setTimeout(() => {
+        const sourceEl = document.getElementById(`source-${activeId}`);
+        sourceEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }
+  }, []);
+
   // Build user context from profile or local state
   const userContext = {
     examBoard: profile?.exam_board || examBoard || undefined,
@@ -432,19 +447,6 @@ export default function Index() {
       />
     );
   }
-  const handleOpenSources = useCallback((sources: Source[], activeId?: number) => {
-    setCurrentSources(sources);
-    setActiveSourceId(activeId);
-    setSourcesOpen(true);
-    
-    // Scroll to source after panel opens
-    if (activeId) {
-      setTimeout(() => {
-        const sourceEl = document.getElementById(`source-${activeId}`);
-        sourceEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 300);
-    }
-  }, []);
 
   // Chat screen
   return (
