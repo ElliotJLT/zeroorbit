@@ -55,12 +55,12 @@ export default function StudyWorkspace({
     }
   }, [activeContent, isMobile]);
   
-  // Auto-open sources panel on desktop (always show it)
+  // Auto-open sources panel on desktop only on initial load
   useEffect(() => {
-    if (!isMobile && !sourcesOpen) {
+    if (!isMobile && sourcesOpen === undefined) {
       onSourcesOpenChange(true);
     }
-  }, [isMobile]);
+  }, []);
   
   // Swipe gesture tracking for mobile
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -177,10 +177,10 @@ export default function StudyWorkspace({
 
   // Desktop layout - shared header + resizable 3-column layout
   const showContent = contentPanelOpen;
-  const showSources = true; // Always show on desktop
+  const showSources = sourcesOpen;
 
   return (
-    <div className="h-screen w-full flex flex-col bg-background">
+    <div className="h-screen w-full flex flex-col bg-background relative">
       <Header />
       
       <div className="flex-1 overflow-hidden px-3 pb-3">
@@ -211,20 +211,40 @@ export default function StudyWorkspace({
             </div>
           </ResizablePanel>
           
-          {/* Right panel - My Learning (always visible, narrower) */}
-          <>
-            <ResizableHandle />
-            <ResizablePanel defaultSize={18} minSize={12} maxSize={30}>
-              <div className="h-full rounded-2xl border border-border/40 bg-card/50 overflow-hidden">
-              <SourcesPanelDesktop
-                sources={currentSources}
-                activeSourceId={activeSourceId}
-              />
-              </div>
-            </ResizablePanel>
-          </>
+          {/* Right panel - My Learning */}
+          {showSources && (
+            <>
+              <ResizableHandle />
+              <ResizablePanel defaultSize={18} minSize={12} maxSize={30}>
+                <div className="h-full rounded-2xl border border-border/40 bg-card/50 overflow-hidden">
+                  <SourcesPanelDesktop
+                    sources={currentSources}
+                    activeSourceId={activeSourceId}
+                    onClose={() => onSourcesOpenChange(false)}
+                  />
+                </div>
+              </ResizablePanel>
+            </>
+          )}
         </ResizablePanelGroup>
       </div>
+      
+      {/* Desktop edge draggers for collapsed panels */}
+      {!showContent && activeContent && (
+        <button
+          onClick={() => onContentPanelOpenChange(true)}
+          className="fixed left-3 top-1/2 -translate-y-1/2 z-40 h-20 w-1.5 rounded-r-full bg-border/60 hover:bg-primary/50 hover:w-2 transition-all duration-200"
+          aria-label="Open context panel"
+        />
+      )}
+      
+      {!showSources && (
+        <button
+          onClick={() => onSourcesOpenChange(true)}
+          className="fixed right-3 top-1/2 -translate-y-1/2 z-40 h-20 w-1.5 rounded-l-full bg-border/60 hover:bg-primary/50 hover:w-2 transition-all duration-200"
+          aria-label="Open learning panel"
+        />
+      )}
       
       <ConfirmDialog />
     </div>
