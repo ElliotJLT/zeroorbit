@@ -76,18 +76,27 @@ export default function StudyWorkspace({
     const touch = e.changedTouches[0];
     const deltaX = touch.clientX - touchStartRef.current.x;
     const deltaY = touch.clientY - touchStartRef.current.y;
+    const startX = touchStartRef.current.x;
+    const screenWidth = window.innerWidth;
     
-    const minSwipeDistance = 80;
+    // Require swipe to start from edge zones (40px from edges) to avoid Android back gesture conflict
+    const isFromLeftEdge = startX < 40;
+    const isFromRightEdge = startX > screenWidth - 40;
+    
+    const minSwipeDistance = 60;
     if (Math.abs(deltaX) > minSwipeDistance && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
-      if (deltaX < 0 && currentSources.length > 0) {
+      // Swipe left (from right edge) → open My Learning
+      if (deltaX < 0 && isFromRightEdge) {
         onSourcesOpenChange(true);
-      } else if (deltaX > 0 && activeContent) {
+      }
+      // Swipe right (from left edge) → open My Context
+      else if (deltaX > 0 && isFromLeftEdge && activeContent) {
         onContentPanelOpenChange(true);
       }
     }
     
     touchStartRef.current = null;
-  }, [currentSources, activeContent, onSourcesOpenChange, onContentPanelOpenChange]);
+  }, [activeContent, onSourcesOpenChange, onContentPanelOpenChange]);
 
   // Shared header component
   const Header = () => (
