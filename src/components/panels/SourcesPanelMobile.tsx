@@ -1,4 +1,5 @@
-import { BookOpen, GraduationCap, TrendingUp, Lightbulb } from 'lucide-react';
+import { useState } from 'react';
+import { BookOpen, GraduationCap, TrendingUp, Lightbulb, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -14,6 +15,22 @@ interface SourcesPanelMobileProps {
   activeSourceId?: number;
 }
 
+// Example key insights (mock data for now)
+const exampleInsights = [
+  {
+    id: 1,
+    title: "Rearranging equations",
+    summary: "Always do the same operation to both sides",
+    explanation: "When rearranging equations, whatever you do to one side, you must do to the other. This keeps the equation balanced. For example, to isolate $x$ in $2x + 5 = 11$, subtract 5 from both sides first, then divide both sides by 2.",
+  },
+  {
+    id: 2,
+    title: "Reading graphs carefully",
+    summary: "Check the axis scales before answering",
+    explanation: "Many students lose marks by misreading graph scales. Always check: What does each axis represent? What are the units? Does the scale start at zero? A quick 5-second check can save you from silly mistakes.",
+  },
+];
+
 export default function SourcesPanelMobile({ 
   open, 
   onOpenChange, 
@@ -22,6 +39,11 @@ export default function SourcesPanelMobile({
 }: SourcesPanelMobileProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [expandedInsight, setExpandedInsight] = useState<number | null>(null);
+
+  const toggleInsight = (id: number) => {
+    setExpandedInsight(expandedInsight === id ? null : id);
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -51,16 +73,51 @@ export default function SourcesPanelMobile({
               </Button>
             )}
 
+            {/* Key Insights Section */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
+                <Sparkles className="h-3 w-3" />
+                Key Insights
+              </div>
+              {exampleInsights.map((insight) => (
+                <button
+                  key={insight.id}
+                  onClick={() => toggleInsight(insight.id)}
+                  className={`w-full text-left rounded-lg border p-3 transition-all hover:border-primary/50 ${
+                    expandedInsight === insight.id 
+                      ? 'border-primary bg-primary/5' 
+                      : 'border-border bg-card/50'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm truncate">{insight.title}</h4>
+                      <p className="text-xs text-muted-foreground mt-0.5">{insight.summary}</p>
+                    </div>
+                    {expandedInsight === insight.id ? (
+                      <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                    )}
+                  </div>
+                  {expandedInsight === insight.id && (
+                    <div className="mt-3 pt-3 border-t border-border text-sm text-muted-foreground leading-relaxed">
+                      <MathText text={insight.explanation} />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Divider if we have sources */}
+            {sources.length > 0 && (
+              <div className="border-t border-border my-4" />
+            )}
+
             {sources.length === 0 ? (
-              <div className="text-center py-8 space-y-3">
-                <div className="w-12 h-12 mx-auto rounded-full bg-muted flex items-center justify-center">
-                  <Lightbulb className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Sources and insights will appear here as you learn.
-                </p>
+              <div className="text-center py-6 space-y-3">
                 <p className="text-xs text-muted-foreground/70">
-                  Ask questions to unlock helpful explanations and exam tips.
+                  More sources will appear here as you learn.
                 </p>
               </div>
             ) : (
