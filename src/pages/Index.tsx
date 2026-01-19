@@ -62,8 +62,8 @@ export default function Index() {
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [currentSources, setCurrentSources] = useState<Source[]>([]);
   const [activeSourceId, setActiveSourceId] = useState<number | undefined>();
-  // Desktop: auto-open content panel when content is available
-  const [contentPanelOpen, setContentPanelOpen] = useState(true);
+  // Start with panels closed on mobile, open on desktop when content is available
+  const [contentPanelOpen, setContentPanelOpen] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
