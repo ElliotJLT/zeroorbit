@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { BookOpen, GraduationCap, TrendingUp, Lightbulb, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { BookOpen, GraduationCap, TrendingUp, Sparkles, ChevronDown, ChevronUp, Layers, Swords, Mic } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import MathText from '../MathText';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 import type { Source } from './types';
 
 interface SourcesPanelDesktopProps {
@@ -53,6 +54,36 @@ export default function SourcesPanelDesktop({
       {/* Content */}
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-4">
+          {/* Study Actions */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              Study with your insights
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => toast.info("Flash cards would use spaced repetition (SM-2 algorithm) to create cards from key insights, storing review intervals in Supabase for optimal retention.")}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-lg border border-border bg-card/50 hover:border-primary/50 hover:bg-primary/5 transition-all text-center"
+              >
+                <Layers className="h-4 w-4 text-primary" />
+                <span className="text-xs font-medium">Flash Cards</span>
+              </button>
+              <button
+                onClick={() => toast.info("Arena test would generate questions from your weak spots identified in insights, using the existing generate-arena-question edge function with topic filtering.")}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-lg border border-border bg-card/50 hover:border-primary/50 hover:bg-primary/5 transition-all text-center"
+              >
+                <Swords className="h-4 w-4 text-primary" />
+                <span className="text-xs font-medium">Test in Arena</span>
+              </button>
+              <button
+                onClick={() => toast.info("Podcast would use NotebookLM-style audio generation: send insights to Gemini for script creation, then use ElevenLabs or Google TTS for conversational audio synthesis.")}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-lg border border-border bg-card/50 hover:border-primary/50 hover:bg-primary/5 transition-all text-center"
+              >
+                <Mic className="h-4 w-4 text-primary" />
+                <span className="text-xs font-medium">Podcast</span>
+              </button>
+            </div>
+          </div>
+
           {/* Key Insights Section */}
           <div className="space-y-2">
             <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
