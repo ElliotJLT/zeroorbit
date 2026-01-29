@@ -508,6 +508,8 @@ export default function Index() {
         isAuthenticated={!!user}
         onStartVoiceSession={() => setShowVoiceSession(true)}
         sessionId={chat.sessionId}
+        currentMode={chat.currentMode}
+        onModeChange={chat.setCurrentMode}
         onOpenSources={handleOpenSources}
       />
     </StudyWorkspace>

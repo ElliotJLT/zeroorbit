@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, Send, Mic, MicOff, Loader2, Sparkles, Volume2, VolumeX, Copy, ThumbsUp, ThumbsDown, Check, BookOpen } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { Camera, Send, Mic, MicOff, Loader2, Volume2, VolumeX, Copy, ThumbsUp, ThumbsDown, Check, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -10,6 +10,10 @@ import CitationText from './CitationText';
 import QuestionReviewScreen from './QuestionReviewScreen';
 import SignupPrompt from './SignupPrompt';
 import VoiceChatPrompt from './VoiceChatPrompt';
+import MomentumIndicator from './MomentumIndicator';
+import MasteryMoment from './MasteryMoment';
+import ModeToggle, { type TutorMode } from './ModeToggle';
+import tutorAvatar from '@/assets/tutor-avatar.png';
 import type { Source } from './panels/types';
 import type { Message } from '@/hooks/useChat';
 
@@ -24,6 +28,9 @@ interface ChatViewProps {
   isAuthenticated: boolean;
   onStartVoiceSession?: () => void;
   sessionId?: string;
+  // Mode control
+  currentMode?: TutorMode;
+  onModeChange?: (mode: TutorMode) => void;
   // Sources callbacks
   onOpenSources?: (sources: Source[], activeId?: number) => void;
 }
@@ -39,6 +46,8 @@ export default function ChatView({
   isAuthenticated,
   onStartVoiceSession,
   sessionId,
+  currentMode = 'coach',
+  onModeChange,
   onOpenSources,
 }: ChatViewProps) {
   const [newMessage, setNewMessage] = useState('');
@@ -229,17 +238,59 @@ export default function ChatView({
     );
   }
 
+  // Calculate exchange count (pairs of student/tutor messages)
+  const exchangeCount = useMemo(() => {
+    return Math.floor(messages.filter(m => m.sender === 'student').length);
+  }, [messages]);
+
+  // Check if any message is marked as correct
+  const hasCorrectAnswer = useMemo(() => {
+    return messages.some(m => m.isCorrect);
+  }, [messages]);
+
   return (
     <div className="flex flex-col h-full min-h-0 bg-background">
+      
+      {/* Momentum Indicator - shows when conversation is active */}
+      {messages.length > 0 && (
+        <MomentumIndicator 
+          exchangeCount={exchangeCount}
+          hasCorrectAnswer={hasCorrectAnswer}
+          className="border-b border-border/50"
+        />
+      )}
+
+      {/* Mode Toggle - shows during active sessions */}
+      {messages.length > 0 && onModeChange && (
+        <div className="flex justify-center py-2 border-b border-border/50">
+          <ModeToggle
+            mode={currentMode}
+            onChange={onModeChange}
+            disabled={sending}
+          />
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground space-y-4">
-            <Sparkles className="h-12 w-12 text-primary/50" />
-            <div>
-              <p className="text-lg font-medium">Ready to help!</p>
-              <p className="text-sm">Snap a question or type your problem</p>
+          <div className="flex flex-col items-center justify-center h-full text-center animate-greeting">
+            {/* Tutor Avatar with glow */}
+            <div className="relative mb-4">
+              <div className="absolute inset-0 logo-glow scale-150 opacity-50" />
+              <img 
+                src={tutorAvatar} 
+                alt="Orbit tutor"
+                className="relative h-16 w-16 rounded-full object-cover ring-2 ring-primary/30"
+              />
+            </div>
+            
+            {/* Greeting */}
+            <div className="bg-muted rounded-2xl px-5 py-4 max-w-[280px]">
+              <p className="text-sm font-medium text-primary mb-1">Orbit</p>
+              <p className="text-sm leading-relaxed">
+                Hey! What are you working on? Snap a photo or describe what you're stuck on.
+              </p>
             </div>
           </div>
         )}
@@ -360,10 +411,19 @@ export default function ChatView({
           </div>
         ))}
 
+        {/* Mastery Moment - appears after correct answer */}
+        {hasCorrectAnswer && (
+          <MasteryMoment 
+            exchangeCount={exchangeCount}
+            className="mx-auto max-w-[85%]"
+          />
+        )}
+
         {sending && (
           <div className="flex justify-start">
-            <div className="bg-muted rounded-2xl px-4 py-3">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <div className="bg-muted rounded-2xl px-4 py-3 flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Thinking...</span>
             </div>
           </div>
         )}
@@ -414,7 +474,7 @@ export default function ChatView({
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type your question..."
+              placeholder="What are you stuck on?"
               disabled={sending}
               className="flex-1"
             />

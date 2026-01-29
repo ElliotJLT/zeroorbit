@@ -78,12 +78,15 @@ function incrementGuestExchanges(): number {
   return newCount;
 }
 
+export type TutorMode = 'coach' | 'check';
+
 export function useChat({ user, userContext, onFirstInput }: UseChatOptions) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [sending, setSending] = useState(false);
-  const [pendingImage, setPendingImage] = useState<{ url: string; mode: 'coach' | 'check' } | null>(null);
+  const [pendingImage, setPendingImage] = useState<{ url: string; mode: TutorMode } | null>(null);
   const [guestExchangeCount, setGuestExchangeCount] = useState(getGuestExchangeCount);
   const [questionAnalysis, setQuestionAnalysis] = useState<QuestionAnalysis | null>(null);
+  const [currentMode, setCurrentMode] = useState<TutorMode>('coach');
   
   const hasTrackedFirstInput = useRef(false);
   const sessionIdRef = useRef<string | null>(null);
@@ -423,6 +426,8 @@ export function useChat({ user, userContext, onFirstInput }: UseChatOptions) {
     isAtLimit,
     questionAnalysis,
     sessionId: sessionIdRef.current,
+    currentMode,
+    setCurrentMode,
     sendMessage,
     handleImageUpload,
     sendImageMessage,
