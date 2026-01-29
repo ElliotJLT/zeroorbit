@@ -61,16 +61,16 @@ export default function PastPapers() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-base-100" data-theme="orbit">
       {/* Header */}
-      <header className="flex items-center gap-3 p-4 border-b border-border">
+      <header className="flex items-center gap-3 p-4 border-b border-base-300">
         <button
           onClick={() => navigate(-1)}
-          className="p-2 rounded-full hover:bg-muted transition-colors"
+          className="p-2 rounded-full hover:bg-base-200 transition-colors text-base-content"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="text-lg font-semibold">Past Papers</h1>
+        <h1 className="text-lg font-semibold text-base-content">Past Papers</h1>
       </header>
 
       {/* Hero */}
@@ -78,8 +78,8 @@ export default function PastPapers() {
         <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
           <FileText className="h-8 w-8 text-primary" />
         </div>
-        <h2 className="text-2xl font-semibold">Past Papers</h2>
-        <p className="text-muted-foreground">
+        <h2 className="text-2xl font-semibold text-base-content">Past Papers</h2>
+        <p className="text-base-content/60">
           Select text from any question to get step-by-step guidance.
         </p>
       </div>
@@ -88,7 +88,7 @@ export default function PastPapers() {
         {/* Orbit Papers */}
         {orbitPapers.length > 0 && (
           <div className="space-y-3">
-            <h3 className="text-sm font-medium text-muted-foreground px-1">Practice with Orbit</h3>
+            <h3 className="text-sm font-medium text-base-content/60 px-1">Practice with Orbit</h3>
             {orbitPapers.map((paper) => (
               <button
                 key={paper.id}
@@ -100,8 +100,8 @@ export default function PastPapers() {
                     <FileText className="h-5 w-5 text-primary" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-medium">{paper.name}</h4>
-                    <p className="text-sm text-muted-foreground">{paper.date}</p>
+                    <h4 className="font-medium text-base-content">{paper.name}</h4>
+                    <p className="text-sm text-base-content/60">{paper.date}</p>
                   </div>
                 </div>
               </button>
@@ -111,25 +111,25 @@ export default function PastPapers() {
 
         {/* Divider */}
         <div className="flex items-center gap-4">
-          <div className="flex-1 h-px bg-border" />
-          <span className="text-sm text-muted-foreground">or</span>
-          <div className="flex-1 h-px bg-border" />
+          <div className="flex-1 h-px bg-base-300" />
+          <span className="text-sm text-base-content/60">or</span>
+          <div className="flex-1 h-px bg-base-300" />
         </div>
 
         {/* Exam Board Links */}
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-muted-foreground px-1">Official exam board papers</h3>
+          <h3 className="text-sm font-medium text-base-content/60 px-1">Official exam board papers</h3>
           {examBoardLinks.map((board) => (
             <a
               key={board.board}
               href={board.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block p-4 bg-muted rounded-2xl hover:bg-muted/80 transition-colors group"
+              className="block p-4 bg-base-200 rounded-2xl hover:bg-base-300 transition-colors group"
             >
               <div className="flex items-center justify-between">
-                <h4 className="font-semibold">{board.board}</h4>
-                <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                <h4 className="font-semibold text-base-content">{board.board}</h4>
+                <ExternalLink className="h-4 w-4 text-base-content/60 group-hover:text-primary transition-colors" />
               </div>
             </a>
           ))}

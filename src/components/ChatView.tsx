@@ -249,20 +249,20 @@ export default function ChatView({
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-[#0F1114]">
+    <div className="flex flex-col h-full min-h-0 bg-base-100">
       
       {/* Momentum Indicator - shows when conversation is active */}
       {messages.length > 0 && (
         <MomentumIndicator 
           exchangeCount={exchangeCount}
           hasCorrectAnswer={hasCorrectAnswer}
-          className="border-b border-[#23272E]/50"
+          className="border-b border-base-300/50"
         />
       )}
 
       {/* Mode Toggle - shows during active sessions */}
       {messages.length > 0 && onModeChange && (
-        <div className="flex justify-center py-2 border-b border-[#23272E]/50">
+        <div className="flex justify-center py-2 border-b border-base-300/50">
           <ModeToggle
             mode={currentMode}
             onChange={onModeChange}
@@ -286,9 +286,9 @@ export default function ChatView({
             </div>
             
             {/* Greeting */}
-            <div className="bg-[#1A1D21] rounded-2xl px-5 py-4 max-w-[280px]">
+            <div className="bg-base-200 rounded-2xl px-5 py-4 max-w-[280px]">
               <p className="text-sm font-medium text-primary mb-1">Orbit</p>
-              <p className="text-sm leading-relaxed text-white">
+              <p className="text-sm leading-relaxed text-base-content">
                 Hey! What are you working on? Snap a photo or describe what you're stuck on.
               </p>
             </div>
@@ -307,8 +307,8 @@ export default function ChatView({
               className={cn(
                 'max-w-[85%] rounded-2xl px-4 py-3',
                 message.sender === 'student'
-                  ? 'bg-primary text-[#0F1114]'
-                  : 'bg-[#1A1D21] text-white',
+                  ? 'bg-primary text-primary-content'
+                  : 'bg-base-200 text-base-content',
                 message.isCorrect && 'ring-2 ring-green-500'
               )}
             >
@@ -343,17 +343,17 @@ export default function ChatView({
 
               {/* Feedback buttons for tutor messages */}
               {message.sender === 'tutor' && !message.isTyping && (
-                <div className="mt-2 pt-2 border-t border-[#23272E]/30 flex items-center justify-between">
+                <div className="mt-2 pt-2 border-t border-base-300/30 flex items-center justify-between">
                   {/* Left side: copy, thumbs */}
                   <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 w-7 p-0 text-[#6B7280] hover:text-white"
+                      className="h-7 w-7 p-0 text-base-content/40 hover:text-base-content"
                       onClick={() => handleCopy(message.id, message.content)}
                     >
                       {copiedMessageId === message.id ? (
-                        <Check className="h-3.5 w-3.5 text-green-500" />
+                        <Check className="h-3.5 w-3.5 text-success" />
                       ) : (
                         <Copy className="h-3.5 w-3.5" />
                       )}
@@ -364,8 +364,8 @@ export default function ChatView({
                       className={cn(
                         "h-7 w-7 p-0",
                         feedbackGiven[message.id] === 'thumbs_up' 
-                          ? "text-green-500" 
-                          : "text-[#6B7280] hover:text-white"
+                          ? "text-success" 
+                          : "text-base-content/40 hover:text-base-content"
                       )}
                       onClick={() => handleThumbsUp(message.id)}
                       disabled={!!feedbackGiven[message.id]}
@@ -378,8 +378,8 @@ export default function ChatView({
                       className={cn(
                         "h-7 w-7 p-0",
                         feedbackGiven[message.id] === 'thumbs_down' 
-                          ? "text-red-500" 
-                          : "text-[#6B7280] hover:text-white"
+                          ? "text-error" 
+                          : "text-base-content/40 hover:text-base-content"
                       )}
                       onClick={() => handleThumbsDown(message.id)}
                       disabled={!!feedbackGiven[message.id]}
@@ -392,7 +392,7 @@ export default function ChatView({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 px-2 gap-1.5 text-xs text-[#6B7280] hover:text-white"
+                    className="h-7 px-2 gap-1.5 text-xs text-base-content/40 hover:text-base-content"
                     onClick={() => handlePlayTTS(message.id, message.content)}
                     disabled={isLoading && playingMessageId === message.id}
                   >
@@ -421,9 +421,9 @@ export default function ChatView({
 
         {sending && (
           <div className="flex justify-start">
-            <div className="bg-[#1A1D21] rounded-2xl px-4 py-3 flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin text-[#9CA3AF]" />
-              <span className="text-sm text-[#9CA3AF]">Thinking...</span>
+            <div className="bg-base-200 rounded-2xl px-4 py-3 flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-base-content/60" />
+              <span className="text-sm text-base-content/60">Thinking...</span>
             </div>
           </div>
         )}
@@ -440,11 +440,11 @@ export default function ChatView({
           <div className="absolute inset-x-0 -top-8 h-16 bg-gradient-to-t from-primary/8 via-primary/4 to-transparent pointer-events-none" />
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-radial from-primary/6 via-transparent to-transparent pointer-events-none blur-xl" />
           
-          <div className="relative border-t border-[#23272E] bg-[#0F1114]/95 backdrop-blur-sm p-4">
+          <div className="relative border-t border-base-300 bg-base-100/95 backdrop-blur-sm p-4">
           {/* Guest exchange counter */}
           {!isAuthenticated && guestExchangeCount > 0 && (
             <div className="text-center mb-2">
-              <span className="text-xs text-[#9CA3AF]">
+              <span className="text-xs text-base-content/60">
                 {guestExchangeCount}/{guestLimit} free messages
               </span>
             </div>

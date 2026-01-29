@@ -100,13 +100,13 @@ export default function StudyWorkspace({
 
   // Shared header component
   const Header = () => (
-    <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b border-[#23272E] bg-[#0F1114]/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b border-base-300 bg-base-100/95 backdrop-blur-sm">
       <BurgerMenu onSettings={onSettings} />
       <Button
         variant="outline"
         size="sm"
         onClick={() => setShowConfirmDialog(true)}
-        className="gap-2 border-[#23272E] bg-transparent text-white hover:bg-[#1A1D21]"
+        className="gap-2 border-base-300 bg-transparent text-base-content hover:bg-base-200"
       >
         <Camera className="h-4 w-4" />
         New Problem
@@ -141,7 +141,7 @@ export default function StudyWorkspace({
         {activeContent && !contentPanelOpen && (
           <button
             onClick={() => onContentPanelOpenChange(true)}
-            className="fixed left-0 top-1/2 -translate-y-1/2 z-40 h-24 w-1.5 rounded-r-full bg-[#23272E]/60 hover:bg-primary/40 hover:w-2 transition-all duration-200"
+            className="fixed left-0 top-1/2 -translate-y-1/2 z-40 h-24 w-1.5 rounded-r-full bg-base-300/60 hover:bg-primary/40 hover:w-2 transition-all duration-200"
             aria-label="Open context panel"
           />
         )}
@@ -150,7 +150,7 @@ export default function StudyWorkspace({
         {!sourcesOpen && (
           <button
             onClick={() => onSourcesOpenChange(true)}
-            className="fixed right-0 top-1/2 -translate-y-1/2 z-40 h-24 w-1.5 rounded-l-full bg-[#23272E]/60 hover:bg-primary/40 hover:w-2 transition-all duration-200"
+            className="fixed right-0 top-1/2 -translate-y-1/2 z-40 h-24 w-1.5 rounded-l-full bg-base-300/60 hover:bg-primary/40 hover:w-2 transition-all duration-200"
             aria-label="Open learning panel"
           />
         )}
@@ -180,7 +180,7 @@ export default function StudyWorkspace({
   const showSources = sourcesOpen;
 
   return (
-    <div className="h-screen w-full flex flex-col bg-[#0F1114] relative">
+    <div className="h-screen w-full flex flex-col bg-base-100 relative" data-theme="orbit">
       <Header />
       
       <div className="flex-1 overflow-hidden px-3 pb-3">
@@ -206,7 +206,7 @@ export default function StudyWorkspace({
           
           {/* Center panel - Chat */}
           <ResizablePanel defaultSize={showContent || showSources ? 50 : 100} minSize={30}>
-            <div className="flex flex-col h-full min-w-0 rounded-b-2xl border-x border-b border-[#23272E]/40 bg-[#1A1D21]/50 overflow-hidden">
+            <div className="flex flex-col h-full min-w-0 rounded-b-2xl border-x border-b border-base-300/40 bg-base-200/50 overflow-hidden">
               {children}
             </div>
           </ResizablePanel>
@@ -216,7 +216,7 @@ export default function StudyWorkspace({
             <>
               <ResizableHandle />
               <ResizablePanel defaultSize={18} minSize={12} maxSize={30}>
-                <div className="h-full rounded-2xl border border-[#23272E]/40 bg-[#1A1D21]/50 overflow-hidden">
+                <div className="h-full rounded-2xl border border-base-300/40 bg-base-200/50 overflow-hidden">
                   <SourcesPanelDesktop
                     sources={currentSources}
                     activeSourceId={activeSourceId}
@@ -233,7 +233,7 @@ export default function StudyWorkspace({
       {!showContent && activeContent && (
         <button
           onClick={() => onContentPanelOpenChange(true)}
-          className="fixed left-3 top-1/2 -translate-y-1/2 z-40 h-20 w-1.5 rounded-r-full bg-[#23272E]/60 hover:bg-primary/50 hover:w-2 transition-all duration-200"
+          className="fixed left-3 top-1/2 -translate-y-1/2 z-40 h-20 w-1.5 rounded-r-full bg-base-300/60 hover:bg-primary/50 hover:w-2 transition-all duration-200"
           aria-label="Open context panel"
         />
       )}
@@ -241,7 +241,7 @@ export default function StudyWorkspace({
       {!showSources && (
         <button
           onClick={() => onSourcesOpenChange(true)}
-          className="fixed right-3 top-1/2 -translate-y-1/2 z-40 h-20 w-1.5 rounded-l-full bg-[#23272E]/60 hover:bg-primary/50 hover:w-2 transition-all duration-200"
+          className="fixed right-3 top-1/2 -translate-y-1/2 z-40 h-20 w-1.5 rounded-l-full bg-base-300/60 hover:bg-primary/50 hover:w-2 transition-all duration-200"
           aria-label="Open learning panel"
         />
       )}
