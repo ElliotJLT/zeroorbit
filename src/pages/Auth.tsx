@@ -77,7 +77,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col p-6 bg-[#0F1114]">
+    <div className="min-h-screen flex flex-col p-6 bg-base-100" data-theme="orbit">
       <div className="max-w-sm mx-auto w-full flex-1 flex flex-col justify-center">
         <div className="space-y-8 animate-fade-in">
           {/* Logo */}
@@ -90,19 +90,19 @@ export default function Auth() {
             {hasPendingQuestion ? (
               <>
                 <p className="text-sm text-primary font-medium">Almost there</p>
-                <h1 className="text-2xl font-semibold tracking-tight text-white">
+                <h1 className="text-2xl font-semibold tracking-tight text-base-content">
                   Create your account
                 </h1>
-                <p className="text-[#9CA3AF] text-sm">
+                <p className="text-base-content/60 text-sm">
                   Get help with your question and track progress
                 </p>
               </>
             ) : (
               <>
-                <h1 className="text-2xl font-semibold tracking-tight text-white">
+                <h1 className="text-2xl font-semibold tracking-tight text-base-content">
                   {isLogin ? 'Welcome back' : 'Get started'}
                 </h1>
-                <p className="text-[#9CA3AF] text-sm">
+                <p className="text-base-content/60 text-sm">
                   {isLogin 
                     ? 'Sign in to continue'
                     : 'Create an account to get started'}
@@ -114,53 +114,53 @@ export default function Auth() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
-              <div className="flex items-center gap-3 bg-[#1A1D21] h-12 rounded-xl px-4 focus-within:ring-2 focus-within:ring-primary">
-                <Mail className="h-4 w-4 text-[#6B7280]" />
+              <div className="flex items-center gap-3 bg-base-200 h-12 rounded-xl px-4 focus-within:ring-2 focus-within:ring-primary">
+                <Mail className="h-4 w-4 text-base-content/40" />
                 <input
                   type="email"
                   placeholder="Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="flex-1 bg-transparent text-white placeholder:text-[#6B7280] focus:outline-none"
+                  className="flex-1 bg-transparent text-base-content placeholder:text-base-content/40 focus:outline-none"
                   aria-invalid={!!errors.email}
                 />
               </div>
               {errors.email && (
-                <p className="text-xs text-red-400 px-1">{errors.email}</p>
+                <p className="text-xs text-error px-1">{errors.email}</p>
               )}
             </div>
 
             <div className="space-y-1">
-              <div className="flex items-center gap-3 bg-[#1A1D21] h-12 rounded-xl px-4 focus-within:ring-2 focus-within:ring-primary">
-                <Lock className="h-4 w-4 text-[#6B7280]" />
+              <div className="flex items-center gap-3 bg-base-200 h-12 rounded-xl px-4 focus-within:ring-2 focus-within:ring-primary">
+                <Lock className="h-4 w-4 text-base-content/40" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="flex-1 bg-transparent text-white placeholder:text-[#6B7280] focus:outline-none"
+                  className="flex-1 bg-transparent text-base-content placeholder:text-base-content/40 focus:outline-none"
                   aria-invalid={!!errors.password}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-[#6B7280] hover:text-white transition-colors"
+                  className="text-base-content/40 hover:text-base-content transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               {errors.password && (
-                <p className="text-xs text-red-400 px-1">{errors.password}</p>
+                <p className="text-xs text-error px-1">{errors.password}</p>
               )}
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 rounded-full font-medium border border-primary bg-[#23272E] text-white hover:shadow-[0_0_16px_rgba(0,250,215,0.25)] transition-all flex items-center justify-center disabled:opacity-50"
+              className="btn btn-outline btn-primary w-full h-12 rounded-full font-medium hover:shadow-[0_0_16px_rgba(0,250,215,0.25)] transition-all flex items-center justify-center disabled:opacity-50"
             >
               {loading ? (
-                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                <span className="loading loading-spinner loading-sm"></span>
               ) : (
                 <>
                   {isLogin ? 'Sign in' : 'Continue'}
@@ -175,7 +175,7 @@ export default function Auth() {
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-[#9CA3AF] hover:text-white transition-colors"
+              className="text-sm text-base-content/60 hover:text-base-content transition-colors"
             >
               {isLogin 
                 ? "Don't have an account? "
@@ -186,7 +186,7 @@ export default function Auth() {
 
           {/* Benefits */}
           {!isLogin && (
-            <div className="space-y-3 pt-4 border-t border-[#23272E]">
+            <div className="space-y-3 pt-4 border-t border-base-300">
               <div className="grid gap-3">
                 {[
                   { title: 'Instant help', desc: 'Get step-by-step guidance' },
@@ -196,8 +196,8 @@ export default function Auth() {
                   <div key={i} className="flex items-start gap-3">
                     <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2" />
                     <div>
-                      <p className="text-sm font-medium text-white">{benefit.title}</p>
-                      <p className="text-xs text-[#9CA3AF]">{benefit.desc}</p>
+                      <p className="text-sm font-medium text-base-content">{benefit.title}</p>
+                      <p className="text-xs text-base-content/60">{benefit.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -211,7 +211,7 @@ export default function Auth() {
       <footer className="text-center py-4">
         <button
           onClick={() => navigate('/')}
-          className="text-sm text-[#9CA3AF] hover:text-white transition-colors"
+          className="text-sm text-base-content/60 hover:text-base-content transition-colors"
         >
           ← Back to home
         </button>

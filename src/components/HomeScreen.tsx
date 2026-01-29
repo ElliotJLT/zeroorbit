@@ -55,14 +55,14 @@ export default function HomeScreen({
   const sections = ['pure', 'statistics', 'mechanics'].filter(s => groupedTopics[s]?.length > 0);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0F1114]">
+    <div className="min-h-screen flex flex-col bg-base-100" data-theme="orbit">
       {/* Header - 44pt touch targets per Apple HIG */}
-      <header className="p-4 flex items-center justify-between border-b border-[#23272E]">
+      <header className="p-4 flex items-center justify-between border-b border-base-300">
         <BurgerMenu />
         {!isAuthenticated && (
           <button 
             onClick={onSignIn} 
-            className="h-11 px-4 rounded-full text-sm text-[#9CA3AF] hover:text-white hover:bg-[#1A1D21] active:scale-95 transition-all"
+            className="h-11 px-4 rounded-full text-sm text-base-content/60 hover:text-base-content hover:bg-base-200 active:scale-95 transition-all"
           >
             Sign in
           </button>
@@ -79,36 +79,36 @@ export default function HomeScreen({
               <div className="absolute w-56 h-56 logo-glow top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
               <img src={orbitLogo} alt="Orbit" className="relative h-48 w-auto mx-auto" />
             </div>
-            <h1 className="text-2xl font-semibold mb-2 text-white">A-Level Maths Tutor</h1>
-            <p className="text-[#9CA3AF]">AQA • Edexcel • OCR</p>
+            <h1 className="text-2xl font-semibold mb-2 text-base-content">A-Level Maths Tutor</h1>
+            <p className="text-base-content/60">AQA • Edexcel • OCR</p>
           </div>
 
           {/* Primary CTA - Snap a Question (min 44pt height, active feedback) */}
           <Button
             onClick={onSnapQuestion}
-            className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl bg-primary hover:bg-primary/90 active:scale-[0.98] text-[#0F1114] font-semibold text-lg shadow-lg transition-all"
+            className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl bg-primary hover:bg-primary/90 active:scale-[0.98] text-primary-content font-semibold text-lg shadow-lg transition-all"
           >
             <Camera className="h-6 w-6" />
             <span>Snap a Question</span>
           </Button>
 
           {/* Value Proposition */}
-          <p className="text-center text-sm text-[#9CA3AF] px-4">
+          <p className="text-center text-sm text-base-content/60 px-4">
             Stuck on a question? Snap it. Get coached through it step-by-step.
           </p>
 
           {/* Or Divider */}
           <div className="flex items-center gap-4">
-            <div className="flex-1 h-px bg-[#23272E]" />
-            <span className="text-sm text-[#9CA3AF]">or</span>
-            <div className="flex-1 h-px bg-[#23272E]" />
+            <div className="flex-1 h-px bg-base-300" />
+            <span className="text-sm text-base-content/60">or</span>
+            <div className="flex-1 h-px bg-base-300" />
           </div>
 
           {/* Arena CTA (min 44pt height, active feedback) */}
           <Button
             onClick={onTestMe}
             variant="outline"
-            className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl border-primary/30 bg-transparent hover:bg-primary/5 active:scale-[0.98] font-medium text-base text-white transition-all"
+            className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl border-primary/30 bg-transparent hover:bg-primary/5 active:scale-[0.98] font-medium text-base text-base-content transition-all"
           >
             <Swords className="h-5 w-5 text-primary" />
             <span>Test yourself in our Arena</span>
@@ -116,10 +116,10 @@ export default function HomeScreen({
 
           {/* Topics Preview (non-interactive) */}
           <div className="space-y-3 opacity-60">
-            <p className="text-xs text-[#9CA3AF] text-center">Orbit covers the full A-Level syllabus</p>
+            <p className="text-xs text-base-content/60 text-center">Orbit covers the full A-Level syllabus</p>
             
             {loadingTopics ? (
-              <div className="text-center py-4 text-[#9CA3AF] text-sm">Loading...</div>
+              <div className="text-center py-4 text-base-content/60 text-sm">Loading...</div>
             ) : (
               <div className="space-y-2">
                 {sections.map((section) => {
@@ -127,14 +127,14 @@ export default function HomeScreen({
                   const topicsInSection = groupedTopics[section] || [];
 
                   return (
-                    <div key={section} className="rounded-xl border border-[#23272E] overflow-hidden">
-                      <div className="p-4 flex items-center gap-3 bg-[#1A1D21]">
+                    <div key={section} className="rounded-xl border border-base-300 overflow-hidden">
+                      <div className="p-4 flex items-center gap-3 bg-base-200">
                         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                           <Icon className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex-1 text-left">
-                          <p className="font-medium text-white">{sectionLabels[section as keyof typeof sectionLabels]}</p>
-                          <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                          <p className="font-medium text-base-content">{sectionLabels[section as keyof typeof sectionLabels]}</p>
+                          <p className="text-xs text-base-content/60 leading-relaxed">
                             {topicsInSection.map(t => t.name).join(' · ')}
                           </p>
                         </div>
@@ -149,8 +149,8 @@ export default function HomeScreen({
       </main>
 
       {/* Footer */}
-      <footer className="p-5 border-t border-[#23272E]">
-        <div className="flex items-center justify-center gap-2 text-sm text-[#9CA3AF]">
+      <footer className="p-5 border-t border-base-300">
+        <div className="flex items-center justify-center gap-2 text-sm text-base-content/60">
           <span>Built with</span>
           <img src={orbitIcon} alt="Zero Gravity" className="h-8 w-auto" />
         </div>

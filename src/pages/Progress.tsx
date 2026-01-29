@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Flame, Zap, Clock, HelpCircle, Target, TrendingDown, Info, Instagram, Check, Coins } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -135,16 +134,16 @@ export default function ProgressPage() {
   const firstName = profile?.full_name?.split(' ')[0] || null;
 
   return (
-    <div className="min-h-screen bg-[#0F1114]">
+    <div className="min-h-screen bg-base-100" data-theme="orbit">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-[#0F1114]/95 backdrop-blur border-b border-[#23272E]">
+      <header className="sticky top-0 z-10 bg-base-100/95 backdrop-blur border-b border-base-300">
         <div className="flex items-center justify-between px-4 h-14">
-          <button onClick={() => navigate('/')} className="p-2 -ml-2 text-white">
+          <button onClick={() => navigate('/')} className="p-2 -ml-2 text-base-content">
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
             <img src={orbitLogo} alt="Orbit" className="h-8 w-8" />
-            <span className="font-semibold text-white">My Progress</span>
+            <span className="font-semibold text-base-content">My Progress</span>
           </div>
           <div className="w-9" />
         </div>
@@ -153,14 +152,14 @@ export default function ProgressPage() {
       <main className="p-4 pb-24 space-y-6 max-w-lg mx-auto">
         {/* Profile Summary */}
         {profile && (
-          <div className="bg-[#1A1D21] rounded-2xl p-4">
+          <div className="bg-base-200 rounded-2xl p-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-[#0F1114] font-bold text-lg">
+              <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-content font-bold text-lg">
                 {firstName?.[0] || '?'}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold truncate text-white">{profile.full_name || 'Student'}</p>
-                <p className="text-sm text-[#9CA3AF]">
+                <p className="font-semibold truncate text-base-content">{profile.full_name || 'Student'}</p>
+                <p className="text-sm text-base-content/60">
                   {[profile.year_group, profile.exam_board, profile.target_grade && `Target ${profile.target_grade}`]
                     .filter(Boolean)
                     .join(' · ')}
@@ -171,47 +170,47 @@ export default function ProgressPage() {
         )}
 
         {/* Token Balance */}
-        <div className="bg-[#1A1D21] rounded-2xl p-4 border border-[#23272E]">
+        <div className="bg-base-200 rounded-2xl p-4 border border-base-300">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Coins className="h-5 w-5 text-yellow-500" />
-              <span className="font-medium text-white">Your Tokens</span>
+              <span className="font-medium text-base-content">Your Tokens</span>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
-                    <Info className="h-4 w-4 text-[#9CA3AF]" />
+                    <Info className="h-4 w-4 text-base-content/60" />
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-[200px] bg-[#23272E] border-[#23272E] text-white">
+                  <TooltipContent side="bottom" className="max-w-[200px] bg-base-300 border-base-300 text-base-content">
                     <p className="text-sm">Tokens are used for AI tutoring sessions. Earn more by practicing daily or following us!</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <span className="text-2xl font-bold text-white">{tokenData.balance}</span>
+            <span className="text-2xl font-bold text-base-content">{tokenData.balance}</span>
           </div>
         </div>
 
         {/* Weekly Streak */}
-        <div className="bg-[#1A1D21] rounded-2xl p-4 border border-[#23272E]">
+        <div className="bg-base-200 rounded-2xl p-4 border border-base-300">
           <WeeklyStreak streak={tokenData.weeklyStreak} />
-          <p className="text-xs text-[#9CA3AF] mt-3">
+          <p className="text-xs text-base-content/60 mt-3">
             Practice daily for +5 tokens each day
           </p>
         </div>
 
         {/* Start Tracking Fluency - shown when no data, positioned under profile */}
         {!hasData && (
-          <div className="bg-[#1A1D21] rounded-2xl border border-dashed border-[#23272E] p-6 text-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-[#23272E] flex items-center justify-center mx-auto">
-              <Target className="h-6 w-6 text-[#9CA3AF]" />
+          <div className="bg-base-200 rounded-2xl border border-dashed border-base-300 p-6 text-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-base-300 flex items-center justify-center mx-auto">
+              <Target className="h-6 w-6 text-base-content/60" />
             </div>
             <div className="space-y-1">
-              <h3 className="font-semibold text-white">Start tracking your fluency</h3>
-              <p className="text-sm text-[#9CA3AF]">
+              <h3 className="font-semibold text-base-content">Start tracking your fluency</h3>
+              <p className="text-sm text-base-content/60">
                 Test yourself in the Practice Arena to see your stats and improvement over time.
               </p>
             </div>
-            <Button onClick={() => navigate('/practice-arena')} size="sm" variant="outline" className="border-[#23272E] bg-transparent text-white hover:bg-[#23272E]">
+            <Button onClick={() => navigate('/practice-arena')} size="sm" variant="outline" className="border-base-300 bg-transparent text-base-content hover:bg-base-300">
               Go to Practice Arena
             </Button>
           </div>
@@ -245,9 +244,9 @@ export default function ProgressPage() {
 
             {/* Focus Areas */}
             {focusAreas.length > 0 && (
-              <div className="bg-[#1A1D21] rounded-2xl border border-[#23272E]">
+              <div className="bg-base-200 rounded-2xl border border-base-300">
                 <div className="p-4 pb-3">
-                  <h3 className="text-base font-semibold flex items-center gap-2 text-white">
+                  <h3 className="text-base font-semibold flex items-center gap-2 text-base-content">
                     <TrendingDown className="h-4 w-4 text-amber-500" />
                     Focus Areas
                   </h3>
@@ -256,8 +255,8 @@ export default function ProgressPage() {
                   {focusAreas.map((area) => (
                     <div key={area.name} className="space-y-1">
                       <div className="flex justify-between text-sm">
-                        <span className="truncate text-white">{area.name}</span>
-                        <span className="text-[#9CA3AF]">{area.accuracy}%</span>
+                        <span className="truncate text-base-content">{area.name}</span>
+                        <span className="text-base-content/60">{area.accuracy}%</span>
                       </div>
                       <Progress value={area.accuracy} className="h-2" />
                     </div>
@@ -267,9 +266,9 @@ export default function ProgressPage() {
             )}
 
             {/* All Topics */}
-            <div className="bg-[#1A1D21] rounded-2xl border border-[#23272E]">
+            <div className="bg-base-200 rounded-2xl border border-base-300">
               <div className="p-4 pb-3">
-                <h3 className="text-base font-semibold text-white">All Topics</h3>
+                <h3 className="text-base font-semibold text-base-content">All Topics</h3>
               </div>
               <div className="px-4 pb-4 space-y-3">
                 {sortedTopics.map(([name, data]) => {
@@ -279,8 +278,8 @@ export default function ProgressPage() {
                   return (
                     <div key={name} className="space-y-1">
                       <div className="flex justify-between text-sm">
-                        <span className="truncate text-white">{name}</span>
-                        <span className="text-[#9CA3AF]">
+                        <span className="truncate text-base-content">{name}</span>
+                        <span className="text-base-content/60">
                           {data.correct}/{data.attempts} ({accuracy}%)
                         </span>
                       </div>
@@ -289,7 +288,7 @@ export default function ProgressPage() {
                   );
                 })}
                 {sortedTopics.length === 0 && (
-                  <p className="text-sm text-[#9CA3AF] text-center py-4">
+                  <p className="text-sm text-base-content/60 text-center py-4">
                     No topic data yet
                   </p>
                 )}
@@ -299,18 +298,18 @@ export default function ProgressPage() {
         )}
 
         {/* Earn Free Tokens */}
-        <div className="bg-[#1A1D21] rounded-2xl border border-[#23272E]">
+        <div className="bg-base-200 rounded-2xl border border-base-300">
           <div className="p-4 pb-3">
-            <h3 className="text-base font-semibold flex items-center gap-2 text-white">
+            <h3 className="text-base font-semibold flex items-center gap-2 text-base-content">
               🎁 Earn Free Tokens
             </h3>
           </div>
           <div className="px-4 pb-4 space-y-3">
             {/* Instagram */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-[#23272E]">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-base-300">
               <div className="flex items-center gap-3">
-                <Instagram className="h-5 w-5 text-white" />
-                <span className="text-sm font-medium text-white">@orbit_maths</span>
+                <Instagram className="h-5 w-5 text-base-content" />
+                <span className="text-sm font-medium text-base-content">@orbit_maths</span>
               </div>
               <Button
                 size="sm"
@@ -333,12 +332,12 @@ export default function ProgressPage() {
             </div>
 
             {/* TikTok */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-[#23272E]">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-base-300">
               <div className="flex items-center gap-3">
-                <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                <svg className="h-5 w-5 text-base-content" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
                 </svg>
-                <span className="text-sm font-medium text-white">@orbit_maths</span>
+                <span className="text-sm font-medium text-base-content">@orbit_maths</span>
               </div>
               <Button
                 size="sm"
@@ -363,9 +362,9 @@ export default function ProgressPage() {
         </div>
 
         {/* Get More Tokens */}
-        <div className="bg-[#1A1D21] rounded-2xl border border-[#23272E]">
+        <div className="bg-base-200 rounded-2xl border border-base-300">
           <div className="p-4 pb-3">
-            <h3 className="text-base font-semibold text-white">Get More Tokens</h3>
+            <h3 className="text-base font-semibold text-base-content">Get More Tokens</h3>
           </div>
           <div className="px-4 pb-4">
             <div className="grid grid-cols-3 gap-3">
@@ -377,16 +376,16 @@ export default function ProgressPage() {
                     "relative p-4 rounded-xl border-2 text-center transition-all hover:scale-105",
                     option.popular
                       ? "border-primary bg-primary/5"
-                      : "border-[#23272E] hover:border-primary/50"
+                      : "border-base-300 hover:border-primary/50"
                   )}
                 >
                   {option.popular && (
-                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-primary text-[#0F1114] text-xs font-medium rounded-full">
+                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-primary text-primary-content text-xs font-medium rounded-full">
                       Best
                     </span>
                   )}
-                  <div className="text-2xl font-bold text-white">{option.tokens}</div>
-                  <div className="text-sm text-[#9CA3AF]">{option.price}</div>
+                  <div className="text-2xl font-bold text-base-content">{option.tokens}</div>
+                  <div className="text-sm text-base-content/60">{option.price}</div>
                 </button>
               ))}
             </div>
