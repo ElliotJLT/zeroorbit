@@ -125,5 +125,37 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    require("daisyui"),
+  ],
+  daisyui: {
+    themes: [
+      {
+        orbit: {
+          "primary": "#00FAD7",           // Mint
+          "primary-content": "#0F1114",   // Dark text on mint
+          "secondary": "#22C55E",         // Success green
+          "secondary-content": "#ffffff",
+          "accent": "#1E2127",
+          "accent-content": "#F8FAFC",
+          "neutral": "#1A1D21",           // Card backgrounds
+          "neutral-content": "#F8FAFC",
+          "base-100": "#0F1114",          // Main background
+          "base-200": "#1A1D21",          // Elevated surfaces
+          "base-300": "#23272E",          // Borders
+          "base-content": "#F8FAFC",      // Main text
+          "info": "#3ABFF8",
+          "success": "#22C55E",
+          "warning": "#F59E0B",
+          "error": "#EF4444",
+        },
+      },
+    ],
+    darkTheme: "orbit",
+    base: true,
+    styled: true,
+    utils: true,
+    logs: false,
+  },
 } satisfies Config;

@@ -4,9 +4,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Force Orbit theme */
+:root {
+  data-theme: orbit;
+}
+
 @layer base {
   :root {
-    /* Orbit Dark Theme */
+    /* Orbit Dark Theme - CSS variables for Tailwind compatibility */
     --background: 220 15% 6%;
     --foreground: 0 0% 98%;
 
@@ -57,6 +62,11 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 220 13% 18%;
     --sidebar-ring: 172 100% 49%;
+
+    /* Surface colors */
+    --surface-1: 220 15% 6%;
+    --surface-2: 220 13% 10%;
+    --surface-3: 220 13% 14%;
   }
 }
 
@@ -71,6 +81,10 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  html, body {
+    data-theme: orbit;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     font-weight: 600;
@@ -78,7 +92,7 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-base-100 text-base-content antialiased;
     min-height: 100vh;
   }
 }
