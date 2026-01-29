@@ -135,16 +135,16 @@ export default function ProgressPage() {
   const firstName = profile?.full_name?.split(' ')[0] || null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#0F1114]">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
+      <header className="sticky top-0 z-10 bg-[#0F1114]/95 backdrop-blur border-b border-[#23272E]">
         <div className="flex items-center justify-between px-4 h-14">
-          <button onClick={() => navigate('/')} className="p-2 -ml-2">
+          <button onClick={() => navigate('/')} className="p-2 -ml-2 text-white">
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
             <img src={orbitLogo} alt="Orbit" className="h-8 w-8" />
-            <span className="font-semibold">My Progress</span>
+            <span className="font-semibold text-white">My Progress</span>
           </div>
           <div className="w-9" />
         </div>
@@ -153,76 +153,68 @@ export default function ProgressPage() {
       <main className="p-4 pb-24 space-y-6 max-w-lg mx-auto">
         {/* Profile Summary */}
         {profile && (
-          <Card className="bg-muted/50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg">
-                  {firstName?.[0] || '?'}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate">{profile.full_name || 'Student'}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {[profile.year_group, profile.exam_board, profile.target_grade && `Target ${profile.target_grade}`]
-                      .filter(Boolean)
-                      .join(' · ')}
-                  </p>
-                </div>
+          <div className="bg-[#1A1D21] rounded-2xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-[#0F1114] font-bold text-lg">
+                {firstName?.[0] || '?'}
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold truncate text-white">{profile.full_name || 'Student'}</p>
+                <p className="text-sm text-[#9CA3AF]">
+                  {[profile.year_group, profile.exam_board, profile.target_grade && `Target ${profile.target_grade}`]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Token Balance */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Coins className="h-5 w-5 text-yellow-500" />
-                <span className="font-medium">Your Tokens</span>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Info className="h-4 w-4 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-[200px]">
-                      <p className="text-sm">Tokens are used for AI tutoring sessions. Earn more by practicing daily or following us!</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <span className="text-2xl font-bold">{tokenData.balance}</span>
+        <div className="bg-[#1A1D21] rounded-2xl p-4 border border-[#23272E]">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Coins className="h-5 w-5 text-yellow-500" />
+              <span className="font-medium text-white">Your Tokens</span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-[#9CA3AF]" />
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-[200px] bg-[#23272E] border-[#23272E] text-white">
+                    <p className="text-sm">Tokens are used for AI tutoring sessions. Earn more by practicing daily or following us!</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
-          </CardContent>
-        </Card>
+            <span className="text-2xl font-bold text-white">{tokenData.balance}</span>
+          </div>
+        </div>
 
         {/* Weekly Streak */}
-        <Card>
-          <CardContent className="p-4">
-            <WeeklyStreak streak={tokenData.weeklyStreak} />
-            <p className="text-xs text-muted-foreground mt-3">
-              Practice daily for +5 tokens each day
-            </p>
-          </CardContent>
-        </Card>
+        <div className="bg-[#1A1D21] rounded-2xl p-4 border border-[#23272E]">
+          <WeeklyStreak streak={tokenData.weeklyStreak} />
+          <p className="text-xs text-[#9CA3AF] mt-3">
+            Practice daily for +5 tokens each day
+          </p>
+        </div>
 
         {/* Start Tracking Fluency - shown when no data, positioned under profile */}
         {!hasData && (
-          <Card className="border-dashed">
-            <CardContent className="p-6 text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto">
-                <Target className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-semibold">Start tracking your fluency</h3>
-                <p className="text-sm text-muted-foreground">
-                  Test yourself in the Practice Arena to see your stats and improvement over time.
-                </p>
-              </div>
-              <Button onClick={() => navigate('/practice-arena')} size="sm" variant="outline">
-                Go to Practice Arena
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="bg-[#1A1D21] rounded-2xl border border-dashed border-[#23272E] p-6 text-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-[#23272E] flex items-center justify-center mx-auto">
+              <Target className="h-6 w-6 text-[#9CA3AF]" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-semibold text-white">Start tracking your fluency</h3>
+              <p className="text-sm text-[#9CA3AF]">
+                Test yourself in the Practice Arena to see your stats and improvement over time.
+              </p>
+            </div>
+            <Button onClick={() => navigate('/practice-arena')} size="sm" variant="outline" className="border-[#23272E] bg-transparent text-white hover:bg-[#23272E]">
+              Go to Practice Arena
+            </Button>
+          </div>
         )}
 
         {hasData && (
@@ -253,33 +245,33 @@ export default function ProgressPage() {
 
             {/* Focus Areas */}
             {focusAreas.length > 0 && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
+              <div className="bg-[#1A1D21] rounded-2xl border border-[#23272E]">
+                <div className="p-4 pb-3">
+                  <h3 className="text-base font-semibold flex items-center gap-2 text-white">
                     <TrendingDown className="h-4 w-4 text-amber-500" />
                     Focus Areas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
+                  </h3>
+                </div>
+                <div className="px-4 pb-4 space-y-3">
                   {focusAreas.map((area) => (
                     <div key={area.name} className="space-y-1">
                       <div className="flex justify-between text-sm">
-                        <span className="truncate">{area.name}</span>
-                        <span className="text-muted-foreground">{area.accuracy}%</span>
+                        <span className="truncate text-white">{area.name}</span>
+                        <span className="text-[#9CA3AF]">{area.accuracy}%</span>
                       </div>
                       <Progress value={area.accuracy} className="h-2" />
                     </div>
                   ))}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             )}
 
             {/* All Topics */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">All Topics</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <div className="bg-[#1A1D21] rounded-2xl border border-[#23272E]">
+              <div className="p-4 pb-3">
+                <h3 className="text-base font-semibold text-white">All Topics</h3>
+              </div>
+              <div className="px-4 pb-4 space-y-3">
                 {sortedTopics.map(([name, data]) => {
                   const accuracy = data.attempts > 0 
                     ? Math.round((data.correct / data.attempts) * 100) 
@@ -287,8 +279,8 @@ export default function ProgressPage() {
                   return (
                     <div key={name} className="space-y-1">
                       <div className="flex justify-between text-sm">
-                        <span className="truncate">{name}</span>
-                        <span className="text-muted-foreground">
+                        <span className="truncate text-white">{name}</span>
+                        <span className="text-[#9CA3AF]">
                           {data.correct}/{data.attempts} ({accuracy}%)
                         </span>
                       </div>
@@ -297,28 +289,28 @@ export default function ProgressPage() {
                   );
                 })}
                 {sortedTopics.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
+                  <p className="text-sm text-[#9CA3AF] text-center py-4">
                     No topic data yet
                   </p>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </>
         )}
 
         {/* Earn Free Tokens */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
+        <div className="bg-[#1A1D21] rounded-2xl border border-[#23272E]">
+          <div className="p-4 pb-3">
+            <h3 className="text-base font-semibold flex items-center gap-2 text-white">
               🎁 Earn Free Tokens
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+            </h3>
+          </div>
+          <div className="px-4 pb-4 space-y-3">
             {/* Instagram */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-[#23272E]">
               <div className="flex items-center gap-3">
-                <Instagram className="h-5 w-5" />
-                <span className="text-sm font-medium">@orbit_maths</span>
+                <Instagram className="h-5 w-5 text-white" />
+                <span className="text-sm font-medium text-white">@orbit_maths</span>
               </div>
               <Button
                 size="sm"
@@ -341,12 +333,12 @@ export default function ProgressPage() {
             </div>
 
             {/* TikTok */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-[#23272E]">
               <div className="flex items-center gap-3">
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
                 </svg>
-                <span className="text-sm font-medium">@orbit_maths</span>
+                <span className="text-sm font-medium text-white">@orbit_maths</span>
               </div>
               <Button
                 size="sm"
@@ -367,15 +359,15 @@ export default function ProgressPage() {
                 )}
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Get More Tokens */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Get More Tokens</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="bg-[#1A1D21] rounded-2xl border border-[#23272E]">
+          <div className="p-4 pb-3">
+            <h3 className="text-base font-semibold text-white">Get More Tokens</h3>
+          </div>
+          <div className="px-4 pb-4">
             <div className="grid grid-cols-3 gap-3">
               {PURCHASE_OPTIONS.map((option) => (
                 <button
@@ -385,21 +377,21 @@ export default function ProgressPage() {
                     "relative p-4 rounded-xl border-2 text-center transition-all hover:scale-105",
                     option.popular
                       ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
+                      : "border-[#23272E] hover:border-primary/50"
                   )}
                 >
                   {option.popular && (
-                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-primary text-primary-foreground text-xs font-medium rounded-full">
+                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-primary text-[#0F1114] text-xs font-medium rounded-full">
                       Best
                     </span>
                   )}
-                  <div className="text-2xl font-bold">{option.tokens}</div>
-                  <div className="text-sm text-muted-foreground">{option.price}</div>
+                  <div className="text-2xl font-bold text-white">{option.tokens}</div>
+                  <div className="text-sm text-[#9CA3AF]">{option.price}</div>
                 </button>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </main>
     </div>
   );

@@ -52,23 +52,23 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-[#0F1114]">
       {/* Header */}
-      <header className="flex items-center gap-3 p-4 border-b border-border">
+      <header className="flex items-center gap-3 p-4 border-b border-[#23272E]">
         <button
           onClick={() => navigate(-1)}
-          className="p-2 rounded-full hover:bg-muted transition-colors"
+          className="p-2 rounded-full hover:bg-[#1A1D21] transition-colors text-white"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="text-lg font-semibold">Settings</h1>
+        <h1 className="text-lg font-semibold text-white">Settings</h1>
       </header>
 
       {/* Content */}
       <div className="flex-1 p-4 space-y-6">
         {/* Exam Board */}
         <div className="space-y-3">
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+          <h2 className="text-sm font-medium text-[#9CA3AF] uppercase tracking-wide">
             Exam Board
           </h2>
           <div className="grid grid-cols-2 gap-3">
@@ -77,10 +77,10 @@ export default function Settings() {
                 key={option.value}
                 onClick={() => handleExamBoardChange(option.value)}
                 className={cn(
-                  "p-4 rounded-2xl font-medium transition-all duration-200 bg-muted border-2",
+                  "p-4 rounded-2xl font-medium transition-all duration-200 bg-[#1A1D21] border-2 text-white",
                   examBoard === option.value
                     ? "border-primary"
-                    : "border-transparent hover:border-border"
+                    : "border-transparent hover:border-[#23272E]"
                 )}
               >
                 {option.label}
@@ -90,14 +90,14 @@ export default function Settings() {
         </div>
 
         {/* Reminders */}
-        <div className="flex items-center justify-between p-4 bg-muted rounded-2xl">
+        <div className="flex items-center justify-between p-4 bg-[#1A1D21] rounded-2xl">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
               <Bell className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="font-medium">Study Reminders</p>
-              <p className="text-sm text-muted-foreground">Daily practice notifications</p>
+              <p className="font-medium text-white">Study Reminders</p>
+              <p className="text-sm text-[#9CA3AF]">Daily practice notifications</p>
             </div>
           </div>
           <Switch
@@ -107,7 +107,7 @@ export default function Settings() {
         </div>
 
         {/* Theme */}
-        <div className="flex items-center justify-between p-4 bg-muted rounded-2xl">
+        <div className="flex items-center justify-between p-4 bg-[#1A1D21] rounded-2xl">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
               {darkMode ? (
@@ -117,8 +117,8 @@ export default function Settings() {
               )}
             </div>
             <div>
-              <p className="font-medium">Dark Mode</p>
-              <p className="text-sm text-muted-foreground">Easier on the eyes</p>
+              <p className="font-medium text-white">Dark Mode</p>
+              <p className="text-sm text-[#9CA3AF]">Easier on the eyes</p>
             </div>
           </div>
           <Switch
