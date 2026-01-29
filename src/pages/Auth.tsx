@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { ArrowRight, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import orbitLogo from '@/assets/orbit-logo.png';
 
@@ -79,7 +77,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col p-6 bg-background">
+    <div className="min-h-screen flex flex-col p-6 bg-base-100">
       <div className="max-w-sm mx-auto w-full flex-1 flex flex-col justify-center">
         <div className="space-y-8 animate-fade-in">
           {/* Logo */}
@@ -95,7 +93,7 @@ export default function Auth() {
                 <h1 className="text-2xl font-semibold tracking-tight">
                   Create your account
                 </h1>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-base-content/60 text-sm">
                   Get help with your question and track progress
                 </p>
               </>
@@ -104,7 +102,7 @@ export default function Auth() {
                 <h1 className="text-2xl font-semibold tracking-tight">
                   {isLogin ? 'Welcome back' : 'Get started'}
                 </h1>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-base-content/60 text-sm">
                   {isLogin 
                     ? 'Sign in to continue'
                     : 'Create an account to get started'}
@@ -115,67 +113,65 @@ export default function Auth() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
+            <div className="form-control">
+              <label className="input input-bordered flex items-center gap-3 bg-base-200 border-0 h-12 rounded-xl focus-within:outline-primary">
+                <Mail className="h-4 w-4 text-base-content/50" />
+                <input
                   type="email"
                   placeholder="Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-11 h-12 rounded-xl bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary"
+                  className="grow bg-transparent"
                   aria-invalid={!!errors.email}
                 />
-              </div>
+              </label>
               {errors.email && (
-                <p className="text-sm text-destructive px-1">{errors.email}</p>
+                <label className="label">
+                  <span className="label-text-alt text-error">{errors.email}</span>
+                </label>
               )}
             </div>
 
-            <div className="space-y-2">
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
+            <div className="form-control">
+              <label className="input input-bordered flex items-center gap-3 bg-base-200 border-0 h-12 rounded-xl focus-within:outline-primary">
+                <Lock className="h-4 w-4 text-base-content/50" />
+                <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-11 pr-11 h-12 rounded-xl bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary"
+                  className="grow bg-transparent"
                   aria-invalid={!!errors.password}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-base-content/50 hover:text-base-content transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
-              </div>
+              </label>
               {errors.password && (
-                <p className="text-sm text-destructive px-1">{errors.password}</p>
+                <label className="label">
+                  <span className="label-text-alt text-error">{errors.password}</span>
+                </label>
               )}
             </div>
 
-            <Button
+            <button
               type="submit"
-              className="w-full h-12 rounded-full font-medium transition-all text-white"
-              style={{ 
-                background: '#111416',
-                border: '1px solid #00FAD7',
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 16px rgba(0,250,215,0.25)'}
-              onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
               disabled={loading}
+              className="btn w-full h-12 rounded-full font-medium border border-primary bg-base-300 text-base-content hover:shadow-[0_0_16px_rgba(0,250,215,0.25)] transition-all"
             >
               {loading ? (
-                'Loading...'
+                <span className="loading loading-spinner loading-sm"></span>
               ) : (
                 <>
                   {isLogin ? 'Sign in' : 'Continue'}
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </>
               )}
-            </Button>
+            </button>
           </form>
 
           {/* Toggle */}
@@ -183,7 +179,7 @@ export default function Auth() {
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm text-base-content/60 hover:text-base-content transition-colors"
             >
               {isLogin 
                 ? "Don't have an account? "
@@ -194,7 +190,7 @@ export default function Auth() {
 
           {/* Benefits */}
           {!isLogin && (
-            <div className="space-y-3 pt-4 border-t border-border">
+            <div className="space-y-3 pt-4 border-t border-base-300">
               <div className="grid gap-3">
                 {[
                   { title: 'Instant help', desc: 'Get step-by-step guidance' },
@@ -205,7 +201,7 @@ export default function Auth() {
                     <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2" />
                     <div>
                       <p className="text-sm font-medium">{benefit.title}</p>
-                      <p className="text-xs text-muted-foreground">{benefit.desc}</p>
+                      <p className="text-xs text-base-content/60">{benefit.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -219,7 +215,7 @@ export default function Auth() {
       <footer className="text-center py-4">
         <button
           onClick={() => navigate('/')}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="text-sm text-base-content/60 hover:text-base-content transition-colors"
         >
           ← Back to home
         </button>
