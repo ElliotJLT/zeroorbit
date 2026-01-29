@@ -353,37 +353,37 @@ export default function Index() {
   // Setup screen (for users without profile context)
   if (step === 'setup') {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <header className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+      <div className="min-h-screen bg-[#0F1114] flex flex-col">
+        <header className="flex items-center justify-between px-4 py-3 border-b border-[#23272E] shrink-0">
           <button
             onClick={() => {
               setStep('home');
               setRawImage(null);
               setAnalysisResult(null);
             }}
-            className="p-2 -ml-2 hover:bg-muted rounded-lg"
+            className="p-2 -ml-2 hover:bg-[#1A1D21] rounded-lg text-white"
           >
             <X className="h-5 w-5" />
           </button>
-          <span className="font-medium">Quick Setup</span>
+          <span className="font-medium text-white">Quick Setup</span>
           <div className="w-9" />
         </header>
         
         <div className="flex-1 p-6 space-y-6">
           <div className="text-center space-y-2">
             <Sparkles className="h-8 w-8 mx-auto text-primary" />
-            <h2 className="text-xl font-semibold">Tell me about your course</h2>
-            <p className="text-muted-foreground text-sm">This helps me give you relevant feedback</p>
+            <h2 className="text-xl font-semibold text-white">Tell me about your course</h2>
+            <p className="text-[#9CA3AF] text-sm">This helps me give you relevant feedback</p>
           </div>
           
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Exam Board</label>
+              <label className="text-sm font-medium text-white">Exam Board</label>
               <Select value={examBoard} onValueChange={setExamBoard}>
-                <SelectTrigger className="h-12">
+                <SelectTrigger className="h-12 bg-[#1A1D21] border-[#23272E] text-white">
                   <SelectValue placeholder="Select exam board" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-[#1A1D21] border-[#23272E]">
                   <SelectItem value="aqa">AQA</SelectItem>
                   <SelectItem value="edexcel">Edexcel</SelectItem>
                   <SelectItem value="ocr">OCR</SelectItem>
@@ -393,12 +393,12 @@ export default function Index() {
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Year Group</label>
+              <label className="text-sm font-medium text-white">Year Group</label>
               <Select value={yearGroup} onValueChange={setYearGroup}>
-                <SelectTrigger className="h-12">
+                <SelectTrigger className="h-12 bg-[#1A1D21] border-[#23272E] text-white">
                   <SelectValue placeholder="Select year group" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-[#1A1D21] border-[#23272E]">
                   <SelectItem value="10">Year 10</SelectItem>
                   <SelectItem value="11">Year 11</SelectItem>
                   <SelectItem value="12">Year 12</SelectItem>
@@ -408,12 +408,12 @@ export default function Index() {
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Target Grade</label>
+              <label className="text-sm font-medium text-white">Target Grade</label>
               <Select value={targetGrade} onValueChange={setTargetGrade}>
-                <SelectTrigger className="h-12">
+                <SelectTrigger className="h-12 bg-[#1A1D21] border-[#23272E] text-white">
                   <SelectValue placeholder="Select target grade" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-[#1A1D21] border-[#23272E]">
                   <SelectItem value="9">Grade 9</SelectItem>
                   <SelectItem value="8">Grade 8</SelectItem>
                   <SelectItem value="7">Grade 7</SelectItem>
@@ -428,12 +428,12 @@ export default function Index() {
             
             {['10', '11'].includes(yearGroup) && (
               <div className="space-y-2">
-                <label className="text-sm font-medium">Tier</label>
+                <label className="text-sm font-medium text-white">Tier</label>
                 <Select value={tier} onValueChange={setTier}>
-                  <SelectTrigger className="h-12">
+                  <SelectTrigger className="h-12 bg-[#1A1D21] border-[#23272E] text-white">
                     <SelectValue placeholder="Select tier" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-[#1A1D21] border-[#23272E]">
                     <SelectItem value="higher">Higher</SelectItem>
                     <SelectItem value="foundation">Foundation</SelectItem>
                   </SelectContent>
@@ -449,7 +449,7 @@ export default function Index() {
               handleSetupComplete();
             }}
             disabled={!examBoard || !yearGroup}
-            className="w-full h-12"
+            className="w-full h-12 bg-primary text-[#0F1114] hover:bg-primary/90"
           >
             Continue
             <ArrowRight className="ml-2 h-4 w-4" />

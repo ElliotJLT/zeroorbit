@@ -249,20 +249,20 @@ export default function ChatView({
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-background">
+    <div className="flex flex-col h-full min-h-0 bg-[#0F1114]">
       
       {/* Momentum Indicator - shows when conversation is active */}
       {messages.length > 0 && (
         <MomentumIndicator 
           exchangeCount={exchangeCount}
           hasCorrectAnswer={hasCorrectAnswer}
-          className="border-b border-border/50"
+          className="border-b border-[#23272E]/50"
         />
       )}
 
       {/* Mode Toggle - shows during active sessions */}
       {messages.length > 0 && onModeChange && (
-        <div className="flex justify-center py-2 border-b border-border/50">
+        <div className="flex justify-center py-2 border-b border-[#23272E]/50">
           <ModeToggle
             mode={currentMode}
             onChange={onModeChange}
@@ -286,9 +286,9 @@ export default function ChatView({
             </div>
             
             {/* Greeting */}
-            <div className="bg-muted rounded-2xl px-5 py-4 max-w-[280px]">
+            <div className="bg-[#1A1D21] rounded-2xl px-5 py-4 max-w-[280px]">
               <p className="text-sm font-medium text-primary mb-1">Orbit</p>
-              <p className="text-sm leading-relaxed">
+              <p className="text-sm leading-relaxed text-white">
                 Hey! What are you working on? Snap a photo or describe what you're stuck on.
               </p>
             </div>
@@ -307,8 +307,8 @@ export default function ChatView({
               className={cn(
                 'max-w-[85%] rounded-2xl px-4 py-3',
                 message.sender === 'student'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted',
+                  ? 'bg-primary text-[#0F1114]'
+                  : 'bg-[#1A1D21] text-white',
                 message.isCorrect && 'ring-2 ring-green-500'
               )}
             >
@@ -343,13 +343,13 @@ export default function ChatView({
 
               {/* Feedback buttons for tutor messages */}
               {message.sender === 'tutor' && !message.isTyping && (
-                <div className="mt-2 pt-2 border-t border-border/30 flex items-center justify-between">
+                <div className="mt-2 pt-2 border-t border-[#23272E]/30 flex items-center justify-between">
                   {/* Left side: copy, thumbs */}
                   <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                      className="h-7 w-7 p-0 text-[#6B7280] hover:text-white"
                       onClick={() => handleCopy(message.id, message.content)}
                     >
                       {copiedMessageId === message.id ? (
@@ -365,7 +365,7 @@ export default function ChatView({
                         "h-7 w-7 p-0",
                         feedbackGiven[message.id] === 'thumbs_up' 
                           ? "text-green-500" 
-                          : "text-muted-foreground hover:text-foreground"
+                          : "text-[#6B7280] hover:text-white"
                       )}
                       onClick={() => handleThumbsUp(message.id)}
                       disabled={!!feedbackGiven[message.id]}
@@ -379,7 +379,7 @@ export default function ChatView({
                         "h-7 w-7 p-0",
                         feedbackGiven[message.id] === 'thumbs_down' 
                           ? "text-red-500" 
-                          : "text-muted-foreground hover:text-foreground"
+                          : "text-[#6B7280] hover:text-white"
                       )}
                       onClick={() => handleThumbsDown(message.id)}
                       disabled={!!feedbackGiven[message.id]}
@@ -392,7 +392,7 @@ export default function ChatView({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 px-2 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                    className="h-7 px-2 gap-1.5 text-xs text-[#6B7280] hover:text-white"
                     onClick={() => handlePlayTTS(message.id, message.content)}
                     disabled={isLoading && playingMessageId === message.id}
                   >
@@ -421,9 +421,9 @@ export default function ChatView({
 
         {sending && (
           <div className="flex justify-start">
-            <div className="bg-muted rounded-2xl px-4 py-3 flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Thinking...</span>
+            <div className="bg-[#1A1D21] rounded-2xl px-4 py-3 flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-[#9CA3AF]" />
+              <span className="text-sm text-[#9CA3AF]">Thinking...</span>
             </div>
           </div>
         )}
@@ -440,11 +440,11 @@ export default function ChatView({
           <div className="absolute inset-x-0 -top-8 h-16 bg-gradient-to-t from-primary/8 via-primary/4 to-transparent pointer-events-none" />
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-radial from-primary/6 via-transparent to-transparent pointer-events-none blur-xl" />
           
-          <div className="relative border-t border-border bg-background/95 backdrop-blur-sm p-4">
+          <div className="relative border-t border-[#23272E] bg-[#0F1114]/95 backdrop-blur-sm p-4">
           {/* Guest exchange counter */}
           {!isAuthenticated && guestExchangeCount > 0 && (
             <div className="text-center mb-2">
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-[#9CA3AF]">
                 {guestExchangeCount}/{guestLimit} free messages
               </span>
             </div>
