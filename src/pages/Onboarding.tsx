@@ -150,7 +150,7 @@ export default function Onboarding() {
   const tierStep = 4; // Only for GCSE
 
   return (
-    <div className="min-h-screen flex flex-col p-6 bg-base-100">
+    <div className="min-h-screen flex flex-col p-6 bg-[#0F1114]" data-theme="orbit">
       <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
         {/* Logo */}
         <div className="flex justify-center mb-6">
@@ -160,14 +160,12 @@ export default function Onboarding() {
         {/* Progress */}
         <div className="flex gap-2 mb-8">
           {Array.from({ length: totalSteps }, (_, i) => i + 1).map((s) => (
-            <progress
+            <div
               key={s}
               className={cn(
-                "progress flex-1 h-1.5",
-                s <= step ? "progress-primary" : "progress-secondary opacity-30"
+                "flex-1 h-1.5 rounded-full transition-colors",
+                s <= step ? "bg-primary" : "bg-[#23272E]"
               )}
-              value={s <= step ? 100 : 0}
-              max="100"
             />
           ))}
         </div>
@@ -177,15 +175,15 @@ export default function Onboarding() {
           {step === 1 && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center space-y-2">
-                <h1 className="text-2xl font-semibold">What's your name?</h1>
-                <p className="text-base-content/60">So we know what to call you</p>
+                <h1 className="text-2xl font-semibold text-white">What's your name?</h1>
+                <p className="text-[#9CA3AF]">So we know what to call you</p>
               </div>
               <input
                 type="text"
                 placeholder="Your first name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="input w-full h-14 text-lg rounded-2xl text-center bg-base-200 border-0 focus:outline-primary"
+                className="w-full h-14 text-lg rounded-2xl text-center bg-[#1A1D21] text-white border-0 focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-[#6B7280]"
                 autoFocus
               />
             </div>
@@ -194,7 +192,7 @@ export default function Onboarding() {
           {step === 2 && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center space-y-2">
-                <h1 className="text-2xl font-semibold">Which year are you in?</h1>
+                <h1 className="text-2xl font-semibold text-white">Which year are you in?</h1>
               </div>
               <div className="grid gap-3">
                 {yearOptions.map((option) => (
@@ -206,14 +204,14 @@ export default function Onboarding() {
                       setTargetGrade('');
                     }}
                     className={cn(
-                      "btn btn-lg h-auto p-5 rounded-2xl justify-start font-normal bg-base-200 border-2 hover:bg-base-200",
+                      "h-auto p-5 rounded-2xl text-left bg-[#1A1D21] border-2 transition-all text-white",
                       yearGroup === option.value
                         ? "border-primary"
-                        : "border-transparent hover:border-base-300"
+                        : "border-transparent hover:border-[#23272E]"
                     )}
                   >
                     <span className="font-medium text-lg">{option.label}</span>
-                    <span className="text-sm text-base-content/60 ml-2">({option.level})</span>
+                    <span className="text-sm text-[#9CA3AF] ml-2">({option.level})</span>
                   </button>
                 ))}
               </div>
@@ -223,8 +221,8 @@ export default function Onboarding() {
           {step === 3 && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center space-y-2">
-                <h1 className="text-2xl font-semibold">What's your exam board?</h1>
-                <p className="text-base-content/60">Don't worry if you're not sure</p>
+                <h1 className="text-2xl font-semibold text-white">What's your exam board?</h1>
+                <p className="text-[#9CA3AF]">Don't worry if you're not sure</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {examBoardOptions.map((option) => (
@@ -232,10 +230,10 @@ export default function Onboarding() {
                     key={option.value}
                     onClick={() => setExamBoard(option.value)}
                     className={cn(
-                      "btn h-auto p-4 rounded-2xl font-medium bg-base-200 border-2 hover:bg-base-200",
+                      "h-auto p-4 rounded-2xl font-medium bg-[#1A1D21] border-2 transition-all text-white",
                       examBoard === option.value
                         ? "border-primary"
-                        : "border-transparent hover:border-base-300"
+                        : "border-transparent hover:border-[#23272E]"
                     )}
                   >
                     {option.label}
@@ -248,8 +246,8 @@ export default function Onboarding() {
           {isGCSE && step === tierStep && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center space-y-2">
-                <h1 className="text-2xl font-semibold">Which tier are you taking?</h1>
-                <p className="text-base-content/60">This affects the questions you'll see</p>
+                <h1 className="text-2xl font-semibold text-white">Which tier are you taking?</h1>
+                <p className="text-[#9CA3AF]">This affects the questions you'll see</p>
               </div>
               <div className="grid gap-3">
                 {tierOptions.map((option) => (
@@ -257,14 +255,14 @@ export default function Onboarding() {
                     key={option.value}
                     onClick={() => setTier(option.value)}
                     className={cn(
-                      "btn btn-lg h-auto p-5 rounded-2xl justify-start font-normal bg-base-200 border-2 hover:bg-base-200",
+                      "h-auto p-5 rounded-2xl text-left bg-[#1A1D21] border-2 transition-all text-white",
                       tier === option.value
                         ? "border-primary"
-                        : "border-transparent hover:border-base-300"
+                        : "border-transparent hover:border-[#23272E]"
                     )}
                   >
                     <span className="font-medium text-lg">{option.label}</span>
-                    <span className="text-sm text-base-content/60 ml-2">{option.description}</span>
+                    <span className="text-sm text-[#9CA3AF] ml-2">{option.description}</span>
                   </button>
                 ))}
               </div>
@@ -274,8 +272,8 @@ export default function Onboarding() {
           {step === gradeStep && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center space-y-2">
-                <h1 className="text-2xl font-semibold">What's your target grade?</h1>
-                <p className="text-base-content/60">We'll push you to get there</p>
+                <h1 className="text-2xl font-semibold text-white">What's your target grade?</h1>
+                <p className="text-[#9CA3AF]">We'll push you to get there</p>
               </div>
               <div className="flex gap-3 justify-center flex-wrap">
                 {gradeOptions.map((option) => (
@@ -283,7 +281,7 @@ export default function Onboarding() {
                     key={option.value}
                     onClick={() => setTargetGrade(option.value)}
                     className={cn(
-                      "btn w-20 h-20 rounded-2xl font-bold text-2xl bg-base-200 border-2 hover:bg-base-200 transition-transform",
+                      "w-20 h-20 rounded-2xl font-bold text-2xl bg-[#1A1D21] border-2 transition-all text-white",
                       targetGrade === option.value
                         ? "border-primary scale-110"
                         : "border-transparent hover:scale-105"
@@ -302,7 +300,7 @@ export default function Onboarding() {
           <button
             onClick={nextStep}
             disabled={!canProceed() || loading}
-            className="btn w-full h-14 text-lg rounded-2xl font-medium border border-primary bg-base-300 text-base-content hover:shadow-[0_0_16px_rgba(0,250,215,0.25)] transition-all disabled:opacity-50"
+            className="w-full h-14 text-lg rounded-2xl font-medium border border-primary bg-[#23272E] text-white hover:shadow-[0_0_16px_rgba(0,250,215,0.25)] transition-all disabled:opacity-50 flex items-center justify-center"
           >
             {loading ? (
               <span className="loading loading-spinner loading-md"></span>
