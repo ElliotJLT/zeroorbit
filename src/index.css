@@ -37,9 +37,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Force Orbit dark theme globally */
-html, html[data-theme="orbit"] {
-  background-color: #0F1114;
+/* Force Orbit dark theme globally (HSL tokens; no hard-coded hex) */
+html,
+html[data-theme="orbit"] {
+  background-color: hsl(var(--surface-1));
   color-scheme: dark;
 }
 

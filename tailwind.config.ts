@@ -79,6 +79,22 @@ export default {
         "surface-1": "hsl(var(--surface-1))",
         "surface-2": "hsl(var(--surface-2))",
         "surface-3": "hsl(var(--surface-3))",
+
+        /**
+         * DaisyUI semantic palette aliases.
+         *
+         * Some environments can fail to emit DaisyUI's theme color utilities;
+         * these aliases ensure classes like bg-base-100/text-base-content
+         * still work while keeping Orbit colors sourced from our HSL tokens.
+         */
+        "base-100": "hsl(var(--surface-1))",
+        "base-200": "hsl(var(--surface-2))",
+        "base-300": "hsl(var(--surface-3))",
+        "base-content": "hsl(var(--foreground))",
+
+        "primary-content": "hsl(var(--primary-foreground))",
+        "secondary-content": "hsl(var(--secondary-foreground))",
+        "accent-content": "hsl(var(--accent-foreground))",
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(ellipse at center, var(--tw-gradient-stops))',
