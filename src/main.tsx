@@ -2,6 +2,9 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
+// Ensure DaisyUI orbit theme is applied
+document.documentElement.setAttribute('data-theme', 'orbit');
+
 // Prevent stale UI in preview/dev by removing any previously-registered service worker caches.
 if (import.meta.env.DEV && "serviceWorker" in navigator) {
   navigator.serviceWorker.getRegistrations().then((regs) => {

@@ -37,7 +37,11 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Force Orbit theme - DaisyUI applies via data-theme attribute on HTML */
+/* Force Orbit dark theme globally */
+html, html[data-theme="orbit"] {
+  background-color: #0F1114;
+  color-scheme: dark;
+}
 
 @layer base {
   :root {
