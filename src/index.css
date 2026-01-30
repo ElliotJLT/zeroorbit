@@ -37,10 +37,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Force Orbit theme */
-:root {
-  data-theme: orbit;
-}
+/* Force Orbit theme - DaisyUI applies via data-theme attribute on HTML */
 
 @layer base {
   :root {
@@ -114,9 +111,7 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  html, body {
-    data-theme: orbit;
-  }
+  /* Theme applied via data-theme="orbit" attribute on html element */
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Archia', 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
